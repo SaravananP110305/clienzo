@@ -4,6 +4,7 @@ import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
+import ChangePassword from "./pages/ChangePassword";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Dashboard from "./modules/Dashboard/pages/Dashboard";
@@ -54,6 +55,7 @@ export default function App() {
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/change-password" element={<ChangePassword />} />
 
             {/* Clienzo Feature Module Route Placeholders */}
             <Route path="/dashboard" element={<Dashboard />} />
