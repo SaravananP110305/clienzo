@@ -77,7 +77,7 @@ export default function MeetingForm() {
       isEditMode ? "Meeting updated successfully." : "Meeting scheduled successfully.",
       "success"
     );
-    navigate("/meetings/upcoming");
+    navigate("/meetings");
   };
 
   const handleError = () => {
@@ -208,6 +208,7 @@ export default function MeetingForm() {
                   placeholder="Select meeting date"
                   defaultDate={value}
                   onChange={(_, dateStr) => onChange(dateStr)}
+                  required={true}
                 />
               )}
             />

@@ -369,6 +369,7 @@ export default function ContactLeadDetail() {
                       <Input
                         {...field}
                         type="date"
+                        min={new Date().toISOString().split("T")[0]}
                         className={errors.followUpDate ? "border-error-500" : ""}
                       />
                     )}

@@ -26,7 +26,7 @@ import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 export interface MasterItem {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   status: "Active" | "Inactive";
 }
 
@@ -65,9 +65,8 @@ export default function MasterConfigPage({
 
   // Form Fields states
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
-  const [errors, setErrors] = useState<{ name?: string; description?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string }>({});
 
   // Reset list if configuration initialData changes (routing changes)
   useEffect(() => {
@@ -89,7 +88,6 @@ export default function MasterConfigPage({
     setModalMode("create");
     setSelectedItem(null);
     setName("");
-    setDescription("");
     setStatus("Active");
     setErrors({});
     formModal.openModal();
@@ -99,7 +97,6 @@ export default function MasterConfigPage({
     setModalMode("edit");
     setSelectedItem(item);
     setName(item.name);
-    setDescription(item.description);
     setStatus(item.status);
     setErrors({});
     formModal.openModal();
@@ -118,12 +115,6 @@ export default function MasterConfigPage({
       newErrors.name = `Name must be at least 3 characters`;
     }
 
-    if (!description.trim()) {
-      newErrors.description = `Description is required`;
-    } else if (description.trim().length < 5) {
-      newErrors.description = `Description must be at least 5 characters`;
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -136,7 +127,6 @@ export default function MasterConfigPage({
       const newItem: MasterItem = {
         id: newId,
         name: name.trim(),
-        description: description.trim(),
         status,
       };
       setItems([...items, newItem]);
@@ -144,7 +134,7 @@ export default function MasterConfigPage({
       setItems(
         items.map((i) =>
           i.id === selectedItem.id
-            ? { ...i, name: name.trim(), description: description.trim(), status }
+            ? { ...i, name: name.trim(), status }
             : i
         )
       );
@@ -179,8 +169,7 @@ export default function MasterConfigPage({
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (i) =>
-          i.name.toLowerCase().includes(q) ||
-          i.description.toLowerCase().includes(q)
+          i.name.toLowerCase().includes(q)
       );
     }
 
@@ -219,12 +208,14 @@ export default function MasterConfigPage({
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
   // Sorting header renderer
-  const renderSortHeader = (label: string, field: keyof MasterItem) => {
+  const renderSortHeader = (label: string, field: keyof MasterItem, centered = false) => {
     const isActive = sortField === field;
     return (
       <button
         onClick={() => handleSort(field)}
-        className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer"
+        className={`flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer ${
+          centered ? "mx-auto justify-center" : ""
+        }`}
       >
         {label}
         <span className="flex flex-col">
@@ -334,19 +325,16 @@ export default function MasterConfigPage({
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                  {renderSortHeader("S.No", "id")}
+                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 w-[100px]">
+                  {renderSortHeader("S.No", "id", true)}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                   {renderSortHeader("Name", "name")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                  {renderSortHeader("Description", "description")}
+                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 w-[180px]">
+                  {renderSortHeader("Status", "status", true)}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                  {renderSortHeader("Status", "status")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 w-[180px]">
                   Action
                 </TableCell>
               </TableRow>
@@ -358,16 +346,13 @@ export default function MasterConfigPage({
                     key={item.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-center">
                       {item.id}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-medium">
                       {item.name}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                      {item.description}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 text-center">
                       <Badge
                         size="sm"
                         color={item.status === "Active" ? "success" : "error"}
@@ -375,8 +360,8 @@ export default function MasterConfigPage({
                         {item.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center gap-2">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 text-center">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleOpenView(item)}
                           className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
@@ -405,7 +390,7 @@ export default function MasterConfigPage({
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={4}
                     className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No items found matching search criteria.
@@ -467,12 +452,6 @@ export default function MasterConfigPage({
                     {selectedItem.name}
                   </span>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block">Description</span>
-                  <span className="text-sm font-medium text-gray-850 dark:text-white">
-                    {selectedItem.description}
-                  </span>
-                </div>
               </div>
             </div>
           )}
@@ -510,28 +489,6 @@ export default function MasterConfigPage({
               {errors.name && (
                 <span className="mt-1.5 text-xs text-error-600 block font-normal">
                   {errors.name}
-                </span>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Description <span className="text-error-500">*</span>
-              </label>
-              <textarea
-                placeholder={`Enter description`}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  if (errors.description) setErrors({ ...errors, description: undefined });
-                }}
-                className={`w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 ${errors.description ? "border-error-500" : ""
-                  }`}
-                rows={3}
-              />
-              {errors.description && (
-                <span className="mt-1.5 text-xs text-error-600 block font-normal">
-                  {errors.description}
                 </span>
               )}
             </div>

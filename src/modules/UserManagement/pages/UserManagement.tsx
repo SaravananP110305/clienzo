@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -10,6 +11,7 @@ import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
+import { useToast } from "../../../hooks/useToast";
 import {
   Table,
   TableHeader,
@@ -33,11 +35,11 @@ interface User {
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "John Doe", email: "john.doe@clienzo.com", phone: "+1 234 567 890", role: "Administrator", status: "Active" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@clienzo.com", phone: "+1 345 678 901", role: "Business Development Manager", status: "Active" },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@clienzo.com", phone: "+1 456 789 012", role: "Business Development Executive", status: "Active" },
-  { id: 4, name: "Robert Lee", email: "robert.lee@clienzo.com", phone: "+1 567 890 123", role: "Presales Consultant", status: "Active" },
-  { id: 5, name: "Emma Watson", email: "emma.watson@clienzo.com", phone: "+1 678 901 234", role: "Guest User", status: "Inactive" }
+  { id: 1, name: "John Doe", email: "john.doe@clienzo.com", phone: "+91 98765 43210", role: "Administrator", status: "Active" },
+  { id: 2, name: "Jane Smith", email: "jane.smith@clienzo.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active" },
+  { id: 3, name: "Alice Johnson", email: "alice.johnson@clienzo.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active" },
+  { id: 4, name: "Robert Lee", email: "robert.lee@clienzo.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active" },
+  { id: 5, name: "Emma Watson", email: "emma.watson@clienzo.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive" }
 ];
 
 const availableRoles = [
@@ -48,6 +50,14 @@ const availableRoles = [
   "Guest User"
 ];
 
+interface UserFormValues {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: "Active" | "Inactive";
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,27 +67,37 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof User>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const { showToast } = useToast();
 
-  // Dropdown filter open states
+  // Dropdown states
   const [isRoleFilterOpen, setIsRoleFilterOpen] = useState(false);
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
-  // Modal control states
+  // Modal states
   const viewModal = useModal();
   const formModal = useModal();
   const deleteModal = useModal();
 
-  // Active items mappings
+  // Active items mapping
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
 
-  // Form Fields states
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState(availableRoles[0]);
-  const [status, setStatus] = useState<"Active" | "Inactive">("Active");
-  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
+  // React Hook Form
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UserFormValues>({
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      role: "",
+      status: "Active",
+    },
+  });
 
   // Handlers
   const handleOpenView = (user: User) => {
@@ -88,24 +108,26 @@ export default function UserManagement() {
   const handleOpenCreate = () => {
     setModalMode("create");
     setSelectedUser(null);
-    setName("");
-    setEmail("");
-    setPhone("");
-    setRole(availableRoles[0]);
-    setStatus("Active");
-    setErrors({});
+    reset({
+      name: "",
+      email: "",
+      phone: "",
+      role: "",
+      status: "Active",
+    });
     formModal.openModal();
   };
 
   const handleOpenEdit = (user: User) => {
     setModalMode("edit");
     setSelectedUser(user);
-    setName(user.name);
-    setEmail(user.email);
-    setPhone(user.phone);
-    setRole(user.role);
-    setStatus(user.status);
-    setErrors({});
+    reset({
+      name: user.name,
+      email: user.email,
+      phone: user.phone.replace(/\D/g, "").slice(-10),
+      role: user.role,
+      status: user.status,
+    });
     formModal.openModal();
   };
 
@@ -114,66 +136,52 @@ export default function UserManagement() {
     deleteModal.openModal();
   };
 
-  const validateForm = () => {
-    const newErrors: typeof errors = {};
-    if (!name.trim()) {
-      newErrors.name = "Employee name is required";
-    } else if (name.trim().length < 3) {
-      newErrors.name = "Employee name must be at least 3 characters";
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim()) {
-      newErrors.email = "Email address is required";
-    } else if (!emailRegex.test(email.trim())) {
-      newErrors.email = "Enter a valid email address";
-    }
-
-    const digitsOnly = phone.replace(/\D/g, "");
-    if (!phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (digitsOnly.length < 8) {
-      newErrors.phone = "Phone number must be at least 8 digits";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveUser = () => {
-    if (!validateForm()) return;
-
+  const handleSaveUser = (data: UserFormValues) => {
     if (modalMode === "create") {
       const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
       const newUser: User = {
         id: newId,
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        role,
-        status,
+        name: data.name.trim(),
+        email: data.email.trim(),
+        phone: data.phone.trim(),
+        role: data.role,
+        status: data.status,
       };
       setUsers([...users, newUser]);
+      showToast("User created successfully.", "success");
     } else if (modalMode === "edit" && selectedUser) {
       setUsers(
         users.map((u) =>
           u.id === selectedUser.id
-            ? { ...u, name: name.trim(), email: email.trim(), phone: phone.trim(), role, status }
+            ? {
+                ...u,
+                name: data.name.trim(),
+                email: data.email.trim(),
+                phone: data.phone.trim(),
+                role: data.role,
+                status: data.status,
+              }
             : u
         )
       );
+      showToast("User updated successfully.", "success");
     }
     formModal.closeModal();
+  };
+
+  const handleFormError = () => {
+    showToast("Please fill all required fields.", "error");
   };
 
   const handleDeleteConfirm = () => {
     if (selectedUser) {
       setUsers(users.filter((u) => u.id !== selectedUser.id));
+      showToast("User deleted successfully.", "success");
     }
     deleteModal.closeModal();
   };
 
-  // Sorting columns handler
+  // Sorting columns
   const handleSort = (field: keyof User) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -184,22 +192,11 @@ export default function UserManagement() {
     setCurrentPage(1);
   };
 
-  // Role and status options for filters
-  const roleFilterOptions = useMemo(() => {
-    return [{ value: "all", label: "All roles" }, ...availableRoles.map((r) => ({ value: r, label: r }))];
-  }, []);
-
-  const statusFilterOptions = [
-    { value: "all", label: "All statuses" },
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
-  ];
-
   // Filters & Sorting calculations
   const processedUsers = useMemo(() => {
     let result = [...users];
 
-    // 1. Search filter
+    // 1. Search Query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -207,7 +204,8 @@ export default function UserManagement() {
           u.name.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
           u.phone.toLowerCase().includes(q) ||
-          u.role.toLowerCase().includes(q)
+          u.role.toLowerCase().includes(q) ||
+          u.status.toLowerCase().includes(q)
       );
     }
 
@@ -221,7 +219,7 @@ export default function UserManagement() {
       result = result.filter((u) => u.status === statusFilter);
     }
 
-    // 4. Sort
+    // 4. Sort column values
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -241,7 +239,7 @@ export default function UserManagement() {
     return result;
   }, [users, searchQuery, roleFilter, statusFilter, sortField, sortOrder]);
 
-  // Paginated users
+  // Paginated elements calculation
   const paginatedUsers = useMemo(() => {
     const startIdx = (currentPage - 1) * rowsPerPage;
     return processedUsers.slice(startIdx, startIdx + rowsPerPage);
@@ -250,7 +248,7 @@ export default function UserManagement() {
   const totalItems = processedUsers.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
-  // Sorting header renderer
+  // Sorting header icons indicator renderer
   const renderSortHeader = (label: string, field: keyof User) => {
     const isActive = sortField === field;
     return (
@@ -262,16 +260,12 @@ export default function UserManagement() {
         <span className="flex flex-col">
           <ChevronUpIcon
             className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc"
-                ? "text-brand-500"
-                : "text-gray-300 dark:text-gray-600"
+              isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
             }`}
           />
           <ChevronDownIcon
             className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc"
-                ? "text-brand-500"
-                : "text-gray-300 dark:text-gray-600"
+              isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
             }`}
           />
         </span>
@@ -283,12 +277,12 @@ export default function UserManagement() {
     <>
       <PageMeta
         title="User Management | ClienZo"
-        description="Manage users in ClienZo CRM."
+        description="Manage employee accounts and roles in ClienZo CRM."
       />
       {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle="User Management" />
 
-      {/* Control Panel Area above Table */}
+      {/* Control Area above Table */}
       <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full lg:w-auto">
           <div className="w-full sm:w-64">
@@ -303,84 +297,98 @@ export default function UserManagement() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Custom Dropdown Filter for Role */}
-            <div className="relative">
-              <button
-                onClick={() => setIsRoleFilterOpen(!isRoleFilterOpen)}
-                className="flex items-center justify-between h-11 w-44 rounded-lg border border-gray-205 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <span>
-                  {roleFilterOptions.find((o) => o.value === roleFilter)?.label || "Filter by role"}
-                </span>
-                <ChevronDownIcon className="w-4 h-4 text-gray-505" />
-              </button>
-              <Dropdown
-                isOpen={isRoleFilterOpen}
-                onClose={() => setIsRoleFilterOpen(false)}
-                className="left-0 right-auto w-56 p-1 mt-2"
-              >
-                <ul className="flex flex-col gap-0.5 max-h-60 overflow-y-auto custom-scrollbar">
-                  {roleFilterOptions.map((opt) => (
-                    <li key={opt.value}>
-                      <DropdownItem
-                        onItemClick={() => {
-                          setRoleFilter(opt.value);
-                          setCurrentPage(1);
-                          setIsRoleFilterOpen(false);
-                        }}
-                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                          roleFilter === opt.value
-                            ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                        }`}
-                      >
-                        {opt.label}
-                      </DropdownItem>
-                    </li>
-                  ))}
-                </ul>
-              </Dropdown>
-            </div>
+          {/* Custom Dropdown Filter for Role */}
+          <div className="relative">
+            <button
+              onClick={() => setIsRoleFilterOpen(!isRoleFilterOpen)}
+              className="flex items-center justify-between h-11 w-48 rounded-lg border border-gray-205 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <span>{roleFilter === "all" ? "All roles" : roleFilter}</span>
+              <ChevronDownIcon className="w-4 h-4 text-gray-555" />
+            </button>
+            <Dropdown
+              isOpen={isRoleFilterOpen}
+              onClose={() => setIsRoleFilterOpen(false)}
+              className="left-0 right-auto w-48 p-1 mt-2"
+            >
+              <ul className="flex flex-col gap-0.5">
+                <li>
+                  <DropdownItem
+                    onItemClick={() => {
+                      setRoleFilter("all");
+                      setCurrentPage(1);
+                      setIsRoleFilterOpen(false);
+                    }}
+                    className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
+                      roleFilter === "all"
+                        ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    All roles
+                  </DropdownItem>
+                </li>
+                {availableRoles.map((roleOpt) => (
+                  <li key={roleOpt}>
+                    <DropdownItem
+                      onItemClick={() => {
+                        setRoleFilter(roleOpt);
+                        setCurrentPage(1);
+                        setIsRoleFilterOpen(false);
+                      }}
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
+                        roleFilter === roleOpt
+                          ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {roleOpt}
+                    </DropdownItem>
+                  </li>
+                ))}
+              </ul>
+            </Dropdown>
+          </div>
 
-            {/* Custom Dropdown Filter for Status */}
-            <div className="relative">
-              <button
-                onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
-                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-205 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <span>
-                  {statusFilterOptions.find((o) => o.value === statusFilter)?.label || "Filter by status"}
-                </span>
-                <ChevronDownIcon className="w-4 h-4 text-gray-505" />
-              </button>
-              <Dropdown
-                isOpen={isStatusFilterOpen}
-                onClose={() => setIsStatusFilterOpen(false)}
-                className="left-0 right-auto w-40 p-1 mt-2"
-              >
-                <ul className="flex flex-col gap-0.5">
-                  {statusFilterOptions.map((opt) => (
-                    <li key={opt.value}>
-                      <DropdownItem
-                        onItemClick={() => {
-                          setStatusFilter(opt.value);
-                          setCurrentPage(1);
-                          setIsStatusFilterOpen(false);
-                        }}
-                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                          statusFilter === opt.value
-                            ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                        }`}
-                      >
-                        {opt.label}
-                      </DropdownItem>
-                    </li>
-                  ))}
-                </ul>
-              </Dropdown>
-            </div>
+          {/* Custom Dropdown Filter for Status */}
+          <div className="relative">
+            <button
+              onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
+              className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-205 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <span>{statusFilter === "all" ? "All statuses" : statusFilter}</span>
+              <ChevronDownIcon className="w-4 h-4 text-gray-555" />
+            </button>
+            <Dropdown
+              isOpen={isStatusFilterOpen}
+              onClose={() => setIsStatusFilterOpen(false)}
+              className="left-0 right-auto w-40 p-1 mt-2"
+            >
+              <ul className="flex flex-col gap-0.5">
+                {[
+                  { value: "all", label: "All statuses" },
+                  { value: "Active", label: "Active" },
+                  { value: "Inactive", label: "Inactive" },
+                ].map((opt) => (
+                  <li key={opt.value}>
+                    <DropdownItem
+                      onItemClick={() => {
+                        setStatusFilter(opt.value);
+                        setCurrentPage(1);
+                        setIsStatusFilterOpen(false);
+                      }}
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
+                        statusFilter === opt.value
+                          ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {opt.label}
+                    </DropdownItem>
+                  </li>
+                ))}
+              </ul>
+            </Dropdown>
           </div>
         </div>
 
@@ -403,25 +411,46 @@ export default function UserManagement() {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("S.No", "id")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Employee name", "name")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                  {renderSortHeader("Email", "email")}
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {renderSortHeader("Email address", "email")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                  Phone
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {renderSortHeader("Phone", "phone")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Role", "role")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Status", "status")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   Action
                 </TableCell>
               </TableRow>
@@ -449,10 +478,7 @@ export default function UserManagement() {
                       {user.role}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                      <Badge
-                        size="sm"
-                        color={user.status === "Active" ? "success" : "error"}
-                      >
+                      <Badge size="sm" color={user.status === "Active" ? "success" : "error"}>
                         {user.status}
                       </Badge>
                     </TableCell>
@@ -497,7 +523,7 @@ export default function UserManagement() {
           </Table>
         </div>
 
-        {/* Reusable Global Pagination */}
+        {/* Pagination Block */}
         {totalItems > 0 && (
           <Pagination
             currentPage={currentPage}
@@ -514,13 +540,11 @@ export default function UserManagement() {
         )}
       </div>
 
-      {/* View User Details Modal */}
+      {/* View User Modal (Read-Only details) */}
       <Modal isOpen={viewModal.isOpen} onClose={viewModal.closeModal} className="max-w-[500px] m-4">
         <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
           <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              User details
-            </h4>
+            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">User details</h4>
           </div>
           {selectedUser && (
             <div className="space-y-4">
@@ -542,7 +566,7 @@ export default function UserManagement() {
                     </Badge>
                   </div>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <span className="text-xs text-gray-400 block">Employee name</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
                     {selectedUser.name}
@@ -585,26 +609,33 @@ export default function UserManagement() {
               {modalMode === "create" ? "Add user" : "Edit user"}
             </h4>
           </div>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit(handleSaveUser, handleFormError)} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Employee name <span className="text-error-500">*</span>
                 </label>
-                <Input
-                  type="text"
-                  placeholder="Enter employee name"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (errors.name) setErrors({ ...errors, name: undefined });
+                <Controller
+                  name="name"
+                  control={control}
+                  rules={{
+                    required: "Name is required",
+                    pattern: {
+                      value: /^[a-zA-Z\s]+$/,
+                      message: "Letters and spaces only",
+                    },
                   }}
-                  className={errors.name ? "border-error-500" : ""}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Enter employee name"
+                      className={errors.name ? "border-error-500" : ""}
+                    />
+                  )}
                 />
                 {errors.name && (
-                  <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.name}
-                  </span>
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.name.message}</span>
                 )}
               </div>
 
@@ -612,20 +643,27 @@ export default function UserManagement() {
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email address <span className="text-error-500">*</span>
                 </label>
-                <Input
-                  type="email"
-                  placeholder="Enter email address"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) setErrors({ ...errors, email: undefined });
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                      message: "Please enter a valid email address.",
+                    },
                   }}
-                  className={errors.email ? "border-error-500" : ""}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="email"
+                      placeholder="Enter email address"
+                      className={errors.email ? "border-error-500" : ""}
+                    />
+                  )}
                 />
                 {errors.email && (
-                  <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.email}
-                  </span>
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.email.message}</span>
                 )}
               </div>
 
@@ -633,20 +671,33 @@ export default function UserManagement() {
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Phone number <span className="text-error-500">*</span>
                 </label>
-                <Input
-                  type="text"
-                  placeholder="Enter phone number"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    if (errors.phone) setErrors({ ...errors, phone: undefined });
+                <Controller
+                  name="phone"
+                  control={control}
+                  rules={{
+                    required: "Phone number is required",
+                    pattern: {
+                      value: /^[6-9]\d{9}$/,
+                      message: "Please enter a valid 10-digit mobile number starting with 6-9.",
+                    },
                   }}
-                  className={errors.phone ? "border-error-500" : ""}
+                  render={({ field: { value, onChange, ...rest } }) => (
+                    <Input
+                      {...rest}
+                      value={value}
+                      type="text"
+                      placeholder="Enter 10-digit phone number"
+                      maxLength={10}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        onChange(digits);
+                      }}
+                      className={errors.phone ? "border-error-500" : ""}
+                    />
+                  )}
                 />
                 {errors.phone && (
-                  <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.phone}
-                  </span>
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.phone.message}</span>
                 )}
               </div>
 
@@ -654,38 +705,58 @@ export default function UserManagement() {
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Role <span className="text-error-500">*</span>
                 </label>
-                <Select
-                  options={availableRoles.map((r) => ({ value: r, label: r }))}
-                  placeholder="Select role"
-                  defaultValue={role}
-                  onChange={(val) => setRole(val)}
+                <Controller
+                  name="role"
+                  control={control}
+                  rules={{ required: "Role is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={availableRoles.map((r) => ({ value: r, label: r }))}
+                      placeholder="Select role"
+                      defaultValue={value}
+                      onChange={onChange}
+                    />
+                  )}
                 />
+                {errors.role && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.role.message}</span>
+                )}
               </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Status <span className="text-error-500">*</span>
                 </label>
-                <Select
-                  options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Inactive", label: "Inactive" },
-                  ]}
-                  placeholder="Select status"
-                  defaultValue={status}
-                  onChange={(val) => setStatus(val as "Active" | "Inactive")}
+                <Controller
+                  name="status"
+                  control={control}
+                  rules={{ required: "Status is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={[
+                        { value: "Active", label: "Active" },
+                        { value: "Inactive", label: "Inactive" },
+                      ]}
+                      placeholder="Select status"
+                      defaultValue={value}
+                      onChange={onChange}
+                    />
+                  )}
                 />
+                {errors.status && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.status.message}</span>
+                )}
               </div>
             </div>
-          </div>
-          <div className="flex items-center justify-end gap-3 mt-6">
-            <Button size="sm" variant="outline" onClick={formModal.closeModal}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSaveUser}>
-              Save
-            </Button>
-          </div>
+            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+              <Button size="sm" variant="outline" onClick={formModal.closeModal}>
+                Cancel
+              </Button>
+              <Button size="sm" type="submit">
+                Save
+              </Button>
+            </div>
+          </form>
         </div>
       </Modal>
 
@@ -707,7 +778,11 @@ export default function UserManagement() {
             <Button size="sm" variant="outline" onClick={deleteModal.closeModal} className="w-1/2">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleDeleteConfirm} className="w-1/2 bg-error-600 hover:bg-error-750">
+            <Button
+              size="sm"
+              onClick={handleDeleteConfirm}
+              className="w-1/2 bg-error-600 hover:bg-error-750"
+            >
               Delete
             </Button>
           </div>

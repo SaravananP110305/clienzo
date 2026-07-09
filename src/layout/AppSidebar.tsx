@@ -53,26 +53,22 @@ const navItems: NavItem[] = [
     name: "Lead Management",
     icon: <MdBusinessCenter className="size-5" />,
     subItems: [
-      { name: "Lead list", path: "/leads" },
-      { name: "Add lead", path: "/leads/add" },
+      { name: "Add Lead", path: "/leads/add" },
+      { name: "Lead List", path: "/leads" },
     ],
   },
   {
     name: "Connect",
     icon: <MdCall className="size-5" />,
     subItems: [
-      { name: "My leads", path: "/contacts/my-leads" },
+      { name: "My Leads", path: "/contacts/my-leads" },
       { name: "Follow-ups", path: "/contacts/follow-ups" },
     ],
   },
   {
-    name: "Meeting Management",
+    name: "Meetings",
     icon: <MdEvent className="size-5" />,
-    subItems: [
-      { name: "Upcoming meetings", path: "/meetings/upcoming" },
-      { name: "Today's meetings", path: "/meetings/today" },
-      { name: "Completed meetings", path: "/meetings/completed" },
-    ],
+    path: "/meetings",
   },
   {
     name: "Reports",
@@ -94,7 +90,6 @@ const AppSidebar: React.FC = () => {
   const isUserMgmtPath = location.pathname === "/users" || location.pathname === "/roles";
   const isLeadMgmtPath = location.pathname.startsWith("/leads");
   const isConnectPath = location.pathname.startsWith("/contacts");
-  const isMeetingsPath = location.pathname.startsWith("/meetings");
   const isReportsPath = location.pathname.startsWith("/reports");
 
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
@@ -102,7 +97,6 @@ const AppSidebar: React.FC = () => {
     "User Management": isUserMgmtPath,
     "Lead Management": isLeadMgmtPath,
     "Connect": isConnectPath,
-    "Meeting Management": isMeetingsPath,
     "Reports": isReportsPath,
   });
 
@@ -115,8 +109,6 @@ const AppSidebar: React.FC = () => {
       setOpenSubMenus({ "Lead Management": true });
     } else if (location.pathname.startsWith("/contacts")) {
       setOpenSubMenus({ "Connect": true });
-    } else if (location.pathname.startsWith("/meetings")) {
-      setOpenSubMenus({ "Meeting Management": true });
     } else if (location.pathname.startsWith("/reports")) {
       setOpenSubMenus({ "Reports": true });
     } else {

@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 
 export default function NotFound() {
+  const base = import.meta.env.BASE_URL;
   return (
     <>
       <PageMeta
@@ -16,9 +17,9 @@ export default function NotFound() {
             ERROR
           </h1>
 
-          <img src="/images/error/404.svg" alt="404" className="dark:hidden" />
+          <img src={`${base}images/error/404.svg`} alt="404" className="dark:hidden" />
           <img
-            src="/images/error/404-dark.svg"
+            src={`${base}images/error/404-dark.svg`}
             alt="404"
             className="hidden dark:block"
           />

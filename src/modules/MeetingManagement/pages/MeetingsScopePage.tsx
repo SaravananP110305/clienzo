@@ -25,21 +25,20 @@ import { FiEye, FiEdit, FiTrash2, FiPlus, FiVideo, FiMapPin } from "react-icons/
 import { Meeting, getMeetingStatusColor } from "../data/meetingsData";
 
 interface MeetingsScopePageProps {
-  scope: "upcoming" | "today" | "completed";
-  pageTitle: string;
   meetings: Meeting[];
   onDeleteMeeting: (id: number) => void;
 }
 
+type TabType = "upcoming" | "today" | "completed";
+
 export default function MeetingsScopePage({
-  scope,
-  pageTitle,
   meetings,
   onDeleteMeeting,
 }: MeetingsScopePageProps) {
   const navigate = useNavigate();
   const deleteModal = useModal();
 
+  const [activeTab, setActiveTab] = useState<TabType>("upcoming");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,18 +78,18 @@ export default function MeetingsScopePage({
   const scopedMeetings = useMemo(() => {
     const todayStr = "2026-07-09";
     return meetings.filter((meeting) => {
-      if (scope === "today") {
+      if (activeTab === "today") {
         return meeting.date === todayStr;
       }
-      if (scope === "upcoming") {
+      if (activeTab === "upcoming") {
         return meeting.date > todayStr && meeting.status !== "Completed" && meeting.status !== "Cancelled";
       }
-      if (scope === "completed") {
+      if (activeTab === "completed") {
         return meeting.date < todayStr || meeting.status === "Completed" || meeting.status === "Cancelled";
       }
       return true;
     });
-  }, [meetings, scope]);
+  }, [meetings, activeTab]);
 
   // Process data (Search, Status Filter, Sort)
   const processedMeetings = useMemo(() => {
@@ -185,13 +184,54 @@ export default function MeetingsScopePage({
     });
   };
 
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setSearchQuery("");
+    setStatusFilter("all");
+  };
+
   return (
     <>
       <PageMeta
-        title={`${pageTitle} | ClienZo`}
+        title="Meetings | ClienZo"
         description="View and manage meetings in ClienZo CRM."
       />
-      <PageBreadcrumb pageTitle={pageTitle} />
+      <PageBreadcrumb pageTitle="Meetings" />
+
+      {/* Modern Premium Tabs Control Header */}
+      <div className="flex border-b border-gray-200 dark:border-white/[0.05] mb-6">
+        <button
+          onClick={() => handleTabChange("upcoming")}
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${
+            activeTab === "upcoming"
+              ? "border-brand-500 text-brand-500 font-semibold"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          Upcoming Meetings
+        </button>
+        <button
+          onClick={() => handleTabChange("today")}
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${
+            activeTab === "today"
+              ? "border-brand-500 text-brand-500 font-semibold"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          Today's Meetings
+        </button>
+        <button
+          onClick={() => handleTabChange("completed")}
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${
+            activeTab === "completed"
+              ? "border-brand-500 text-brand-500 font-semibold"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          Completed Meetings
+        </button>
+      </div>
 
       {/* Control Panel Area above Table */}
       <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
@@ -217,7 +257,7 @@ export default function MeetingsScopePage({
               <span className="truncate">
                 {statusOptions.find((o) => o.value === statusFilter)?.label}
               </span>
-              <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+              <ChevronDownIcon className="w-4 h-4 text-gray-555 shrink-0 ml-1" />
             </button>
             <Dropdown
               isOpen={isStatusOpen}

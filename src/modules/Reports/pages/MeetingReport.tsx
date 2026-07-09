@@ -20,8 +20,10 @@ import {
 } from "../../../icons";
 import { FiDownload, FiVideo, FiMapPin } from "react-icons/fi";
 import { MEETING_REPORT_DATA, MeetingReportData } from "../data/reportsData";
+import { useToast } from "../../../hooks/useToast";
 
 export default function MeetingReport() {
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -270,7 +272,7 @@ export default function MeetingReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => alert("Exporting Meeting report...")}
+            onClick={() => showToast("Exporting Meeting report...", "info")}
           >
             Export
           </Button>

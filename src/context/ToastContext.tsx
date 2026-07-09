@@ -19,7 +19,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const showToast = useCallback((message: string, type: "success" | "error" | "warning" | "info" = "success") => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
-    
+
     // Auto-remove after 4 seconds
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -48,15 +48,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const getTypeStyles = (type: string) => {
     switch (type) {
       case "success":
-        return "border-success-500 bg-success-50 dark:bg-success-500/15";
+        return "border-gray-500 bg-white dark:bg-success-900";
       case "error":
-        return "border-error-500 bg-error-50 dark:bg-error-500/15";
+        return "border-gray-500 bg-white dark:bg-error-900";
       case "warning":
-        return "border-warning-500 bg-warning-50 dark:bg-warning-500/15";
+        return "border-gray-500 bg-white dark:bg-warning-900";
       case "info":
-        return "border-blue-500 bg-blue-50 dark:bg-blue-500/15";
+        return "border-gray-500 bg-white dark:bg-blue-900";
       default:
-        return "border-gray-200 bg-gray-50";
+        return "border-gray-500 bg-white dark:bg-gray-900";
     }
   };
 
@@ -64,7 +64,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {/* Floating container */}
-      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+      <div className="fixed top-5 right-5 z-[999999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}

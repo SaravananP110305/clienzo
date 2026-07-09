@@ -37,7 +37,7 @@ interface Permission {
 interface Role {
   id: number;
   roleName: string;
-  description: string;
+  description?: string;
   status: "Active" | "Inactive";
   permissions: Permission[];
 }
@@ -132,7 +132,7 @@ const initialRoles: Role[] = [
 
 interface RoleFormValues {
   roleName: string;
-  description: string;
+  description?: string;
   status: "Active" | "Inactive";
   permissions: Permission[];
 }
@@ -232,7 +232,6 @@ export default function UserRoleManagement() {
       const newRole: Role = {
         id: newId,
         roleName: data.roleName.trim(),
-        description: data.description.trim(),
         status: data.status,
         permissions: data.permissions,
       };
@@ -245,7 +244,6 @@ export default function UserRoleManagement() {
             ? {
                 ...r,
                 roleName: data.roleName.trim(),
-                description: data.description.trim(),
                 status: data.status,
                 permissions: data.permissions,
               }
@@ -290,7 +288,6 @@ export default function UserRoleManagement() {
       result = result.filter(
         (r) =>
           r.roleName.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q) ||
           r.status.toLowerCase().includes(q)
       );
     }
@@ -330,12 +327,14 @@ export default function UserRoleManagement() {
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
   // Sorting header icons indicator renderer
-  const renderSortHeader = (label: string, field: keyof Role) => {
+  const renderSortHeader = (label: string, field: keyof Role, centered = false) => {
     const isActive = sortField === field;
     return (
       <button
         onClick={() => handleSort(field)}
-        className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer"
+        className={`flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer ${
+          centered ? "mx-auto justify-center" : ""
+        }`}
       >
         {label}
         <span className="flex flex-col">
@@ -441,9 +440,9 @@ export default function UserRoleManagement() {
               <TableRow>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 w-[100px]"
                 >
-                  {renderSortHeader("S.No", "id")}
+                  {renderSortHeader("S.No", "id", true)}
                 </TableCell>
                 <TableCell
                   isHeader
@@ -453,19 +452,13 @@ export default function UserRoleManagement() {
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 w-[180px]"
                 >
-                  {renderSortHeader("Description", "description")}
+                  {renderSortHeader("Status", "status", true)}
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
-                >
-                  {renderSortHeader("Status", "status")}
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 w-[180px]"
                 >
                   Action
                 </TableCell>
@@ -478,22 +471,19 @@ export default function UserRoleManagement() {
                     key={role.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-855 dark:text-white/90 text-center">
                       {role.id}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-medium">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-855 dark:text-white/90 font-medium">
                       {role.roleName}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                      {role.description}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 text-center">
                       <Badge size="sm" color={role.status === "Active" ? "success" : "error"}>
                         {role.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center gap-2">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 text-center">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleOpenView(role)}
                           className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
@@ -522,7 +512,7 @@ export default function UserRoleManagement() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={4}
                     className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No roles match your search criteria.
@@ -581,12 +571,6 @@ export default function UserRoleManagement() {
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
                     {selectedRole.roleName}
                   </span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block">Description</span>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {selectedRole.description}
-                  </p>
                 </div>
 
                 {/* View Role Menu Privileges Matrix */}
@@ -686,35 +670,6 @@ export default function UserRoleManagement() {
                     />
                   )}
                 />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Description <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="description"
-                  control={control}
-                  rules={{
-                    required: "Description is required",
-                    minLength: { value: 10, message: "Description must be at least 10 characters" },
-                  }}
-                  render={({ field }) => (
-                    <textarea
-                      {...field}
-                      placeholder="Enter role description"
-                      className={`w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 ${
-                        errors.description ? "border-error-500" : ""
-                      }`}
-                      rows={3}
-                    />
-                  )}
-                />
-                {errors.description && (
-                  <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.description.message}
-                  </span>
-                )}
               </div>
 
               {/* Menu Privileges Table with Toggles */}

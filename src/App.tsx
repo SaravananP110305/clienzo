@@ -98,42 +98,17 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/leads" element={<LeadList />} />
             <Route path="/leads/add" element={<AddLead />} />
+            <Route path="/leads/:id/edit" element={<AddLead />} />
             <Route path="/leads/:id" element={<LeadDetails />} />
             <Route path="/contacts" element={<MyLeads />} />
             <Route path="/contacts/my-leads" element={<MyLeads />} />
             <Route path="/contacts/follow-ups" element={<FollowUps />} />
             <Route path="/contacts/:id" element={<ContactLeadDetail />} />
 
-            {/* Meetings Routes */}
-            <Route path="/meetings" element={<Navigate to="/meetings/upcoming" replace />} />
             <Route
-              path="/meetings/upcoming"
+              path="/meetings"
               element={
                 <MeetingsScopePage
-                  scope="upcoming"
-                  pageTitle="Upcoming meetings"
-                  meetings={meetings}
-                  onDeleteMeeting={handleDeleteMeeting}
-                />
-              }
-            />
-            <Route
-              path="/meetings/today"
-              element={
-                <MeetingsScopePage
-                  scope="today"
-                  pageTitle="Today's meetings"
-                  meetings={meetings}
-                  onDeleteMeeting={handleDeleteMeeting}
-                />
-              }
-            />
-            <Route
-              path="/meetings/completed"
-              element={
-                <MeetingsScopePage
-                  scope="completed"
-                  pageTitle="Completed meetings"
                   meetings={meetings}
                   onDeleteMeeting={handleDeleteMeeting}
                 />

@@ -1,100 +1,111 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
-import { LEAD_STATUSES, ASSIGNEES } from "../data/leadsData";
+import { LEAD_STATUSES, ASSIGNEES, initialLeads, LeadStatus } from "../data/leadsData";
+import { useToast } from "../../../hooks/useToast";
 
-interface FormErrors {
-  company?: string;
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
-  status?: string;
-  assignedTo?: string;
+interface LeadFormValues {
+  company: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  status: LeadStatus | "";
+  assignedTo: string;
+  industry: string;
+  source: string;
+  website: string;
+  address: string;
+  notes: string;
 }
 
 export default function AddLead() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(true);
 
-  const [company, setCompany] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [source, setSource] = useState("");
-  const [website, setWebsite] = useState("");
-  const [address, setAddress] = useState("");
-  const [notes, setNotes] = useState("");
-  const [errors, setErrors] = useState<FormErrors>({});
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<LeadFormValues>({
+    mode: "onChange",
+    defaultValues: {
+      company: "",
+      contactPerson: "",
+      email: "",
+      phone: "",
+      status: "",
+      assignedTo: "",
+      industry: "",
+      source: "",
+      website: "",
+      address: "",
+      notes: "",
+    },
+  });
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  const validate = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!company.trim()) {
-      newErrors.company = "Company name is required";
-    } else if (company.trim().length < 2) {
-      newErrors.company = "Company name must be at least 2 characters";
+  useEffect(() => {
+    if (isEditMode) {
+      const lead = initialLeads.find((l) => l.id === Number(id));
+      if (lead) {
+        reset({
+          company: lead.company,
+          contactPerson: lead.contactPerson,
+          email: lead.email,
+          phone: lead.phone.replace(/\D/g, "").slice(-10),
+          status: lead.status,
+          assignedTo: lead.assignedTo,
+          industry: lead.industry || "",
+          source: lead.source || "",
+          website: lead.website || "",
+          address: lead.address || "",
+          notes: lead.notes || "",
+        });
+      }
     }
-
-    if (!contactPerson.trim()) {
-      newErrors.contactPerson = "Contact person is required";
-    } else if (contactPerson.trim().length < 3) {
-      newErrors.contactPerson = "Contact person must be at least 3 characters";
-    }
-
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(email.trim())) {
-      newErrors.email = "Enter a valid email address";
-    }
-
-    if (!phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (phone.replace(/\D/g, "").length < 8) {
-      newErrors.phone = "Phone must have at least 8 digits";
-    }
-
-    if (!status) {
-      newErrors.status = "Status is required";
-    }
-
-    if (!assignedTo) {
-      newErrors.assignedTo = "Assigned to is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setLoading(false);
+  }, [id, isEditMode, reset]);
 
   const handleSave = () => {
-    if (!validate()) return;
-    // In Phase 2, this will call the API
+    showToast(
+      isEditMode ? "Lead updated successfully." : "Lead created successfully.",
+      "success"
+    );
     navigate("/leads");
+  };
+
+  const handleFormError = () => {
+    showToast("Please fill all required fields.", "error");
   };
 
   const handleCancel = () => {
     navigate("/leads");
   };
 
-  const fieldClass = (hasError: boolean) =>
-    hasError ? "border-error-500 focus:ring-error-500/10" : "";
+  if (loading) {
+    return <div className="text-center py-10 text-gray-500">Loading lead details...</div>;
+  }
 
   return (
     <>
       <PageMeta
-        title="Add Lead | ClienZo"
-        description="Add a new lead to ClienZo CRM."
+        title={isEditMode ? "Edit Lead | ClienZo" : "Add Lead | ClienZo"}
+        description={isEditMode ? "Edit an existing lead in ClienZo CRM." : "Add a new lead to ClienZo CRM."}
       />
-      <PageBreadcrumb pageTitle="Add lead" />
+      <PageBreadcrumb pageTitle={isEditMode ? "Edit lead" : "Add lead"} />
 
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
+      <form
+        onSubmit={handleSubmit(handleSave, handleFormError)}
+        className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6"
+      >
         {/* Section: Company Information */}
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
           Company information
@@ -106,39 +117,58 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Company name <span className="text-error-500">*</span>
             </label>
-            <Input
-              type="text"
-              placeholder="Enter company name"
-              value={company}
-              onChange={(e) => {
-                setCompany(e.target.value);
-                if (errors.company) setErrors({ ...errors, company: undefined });
+            <Controller
+              name="company"
+              control={control}
+              rules={{
+                required: "Company name is required",
+                pattern: {
+                  value: /^[a-zA-Z0-9\s&.,-]+$/,
+                  message: "Allow letters, numbers, spaces, &, ., -, and commas only",
+                },
               }}
-              className={fieldClass(!!errors.company)}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder="Enter company name"
+                  className={errors.company ? "border-error-500" : ""}
+                />
+              )}
             />
             {errors.company && (
-              <span className="mt-1.5 text-xs text-error-600 block">{errors.company}</span>
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.company.message}</span>
             )}
           </div>
 
           {/* Industry */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Industry
+              Industry <span className="text-error-500">*</span>
             </label>
-            <Select
-              options={[
-                { value: "Information Technology", label: "Information Technology" },
-                { value: "Healthcare", label: "Healthcare" },
-                { value: "Finance", label: "Finance" },
-                { value: "Manufacturing", label: "Manufacturing" },
-                { value: "Retail", label: "Retail" },
-                { value: "Education", label: "Education" },
-              ]}
-              placeholder="Select industry"
-              onChange={(val) => setIndustry(val)}
-              defaultValue={industry}
+            <Controller
+              name="industry"
+              control={control}
+              rules={{ required: "Industry is required" }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={[
+                    { value: "Information Technology", label: "Information Technology" },
+                    { value: "Healthcare", label: "Healthcare" },
+                    { value: "Finance", label: "Finance" },
+                    { value: "Manufacturing", label: "Manufacturing" },
+                    { value: "Retail", label: "Retail" },
+                    { value: "Education", label: "Education" },
+                  ]}
+                  placeholder="Select industry"
+                  onChange={onChange}
+                  defaultValue={value}
+                />
+              )}
             />
+            {errors.industry && (
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.industry.message}</span>
+            )}
           </div>
 
           {/* Website */}
@@ -146,45 +176,82 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Website
             </label>
-            <Input
-              type="text"
-              placeholder="https://example.com"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
+            <Controller
+              name="website"
+              control={control}
+              rules={{
+                validate: (val) => {
+                  if (!val) return true;
+                  const urlPattern =
+                    /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
+                  return urlPattern.test(val) || "Please enter a valid website URL";
+                },
+              }}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder="https://example.com"
+                  className={errors.website ? "border-error-500" : ""}
+                />
+              )}
             />
+            {errors.website && (
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.website.message}</span>
+            )}
           </div>
 
           {/* Source */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Lead source
+              Lead source <span className="text-error-500">*</span>
             </label>
-            <Select
-              options={[
-                { value: "Website", label: "Website" },
-                { value: "Referral", label: "Referral" },
-                { value: "Cold Call", label: "Cold Call" },
-                { value: "LinkedIn", label: "LinkedIn" },
-                { value: "Email Campaign", label: "Email Campaign" },
-                { value: "Trade Show", label: "Trade Show" },
-              ]}
-              placeholder="Select source"
-              onChange={(val) => setSource(val)}
-              defaultValue={source}
+            <Controller
+              name="source"
+              control={control}
+              rules={{ required: "Lead source is required" }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={[
+                    { value: "Website", label: "Website" },
+                    { value: "Referral", label: "Referral" },
+                    { value: "Cold Call", label: "Cold Call" },
+                    { value: "LinkedIn", label: "LinkedIn" },
+                    { value: "Email Campaign", label: "Email Campaign" },
+                    { value: "Trade Show", label: "Trade Show" },
+                  ]}
+                  placeholder="Select source"
+                  onChange={onChange}
+                  defaultValue={value}
+                />
+              )}
             />
+            {errors.source && (
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.source.message}</span>
+            )}
           </div>
 
           {/* Address */}
           <div className="sm:col-span-2">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Address
+              Address <span className="text-error-500">*</span>
             </label>
-            <Input
-              type="text"
-              placeholder="Enter full address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+            <Controller
+              name="address"
+              control={control}
+              rules={{ required: "Address is required" }}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder="Enter full address"
+                  className={errors.address ? "border-error-500" : ""}
+                />
+              )}
             />
+            {errors.address && (
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.address.message}</span>
+            )}
           </div>
         </div>
 
@@ -199,18 +266,29 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Contact person <span className="text-error-500">*</span>
             </label>
-            <Input
-              type="text"
-              placeholder="Enter contact person name"
-              value={contactPerson}
-              onChange={(e) => {
-                setContactPerson(e.target.value);
-                if (errors.contactPerson) setErrors({ ...errors, contactPerson: undefined });
+            <Controller
+              name="contactPerson"
+              control={control}
+              rules={{
+                required: "Contact person is required",
+                pattern: {
+                  value: /^[a-zA-Z\s]+$/,
+                  message: "Letters and spaces only",
+                },
               }}
-              className={fieldClass(!!errors.contactPerson)}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder="Enter contact person name"
+                  className={errors.contactPerson ? "border-error-500" : ""}
+                />
+              )}
             />
             {errors.contactPerson && (
-              <span className="mt-1.5 text-xs text-error-600 block">{errors.contactPerson}</span>
+              <span className="mt-1.5 text-xs text-error-600 block">
+                {errors.contactPerson.message}
+              </span>
             )}
           </div>
 
@@ -219,18 +297,27 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email <span className="text-error-500">*</span>
             </label>
-            <Input
-              type="email"
-              placeholder="contact@company.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors({ ...errors, email: undefined });
+            <Controller
+              name="email"
+              control={control}
+              rules={{
+                required: "Email is required",
+                pattern: {
+                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                  message: "Please enter a valid email address.",
+                },
               }}
-              className={fieldClass(!!errors.email)}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="email"
+                  placeholder="contact@company.com"
+                  className={errors.email ? "border-error-500" : ""}
+                />
+              )}
             />
             {errors.email && (
-              <span className="mt-1.5 text-xs text-error-600 block">{errors.email}</span>
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.email.message}</span>
             )}
           </div>
 
@@ -239,18 +326,33 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Phone <span className="text-error-500">*</span>
             </label>
-            <Input
-              type="tel"
-              placeholder="+1 234 567 890"
-              value={phone}
-              onChange={(e) => {
-                setPhone(e.target.value);
-                if (errors.phone) setErrors({ ...errors, phone: undefined });
+            <Controller
+              name="phone"
+              control={control}
+              rules={{
+                required: "Phone number is required",
+                pattern: {
+                  value: /^[6-9]\d{9}$/,
+                  message: "Please enter a valid 10-digit mobile number starting with 6-9.",
+                },
               }}
-              className={fieldClass(!!errors.phone)}
+              render={({ field: { value, onChange, ...rest } }) => (
+                <Input
+                  {...rest}
+                  value={value}
+                  type="text"
+                  placeholder="Enter 10-digit phone number"
+                  maxLength={10}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    onChange(digits);
+                  }}
+                  className={errors.phone ? "border-error-500" : ""}
+                />
+              )}
             />
             {errors.phone && (
-              <span className="mt-1.5 text-xs text-error-600 block">{errors.phone}</span>
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.phone.message}</span>
             )}
           </div>
         </div>
@@ -266,17 +368,21 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Status <span className="text-error-500">*</span>
             </label>
-            <Select
-              options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))}
-              placeholder="Select status"
-              onChange={(val) => {
-                setStatus(val);
-                if (errors.status) setErrors({ ...errors, status: undefined });
-              }}
-              defaultValue={status}
+            <Controller
+              name="status"
+              control={control}
+              rules={{ required: "Status is required" }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))}
+                  placeholder="Select status"
+                  onChange={onChange}
+                  defaultValue={value}
+                />
+              )}
             />
             {errors.status && (
-              <span className="mt-1.5 text-xs text-error-600 block">{errors.status}</span>
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.status.message}</span>
             )}
           </div>
 
@@ -285,17 +391,23 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Assigned to <span className="text-error-500">*</span>
             </label>
-            <Select
-              options={ASSIGNEES.map((a) => ({ value: a, label: a }))}
-              placeholder="Select assignee"
-              onChange={(val) => {
-                setAssignedTo(val);
-                if (errors.assignedTo) setErrors({ ...errors, assignedTo: undefined });
-              }}
-              defaultValue={assignedTo}
+            <Controller
+              name="assignedTo"
+              control={control}
+              rules={{ required: "Assigned to is required" }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={ASSIGNEES.map((a) => ({ value: a, label: a }))}
+                  placeholder="Select assignee"
+                  onChange={onChange}
+                  defaultValue={value}
+                />
+              )}
             />
             {errors.assignedTo && (
-              <span className="mt-1.5 text-xs text-error-600 block">{errors.assignedTo}</span>
+              <span className="mt-1.5 text-xs text-error-600 block">
+                {errors.assignedTo.message}
+              </span>
             )}
           </div>
 
@@ -304,12 +416,17 @@ export default function AddLead() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Notes
             </label>
-            <textarea
-              placeholder="Add any relevant notes about this lead..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <textarea
+                  {...field}
+                  placeholder="Add any relevant notes about this lead..."
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+              )}
             />
           </div>
         </div>
@@ -319,11 +436,11 @@ export default function AddLead() {
           <Button size="sm" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button size="sm" onClick={handleSave}>
+          <Button size="sm" type="submit">
             Save lead
           </Button>
         </div>
-      </div>
+      </form>
     </>
   );
 }
