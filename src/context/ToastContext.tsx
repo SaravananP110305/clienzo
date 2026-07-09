@@ -19,9 +19,9 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
 }) => {
   const [isExiting, setIsExiting] = useState(false);
   const [progress, setProgress] = useState(100);
-  const startTime = useRef(Date.now());
+  const startTime = useRef<number>(Date.now());
   const duration = 4000;
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const animate = () => {
@@ -34,7 +34,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
     };
     frameRef.current = requestAnimationFrame(animate);
     return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
   }, []);
 
@@ -54,25 +54,25 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
   const typeStyles = {
     success: {
       container:
-        "border-success-500 bg-success-50 dark:bg-success-500/15 shadow-success-sm",
+        "border-success-500 bg-success-50 dark:bg-success-500/15",
       icon: "text-success-500",
       progress: "bg-success-500",
     },
     error: {
       container:
-        "border-error-500 bg-error-50 dark:bg-error-500/15 shadow-error-sm",
+        "border-error-500 bg-error-50 dark:bg-error-500/15",
       icon: "text-error-500",
       progress: "bg-error-500",
     },
     warning: {
       container:
-        "border-warning-500 bg-warning-50 dark:bg-warning-500/15 shadow-warning-sm",
+        "border-warning-500 bg-warning-50 dark:bg-warning-500/15",
       icon: "text-warning-500",
       progress: "bg-warning-500",
     },
     info: {
       container:
-        "border-blue-500 bg-blue-50 dark:bg-blue-500/15 shadow-info-sm",
+        "border-blue-500 bg-blue-50 dark:bg-blue-500/15",
       icon: "text-blue-500",
       progress: "bg-blue-500",
     },
@@ -91,7 +91,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
     <div
       className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl border shadow-lg transition-all duration-300 ease-in-out ${
         isExiting
-          ? "opacity-0 translate-x-full -translate-y-2 scale-95"
+          ? "opacity-0 translate-x-full scale-95"
           : "opacity-100 translate-x-0 translate-y-0 scale-100 animate-slide-in-right"
       } ${styles.container}`}
     >
@@ -133,7 +133,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {/* Floating container - z-99999 to stay above the header's z-99999 */}
+      {/* Floating container - top right */}
       <div
         aria-live="polite"
         aria-label="Notifications"
