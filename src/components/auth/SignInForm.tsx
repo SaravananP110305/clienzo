@@ -24,6 +24,7 @@ export default function SignInForm() {
     handleSubmit,
     formState: { errors },
   } = useForm<SignInFormValues>({
+    mode: "onChange",
     defaultValues: {
       email: "",
       password: "",

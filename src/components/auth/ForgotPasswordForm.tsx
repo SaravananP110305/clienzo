@@ -17,6 +17,7 @@ export default function ForgotPasswordForm() {
     handleSubmit,
     formState: { errors },
   } = useForm<ForgotPasswordFormValues>({
+    mode: "onChange",
     defaultValues: {
       email: "",
     },

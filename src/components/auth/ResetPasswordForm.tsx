@@ -24,6 +24,7 @@ export default function ResetPasswordForm() {
     watch,
     formState: { errors },
   } = useForm<ResetPasswordFormValues>({
+    mode: "onChange",
     defaultValues: {
       password: "",
       confirmPassword: "",

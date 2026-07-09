@@ -12,41 +12,40 @@ interface SignUpFormValues {
   lname: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 export default function SignUpForm() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignUpFormValues>({
+    mode: "onChange",
     defaultValues: {
       fname: "",
       lname: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
+
+  const passwordValue = watch("password");
 
   const onSubmit = () => {
     showToast("User created successfully.", "success");
     navigate("/signin");
   };
 
-  const onError = (formErrors: any) => {
-    if (formErrors.email?.type === "pattern") {
-      showToast("Please enter a valid email address.", "error");
-    } else if (formErrors.fname?.type === "pattern" || formErrors.lname?.type === "pattern") {
-      showToast("Names must contain letters and spaces only.", "error");
-    } else if (formErrors.password?.type === "pattern") {
-      showToast("Please enter a stronger password.", "error");
-    } else {
-      showToast("Please fill all required fields.", "error");
-    }
+  const onError = () => {
+    showToast("Please fix the form errors before submitting.", "error");
   };
 
   return (
@@ -73,6 +72,14 @@ export default function SignUpForm() {
                 control={control}
                 rules={{
                   required: "First name is required",
+                  minLength: {
+                    value: 2,
+                    message: "First name must be at least 2 characters",
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: "First name must be at most 50 characters",
+                  },
                   pattern: {
                     value: /^[a-zA-Z\s]+$/,
                     message: "Letters and spaces only",
@@ -102,6 +109,14 @@ export default function SignUpForm() {
                 control={control}
                 rules={{
                   required: "Last name is required",
+                  minLength: {
+                    value: 1,
+                    message: "Last name must be at least 1 character",
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: "Last name must be at most 50 characters",
+                  },
                   pattern: {
                     value: /^[a-zA-Z\s]+$/,
                     message: "Letters and spaces only",
@@ -191,6 +206,45 @@ export default function SignUpForm() {
             </div>
             {errors.password && (
               <span className="mt-1.5 text-xs text-error-600 block">{errors.password.message}</span>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <Label>
+              Confirm password <span className="text-error-500">*</span>
+            </Label>
+            <div className="relative">
+              <Controller
+                name="confirmPassword"
+                control={control}
+                rules={{
+                  required: "Please confirm your password",
+                  validate: (value) =>
+                    value === passwordValue || "Passwords do not match",
+                }}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    placeholder="Confirm your password"
+                    type={showConfirm ? "text" : "password"}
+                    className={errors.confirmPassword ? "border-error-500" : ""}
+                  />
+                )}
+              />
+              <span
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+              >
+                {showConfirm ? (
+                  <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                ) : (
+                  <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                )}
+              </span>
+            </div>
+            {errors.confirmPassword && (
+              <span className="mt-1.5 text-xs text-error-600 block">{errors.confirmPassword.message}</span>
             )}
           </div>
 
