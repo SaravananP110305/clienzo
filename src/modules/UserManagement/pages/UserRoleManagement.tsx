@@ -1,15 +1,18 @@
 import { useState, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
+import Checkbox from "../../../components/form/input/Checkbox";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
+import { useToast } from "../../../hooks/useToast";
 import {
   Table,
   TableHeader,
@@ -23,20 +26,116 @@ import {
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 
+interface Permission {
+  menu: string;
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+}
+
 interface Role {
   id: number;
   roleName: string;
   description: string;
   status: "Active" | "Inactive";
+  permissions: Permission[];
 }
 
-const initialRoles: Role[] = [
-  { id: 1, roleName: "Administrator", description: "Full system access to all modules, records, and configurations.", status: "Active" },
-  { id: 2, roleName: "Business Development Manager", description: "Manage BDM team, view pipeline reports, and assign incoming leads.", status: "Active" },
-  { id: 3, roleName: "Business Development Executive", description: "Add leads, log customer follow-ups, and coordinate meeting bookings.", status: "Active" },
-  { id: 4, roleName: "Presales Consultant", description: "Evaluate lead technical requirements and draft solution proposal details.", status: "Active" },
-  { id: 5, roleName: "Guest User", description: "Read-only access to basic performance metric counts on the dashboard.", status: "Inactive" },
+const defaultPermissionsList: Permission[] = [
+  { menu: "Dashboard", view: false, create: false, edit: false, delete: false },
+  { menu: "Master Config", view: false, create: false, edit: false, delete: false },
+  { menu: "User Management", view: false, create: false, edit: false, delete: false },
+  { menu: "Lead Management", view: false, create: false, edit: false, delete: false },
+  { menu: "Connect", view: false, create: false, edit: false, delete: false },
+  { menu: "Meeting Management", view: false, create: false, edit: false, delete: false },
+  { menu: "Reports", view: false, create: false, edit: false, delete: false },
 ];
+
+const initialRoles: Role[] = [
+  {
+    id: 1,
+    roleName: "Administrator",
+    description: "Full system access to all modules, records, and configurations.",
+    status: "Active",
+    permissions: [
+      { menu: "Dashboard", view: true, create: true, edit: true, delete: true },
+      { menu: "Master Config", view: true, create: true, edit: true, delete: true },
+      { menu: "User Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Lead Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Connect", view: true, create: true, edit: true, delete: true },
+      { menu: "Meeting Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Reports", view: true, create: true, edit: true, delete: true },
+    ],
+  },
+  {
+    id: 2,
+    roleName: "Business Development Manager",
+    description: "Manage BDM team, view pipeline reports, and assign incoming leads.",
+    status: "Active",
+    permissions: [
+      { menu: "Dashboard", view: true, create: true, edit: true, delete: true },
+      { menu: "Master Config", view: true, create: false, edit: false, delete: false },
+      { menu: "User Management", view: true, create: true, edit: true, delete: false },
+      { menu: "Lead Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Connect", view: true, create: true, edit: true, delete: true },
+      { menu: "Meeting Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Reports", view: true, create: false, edit: false, delete: false },
+    ],
+  },
+  {
+    id: 3,
+    roleName: "Business Development Executive",
+    description: "Add leads, log customer follow-ups, and coordinate meeting bookings.",
+    status: "Active",
+    permissions: [
+      { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
+      { menu: "Master Config", view: false, create: false, edit: false, delete: false },
+      { menu: "User Management", view: false, create: false, edit: false, delete: false },
+      { menu: "Lead Management", view: true, create: true, edit: true, delete: false },
+      { menu: "Connect", view: true, create: true, edit: true, delete: false },
+      { menu: "Meeting Management", view: true, create: true, edit: true, delete: false },
+      { menu: "Reports", view: false, create: false, edit: false, delete: false },
+    ],
+  },
+  {
+    id: 4,
+    roleName: "Presales Consultant",
+    description: "Evaluate lead technical requirements and draft solution proposal details.",
+    status: "Active",
+    permissions: [
+      { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
+      { menu: "Master Config", view: false, create: false, edit: false, delete: false },
+      { menu: "User Management", view: false, create: false, edit: false, delete: false },
+      { menu: "Lead Management", view: true, create: false, edit: true, delete: false },
+      { menu: "Connect", view: false, create: false, edit: false, delete: false },
+      { menu: "Meeting Management", view: true, create: false, edit: true, delete: false },
+      { menu: "Reports", view: false, create: false, edit: false, delete: false },
+    ],
+  },
+  {
+    id: 5,
+    roleName: "Guest User",
+    description: "Read-only access to basic performance metric counts on the dashboard.",
+    status: "Inactive",
+    permissions: [
+      { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
+      { menu: "Master Config", view: false, create: false, edit: false, delete: false },
+      { menu: "User Management", view: false, create: false, edit: false, delete: false },
+      { menu: "Lead Management", view: false, create: false, edit: false, delete: false },
+      { menu: "Connect", view: false, create: false, edit: false, delete: false },
+      { menu: "Meeting Management", view: false, create: false, edit: false, delete: false },
+      { menu: "Reports", view: false, create: false, edit: false, delete: false },
+    ],
+  },
+];
+
+interface RoleFormValues {
+  roleName: string;
+  description: string;
+  status: "Active" | "Inactive";
+  permissions: Permission[];
+}
 
 export default function UserRoleManagement() {
   const [roles, setRoles] = useState<Role[]>(initialRoles);
@@ -45,6 +144,7 @@ export default function UserRoleManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Role>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const { showToast } = useToast();
 
   // Dropdown states
   const [statusFilter, setStatusFilter] = useState("all");
@@ -59,11 +159,37 @@ export default function UserRoleManagement() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
 
-  // Form Fields states
-  const [roleName, setRoleName] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<"Active" | "Inactive">("Active");
-  const [errors, setErrors] = useState<{ roleName?: string; description?: string }>({});
+  // React Hook Form
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<RoleFormValues>({
+    defaultValues: {
+      roleName: "",
+      description: "",
+      status: "Active",
+      permissions: defaultPermissionsList,
+    },
+  });
+
+  const currentPermissions = watch("permissions") || defaultPermissionsList;
+
+  const handlePermissionChange = (
+    index: number,
+    field: "view" | "create" | "edit" | "delete",
+    checked: boolean
+  ) => {
+    const updated = [...currentPermissions];
+    updated[index] = {
+      ...updated[index],
+      [field]: checked,
+    };
+    setValue("permissions", updated);
+  };
 
   // Handlers
   const handleOpenView = (role: Role) => {
@@ -74,20 +200,24 @@ export default function UserRoleManagement() {
   const handleOpenCreate = () => {
     setModalMode("create");
     setSelectedRole(null);
-    setRoleName("");
-    setDescription("");
-    setStatus("Active");
-    setErrors({});
+    reset({
+      roleName: "",
+      description: "",
+      status: "Active",
+      permissions: defaultPermissionsList.map((p) => ({ ...p })),
+    });
     formModal.openModal();
   };
 
   const handleOpenEdit = (role: Role) => {
     setModalMode("edit");
     setSelectedRole(role);
-    setRoleName(role.roleName);
-    setDescription(role.description);
-    setStatus(role.status);
-    setErrors({});
+    reset({
+      roleName: role.roleName,
+      description: role.description,
+      status: role.status,
+      permissions: (role.permissions || defaultPermissionsList).map((p) => ({ ...p })),
+    });
     formModal.openModal();
   };
 
@@ -96,49 +226,45 @@ export default function UserRoleManagement() {
     deleteModal.openModal();
   };
 
-  const validateForm = () => {
-    const newErrors: typeof errors = {};
-    if (!roleName.trim()) {
-      newErrors.roleName = "Role name is required";
-    } else if (roleName.trim().length < 3) {
-      newErrors.roleName = "Role name must be at least 3 characters";
-    }
-    if (!description.trim()) {
-      newErrors.description = "Description is required";
-    } else if (description.trim().length < 10) {
-      newErrors.description = "Description must be at least 10 characters";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveRole = () => {
-    if (!validateForm()) return;
-
+  const handleSaveRole = (data: RoleFormValues) => {
     if (modalMode === "create") {
       const newId = roles.length > 0 ? Math.max(...roles.map((r) => r.id)) + 1 : 1;
       const newRole: Role = {
         id: newId,
-        roleName: roleName.trim(),
-        description: description.trim(),
-        status,
+        roleName: data.roleName.trim(),
+        description: data.description.trim(),
+        status: data.status,
+        permissions: data.permissions,
       };
       setRoles([...roles, newRole]);
+      showToast("Role created successfully.", "success");
     } else if (modalMode === "edit" && selectedRole) {
       setRoles(
         roles.map((r) =>
           r.id === selectedRole.id
-            ? { ...r, roleName: roleName.trim(), description: description.trim(), status }
+            ? {
+                ...r,
+                roleName: data.roleName.trim(),
+                description: data.description.trim(),
+                status: data.status,
+                permissions: data.permissions,
+              }
             : r
         )
       );
+      showToast("Role updated successfully.", "success");
     }
     formModal.closeModal();
+  };
+
+  const handleFormError = () => {
+    showToast("Please fill all required fields.", "error");
   };
 
   const handleDeleteConfirm = () => {
     if (selectedRole) {
       setRoles(roles.filter((r) => r.id !== selectedRole.id));
+      showToast("Role deleted successfully.", "success");
     }
     deleteModal.closeModal();
   };
@@ -214,16 +340,14 @@ export default function UserRoleManagement() {
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc"
-                ? "text-brand-500"
-                : "text-gray-300 dark:text-gray-600"
-              }`}
+            className={`w-3 h-3 -mb-1 transition-colors ${
+              isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+            }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc"
-                ? "text-brand-500"
-                : "text-gray-300 dark:text-gray-600"
-              }`}
+            className={`w-3 h-3 transition-colors ${
+              isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+            }`}
           />
         </span>
       </button>
@@ -260,9 +384,7 @@ export default function UserRoleManagement() {
               onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
               className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-205 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <span>
-                {statusFilter === "all" ? "All statuses" : statusFilter}
-              </span>
+              <span>{statusFilter === "all" ? "All statuses" : statusFilter}</span>
               <ChevronDownIcon className="w-4 h-4 text-gray-555" />
             </button>
             <Dropdown
@@ -285,7 +407,7 @@ export default function UserRoleManagement() {
                       }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
                         statusFilter === opt.value
-                          ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                          ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                       }`}
                     >
@@ -317,19 +439,34 @@ export default function UserRoleManagement() {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("S.No", "id")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Role name", "roleName")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Description", "description")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Status", "status")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   Action
                 </TableCell>
               </TableRow>
@@ -351,10 +488,7 @@ export default function UserRoleManagement() {
                       {role.description}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                      <Badge
-                        size="sm"
-                        color={role.status === "Active" ? "success" : "error"}
-                      >
+                      <Badge size="sm" color={role.status === "Active" ? "success" : "error"}>
                         {role.status}
                       </Badge>
                     </TableCell>
@@ -420,9 +554,7 @@ export default function UserRoleManagement() {
       <Modal isOpen={viewModal.isOpen} onClose={viewModal.closeModal} className="max-w-[500px] m-4">
         <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
           <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              Role details
-            </h4>
+            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">Role details</h4>
           </div>
           {selectedRole && (
             <div className="space-y-4">
@@ -456,6 +588,37 @@ export default function UserRoleManagement() {
                     {selectedRole.description}
                   </p>
                 </div>
+
+                {/* View Role Menu Privileges Matrix */}
+                <div className="col-span-2 mt-4">
+                  <span className="text-xs text-gray-400 block mb-2 font-medium">
+                    Menu privileges
+                  </span>
+                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 max-h-[250px] overflow-y-auto custom-scrollbar">
+                    <table className="w-full text-left text-xs text-gray-500 dark:text-gray-400 border-collapse">
+                      <thead className="bg-gray-100/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 font-semibold uppercase sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2">Menu</th>
+                          <th className="px-3 py-2 text-center">View</th>
+                          <th className="px-3 py-2 text-center">Create</th>
+                          <th className="px-3 py-2 text-center">Edit</th>
+                          <th className="px-3 py-2 text-center">Delete</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-150 dark:divide-gray-800 text-gray-800 dark:text-white/80">
+                        {(selectedRole.permissions || defaultPermissionsList).map((perm) => (
+                          <tr key={perm.menu} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                            <td className="px-3 py-2 font-medium">{perm.menu}</td>
+                            <td className="px-3 py-2 text-center">{perm.view ? "✅" : "❌"}</td>
+                            <td className="px-3 py-2 text-center">{perm.create ? "✅" : "❌"}</td>
+                            <td className="px-3 py-2 text-center">{perm.edit ? "✅" : "❌"}</td>
+                            <td className="px-3 py-2 text-center">{perm.delete ? "✅" : "❌"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -468,32 +631,38 @@ export default function UserRoleManagement() {
       </Modal>
 
       {/* Create/Edit Form Modal */}
-      <Modal isOpen={formModal.isOpen} onClose={formModal.closeModal} className="max-w-[600px] m-4">
+      <Modal isOpen={formModal.isOpen} onClose={formModal.closeModal} className="max-w-[650px] m-4">
         <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
           <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
             <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
               {modalMode === "create" ? "Add role" : "Edit role"}
             </h4>
           </div>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit(handleSaveRole, handleFormError)} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Role name <span className="text-error-500">*</span>
                 </label>
-                <Input
-                  type="text"
-                  placeholder="Enter role name"
-                  value={roleName}
-                  onChange={(e) => {
-                    setRoleName(e.target.value);
-                    if (errors.roleName) setErrors({ ...errors, roleName: undefined });
+                <Controller
+                  name="roleName"
+                  control={control}
+                  rules={{
+                    required: "Role name is required",
+                    minLength: { value: 3, message: "Role name must be at least 3 characters" },
                   }}
-                  className={errors.roleName ? "border-error-500" : ""}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Enter role name"
+                      className={errors.roleName ? "border-error-500" : ""}
+                    />
+                  )}
                 />
                 {errors.roleName && (
                   <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.roleName}
+                    {errors.roleName.message}
                   </span>
                 )}
               </div>
@@ -502,14 +671,20 @@ export default function UserRoleManagement() {
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Status <span className="text-error-500">*</span>
                 </label>
-                <Select
-                  options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Inactive", label: "Inactive" },
-                  ]}
-                  placeholder="Select status"
-                  defaultValue={status}
-                  onChange={(val) => setStatus(val as "Active" | "Inactive")}
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={[
+                        { value: "Active", label: "Active" },
+                        { value: "Inactive", label: "Inactive" },
+                      ]}
+                      placeholder="Select status"
+                      defaultValue={value}
+                      onChange={onChange}
+                    />
+                  )}
                 />
               </div>
 
@@ -517,33 +692,107 @@ export default function UserRoleManagement() {
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Description <span className="text-error-500">*</span>
                 </label>
-                <textarea
-                  placeholder="Enter role description"
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    if (errors.description) setErrors({ ...errors, description: undefined });
+                <Controller
+                  name="description"
+                  control={control}
+                  rules={{
+                    required: "Description is required",
+                    minLength: { value: 10, message: "Description must be at least 10 characters" },
                   }}
-                  className={`w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 ${errors.description ? "border-error-500" : ""
-                    }`}
-                  rows={3}
+                  render={({ field }) => (
+                    <textarea
+                      {...field}
+                      placeholder="Enter role description"
+                      className={`w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 ${
+                        errors.description ? "border-error-500" : ""
+                      }`}
+                      rows={3}
+                    />
+                  )}
                 />
                 {errors.description && (
                   <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.description}
+                    {errors.description.message}
                   </span>
                 )}
               </div>
+
+              {/* Menu Privileges Table with Toggles */}
+              <div className="sm:col-span-2 mt-2">
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Menu privileges
+                </label>
+                <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 max-h-[280px] overflow-y-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs text-gray-500 dark:text-gray-400 border-collapse">
+                    <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold uppercase sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800">
+                      <tr>
+                        <th className="px-4 py-2.5">Menu</th>
+                        <th className="px-4 py-2.5 text-center">View</th>
+                        <th className="px-4 py-2.5 text-center">Create</th>
+                        <th className="px-4 py-2.5 text-center">Edit</th>
+                        <th className="px-4 py-2.5 text-center">Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-150 dark:divide-gray-800 text-gray-800 dark:text-white/90">
+                      {currentPermissions.map((perm, idx) => (
+                        <tr
+                          key={perm.menu}
+                          className="hover:bg-gray-100/50 dark:hover:bg-white/[0.01]"
+                        >
+                          <td className="px-4 py-3.5 font-medium">{perm.menu}</td>
+                          <td className="px-4 py-3.5 text-center">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={perm.view}
+                                onChange={(checked) => handlePermissionChange(idx, "view", checked)}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={perm.create}
+                                onChange={(checked) =>
+                                  handlePermissionChange(idx, "create", checked)
+                                }
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={perm.edit}
+                                onChange={(checked) => handlePermissionChange(idx, "edit", checked)}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={perm.delete}
+                                onChange={(checked) =>
+                                  handlePermissionChange(idx, "delete", checked)
+                                }
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center justify-end gap-3 mt-6">
-            <Button size="sm" variant="outline" onClick={formModal.closeModal}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSaveRole}>
-              Save
-            </Button>
-          </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+              <Button size="sm" variant="outline" onClick={formModal.closeModal}>
+                Cancel
+              </Button>
+              <Button size="sm" type="submit">
+                Save
+              </Button>
+            </div>
+          </form>
         </div>
       </Modal>
 
@@ -565,7 +814,11 @@ export default function UserRoleManagement() {
             <Button size="sm" variant="outline" onClick={deleteModal.closeModal} className="w-1/2">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleDeleteConfirm} className="w-1/2 bg-error-600 hover:bg-error-750">
+            <Button
+              size="sm"
+              onClick={handleDeleteConfirm}
+              className="w-1/2 bg-error-600 hover:bg-error-750"
+            >
               Delete
             </Button>
           </div>

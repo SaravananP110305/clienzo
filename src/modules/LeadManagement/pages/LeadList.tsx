@@ -140,18 +140,16 @@ export default function LeadList() {
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc"
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc"
                 ? "text-brand-500"
                 : "text-gray-300 dark:text-gray-600"
-            }`}
+              }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc"
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc"
                 ? "text-brand-500"
                 : "text-gray-300 dark:text-gray-600"
-            }`}
+              }`}
           />
         </span>
       </button>
@@ -211,11 +209,10 @@ export default function LeadList() {
                           setCurrentPage(1);
                           setIsStatusOpen(false);
                         }}
-                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                          statusFilter === opt.value
+                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
                             ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                        }`}
+                          }`}
                       >
                         {opt.label}
                       </DropdownItem>
@@ -253,11 +250,10 @@ export default function LeadList() {
                           setCurrentPage(1);
                           setIsAssigneeOpen(false);
                         }}
-                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                          assigneeFilter === opt.value
+                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
                             ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                        }`}
+                          }`}
                       >
                         {opt.label}
                       </DropdownItem>
@@ -436,11 +432,10 @@ export default function LeadList() {
               const file = e.dataTransfer.files?.[0];
               if (file) setUploadedFile(file);
             }}
-            className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed py-10 px-6 text-center transition-colors cursor-pointer ${
-              dragOver
+            className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed py-10 px-6 text-center transition-colors cursor-pointer ${dragOver
                 ? "border-brand-400 bg-brand-50 dark:bg-brand-500/10"
                 : "border-gray-200 hover:border-brand-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5"
-            }`}
+              }`}
             onClick={() => document.getElementById("excel-file-input")?.click()}
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
@@ -476,14 +471,6 @@ export default function LeadList() {
               }}
             />
           </div>
-
-          {/* Template download hint */}
-          <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-            Make sure your file matches the required template format.{" "}
-            <span className="text-brand-500 cursor-pointer hover:underline">
-              Download template
-            </span>
-          </p>
 
           <div className="flex items-center justify-end gap-3 mt-6">
             <Button
