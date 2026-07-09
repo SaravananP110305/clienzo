@@ -1,0 +1,245 @@
+// Shared Lead types and dummy data for Lead Management module
+
+export type LeadStatus =
+  | "New"
+  | "Contacted"
+  | "Qualified"
+  | "Proposal sent"
+  | "Won"
+  | "Lost";
+
+export interface Lead {
+  id: number;
+  company: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  status: LeadStatus;
+  assignedTo: string;
+  industry: string;
+  source: string;
+  website: string;
+  address: string;
+  notes: string;
+  createdAt: string;
+}
+
+export const LEAD_STATUSES: LeadStatus[] = [
+  "New",
+  "Contacted",
+  "Qualified",
+  "Proposal sent",
+  "Won",
+  "Lost",
+];
+
+export const ASSIGNEES = [
+  "John Doe",
+  "Jane Smith",
+  "Alice Johnson",
+  "Robert Lee",
+];
+
+export const getStatusColor = (
+  status: LeadStatus
+): "primary" | "info" | "warning" | "success" | "error" | "light" => {
+  switch (status) {
+    case "New":
+      return "primary";
+    case "Contacted":
+      return "info";
+    case "Qualified":
+      return "warning";
+    case "Proposal sent":
+      return "warning";
+    case "Won":
+      return "success";
+    case "Lost":
+      return "error";
+    default:
+      return "light";
+  }
+};
+
+export const initialLeads: Lead[] = [
+  {
+    id: 1,
+    company: "Tech solutions",
+    contactPerson: "Alice Smith",
+    email: "alice@techsolutions.com",
+    phone: "+1 234 567 890",
+    status: "New",
+    assignedTo: "John Doe",
+    industry: "Information Technology",
+    source: "Website",
+    website: "https://techsolutions.com",
+    address: "123 Tech Park, San Francisco, CA 94105",
+    notes: "Interested in enterprise CRM solution. Follow up next week.",
+    createdAt: "2024-01-10",
+  },
+  {
+    id: 2,
+    company: "Innovate LLC",
+    contactPerson: "Bob Jones",
+    email: "bob@innovatellc.com",
+    phone: "+1 345 678 901",
+    status: "Contacted",
+    assignedTo: "Jane Smith",
+    industry: "Finance",
+    source: "Referral",
+    website: "https://innovatellc.com",
+    address: "456 Finance Ave, New York, NY 10001",
+    notes: "Had an initial call. They need a demo by end of month.",
+    createdAt: "2024-01-15",
+  },
+  {
+    id: 3,
+    company: "Apex digital",
+    contactPerson: "Charlie Brown",
+    email: "charlie@apexdigital.com",
+    phone: "+1 456 789 012",
+    status: "Qualified",
+    assignedTo: "John Doe",
+    industry: "Healthcare",
+    source: "LinkedIn",
+    website: "https://apexdigital.com",
+    address: "789 Health Blvd, Boston, MA 02101",
+    notes: "Budget approved. Proposal to be sent by Friday.",
+    createdAt: "2024-01-18",
+  },
+  {
+    id: 4,
+    company: "Nextgen software",
+    contactPerson: "Diana Prince",
+    email: "diana@nextgensoftware.com",
+    phone: "+1 567 890 123",
+    status: "Proposal sent",
+    assignedTo: "Alice Johnson",
+    industry: "Manufacturing",
+    source: "Cold Call",
+    website: "https://nextgensoftware.com",
+    address: "321 Industrial Rd, Detroit, MI 48201",
+    notes: "Proposal sent on Jan 20. Awaiting feedback from management.",
+    createdAt: "2024-01-20",
+  },
+  {
+    id: 5,
+    company: "Quantum systems",
+    contactPerson: "Evan Wright",
+    email: "evan@quantumsystems.com",
+    phone: "+1 678 901 234",
+    status: "Won",
+    assignedTo: "Jane Smith",
+    industry: "Information Technology",
+    source: "Trade Show",
+    website: "https://quantumsystems.com",
+    address: "654 Innovation Dr, Austin, TX 73301",
+    notes: "Deal closed on Jan 25. Contract signed for 12-month term.",
+    createdAt: "2024-01-08",
+  },
+  {
+    id: 6,
+    company: "Alpha media",
+    contactPerson: "Fiona Gallagher",
+    email: "fiona@alphamedia.com",
+    phone: "+1 789 012 345",
+    status: "Lost",
+    assignedTo: "John Doe",
+    industry: "Retail",
+    source: "Email Campaign",
+    website: "https://alphamedia.com",
+    address: "987 Media Plaza, Los Angeles, CA 90001",
+    notes: "Lost to competitor. Budget constraint was the main issue.",
+    createdAt: "2024-01-05",
+  },
+  {
+    id: 7,
+    company: "Nexus creators",
+    contactPerson: "George Clark",
+    email: "george@nexuscreators.com",
+    phone: "+1 890 123 456",
+    status: "New",
+    assignedTo: "Alice Johnson",
+    industry: "Education",
+    source: "Website",
+    website: "https://nexuscreators.com",
+    address: "159 Creative Hub, Chicago, IL 60601",
+    notes: "Submitted inquiry via website. Initial contact not yet made.",
+    createdAt: "2024-01-28",
+  },
+  {
+    id: 8,
+    company: "Horizon ventures",
+    contactPerson: "Hannah Abbott",
+    email: "hannah@horizonventures.com",
+    phone: "+1 901 234 567",
+    status: "Contacted",
+    assignedTo: "Jane Smith",
+    industry: "Finance",
+    source: "Referral",
+    website: "https://horizonventures.com",
+    address: "753 Venture Blvd, Seattle, WA 98101",
+    notes: "Referred by existing client. Initial call completed.",
+    createdAt: "2024-01-22",
+  },
+  {
+    id: 9,
+    company: "Summit labs",
+    contactPerson: "Ian Malcolm",
+    email: "ian@summitlabs.com",
+    phone: "+1 012 345 678",
+    status: "Qualified",
+    assignedTo: "John Doe",
+    industry: "Healthcare",
+    source: "LinkedIn",
+    website: "https://summitlabs.com",
+    address: "246 Research Pkwy, San Diego, CA 92101",
+    notes: "Decision-maker identified. Ready for proposal stage.",
+    createdAt: "2024-01-12",
+  },
+  {
+    id: 10,
+    company: "Vanguard corp",
+    contactPerson: "Julia Roberts",
+    email: "julia@vanguardcorp.com",
+    phone: "+1 123 456 789",
+    status: "Proposal sent",
+    assignedTo: "Alice Johnson",
+    industry: "Manufacturing",
+    source: "Cold Call",
+    website: "https://vanguardcorp.com",
+    address: "864 Corporate Way, Phoenix, AZ 85001",
+    notes: "Proposal reviewed. Follow-up call scheduled for Feb 5.",
+    createdAt: "2024-01-25",
+  },
+  {
+    id: 11,
+    company: "Delta networks",
+    contactPerson: "Kevin Bacon",
+    email: "kevin@deltanetworks.com",
+    phone: "+1 234 567 891",
+    status: "Won",
+    assignedTo: "Jane Smith",
+    industry: "Information Technology",
+    source: "Trade Show",
+    website: "https://deltanetworks.com",
+    address: "531 Network Ave, Dallas, TX 75201",
+    notes: "Won deal after 3-month negotiation. Start date Feb 1.",
+    createdAt: "2024-01-03",
+  },
+  {
+    id: 12,
+    company: "Omega logistics",
+    contactPerson: "Laura Croft",
+    email: "laura@omegatlogistics.com",
+    phone: "+1 345 678 902",
+    status: "Lost",
+    assignedTo: "John Doe",
+    industry: "Retail",
+    source: "Email Campaign",
+    website: "https://omegatlogistics.com",
+    address: "975 Logistics Park, Atlanta, GA 30301",
+    notes: "Chose a competitor with lower pricing. May revisit next quarter.",
+    createdAt: "2024-01-02",
+  },
+];
