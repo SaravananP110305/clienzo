@@ -24,8 +24,7 @@ export default function AuthLayout({
           {children}
         </div>
 
-        {/* Right — Branding panel */}
-        <div className="hidden lg:flex lg:w-1/2 relative bg-brand-950 dark:bg-white/5 flex-col items-center justify-center overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 relative bg-[#ff3951] dark:bg-white/5 flex-col items-center justify-center overflow-hidden">
           <GridShape />
 
           <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-lg">
@@ -46,8 +45,8 @@ export default function AuthLayout({
             {/* Feature list */}
             <div className="flex flex-col gap-4 w-full text-left">
               <div className="flex items-start gap-4 rounded-xl bg-white/5 border border-white/10 px-5 py-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/20">
-                  <MdOutlineLeaderboard className="text-brand-300 size-5" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                  <MdOutlineLeaderboard className="text-white size-5" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">Lead management</p>
@@ -58,8 +57,8 @@ export default function AuthLayout({
               </div>
 
               <div className="flex items-start gap-4 rounded-xl bg-white/5 border border-white/10 px-5 py-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/20">
-                  <MdOutlineCalendarMonth className="text-brand-300 size-5" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                  <MdOutlineCalendarMonth className="text-white size-5" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">Meeting scheduling</p>
@@ -70,8 +69,8 @@ export default function AuthLayout({
               </div>
 
               <div className="flex items-start gap-4 rounded-xl bg-white/5 border border-white/10 px-5 py-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/20">
-                  <MdOutlinePeople className="text-brand-300 size-5" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                  <MdOutlinePeople className="text-white size-5" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">Team follow-ups</p>
