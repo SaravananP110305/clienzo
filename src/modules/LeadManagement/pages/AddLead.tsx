@@ -5,6 +5,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
+import { useToast } from "../../../hooks/useToast";
 import { LEAD_STATUSES, ASSIGNEES } from "../data/leadsData";
 
 interface FormErrors {
@@ -18,6 +19,7 @@ interface FormErrors {
 
 export default function AddLead() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [company, setCompany] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -74,8 +76,11 @@ export default function AddLead() {
   };
 
   const handleSave = () => {
-    if (!validate()) return;
-    // In Phase 2, this will call the API
+    if (!validate()) {
+      showToast("Please fix the form errors before saving.", "error");
+      return;
+    }
+    showToast("Lead added successfully.", "success");
     navigate("/leads");
   };
 

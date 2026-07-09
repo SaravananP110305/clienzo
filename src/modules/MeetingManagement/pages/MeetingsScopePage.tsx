@@ -22,6 +22,7 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus, FiVideo, FiMapPin } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 import { Meeting, getMeetingStatusColor } from "../data/meetingsData";
 
 interface MeetingsScopePageProps {
@@ -38,6 +39,7 @@ export default function MeetingsScopePage({
   onDeleteMeeting,
 }: MeetingsScopePageProps) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const deleteModal = useModal();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +63,7 @@ export default function MeetingsScopePage({
   const handleDeleteConfirm = () => {
     if (selectedMeeting) {
       onDeleteMeeting(selectedMeeting.id);
+      showToast(`Meeting "${selectedMeeting.subject}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
   };

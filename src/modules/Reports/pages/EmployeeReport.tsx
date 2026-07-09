@@ -19,9 +19,11 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiDownload } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 import { EMPLOYEE_REPORT_DATA, EmployeeReportData } from "../data/reportsData";
 
 export default function EmployeeReport() {
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -248,7 +250,7 @@ export default function EmployeeReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => alert("Exporting Employee report...")}
+            onClick={() => showToast("Employee report exported successfully.", "success")}
           >
             Export
           </Button>

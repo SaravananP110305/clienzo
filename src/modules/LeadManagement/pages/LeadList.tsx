@@ -19,6 +19,7 @@ import {
 } from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus, FiUpload } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 import {
   initialLeads,
   getStatusColor,
@@ -29,6 +30,7 @@ import {
 
 export default function LeadList() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const uploadModal = useModal();
   const deleteModal = useModal();
 
@@ -58,6 +60,7 @@ export default function LeadList() {
   const handleDeleteConfirm = () => {
     if (selectedLead) {
       setLeads((prev) => prev.filter((l) => l.id !== selectedLead.id));
+      showToast(`Lead "${selectedLead.company}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
   };
@@ -500,8 +503,10 @@ export default function LeadList() {
               size="sm"
               disabled={!uploadedFile}
               onClick={() => {
+                const fileName = uploadedFile?.name || "file";
                 setUploadedFile(null);
                 uploadModal.closeModal();
+                showToast(`Leads imported successfully from "${fileName}".`, "success");
               }}
             >
               Import leads

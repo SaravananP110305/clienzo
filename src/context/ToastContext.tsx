@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { FiX, FiCheckCircle, FiAlertTriangle, FiInfo, FiXCircle } from "react-icons/fi";
 
 export interface ToastMessage {
@@ -13,76 +13,134 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void }> = ({
+  toast,
+  onRemove,
+}) => {
+  const [isExiting, setIsExiting] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const startTime = useRef(Date.now());
+  const duration = 4000;
+  const frameRef = useRef<number>();
+
+  useEffect(() => {
+    const animate = () => {
+      const elapsed = Date.now() - startTime.current;
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+      setProgress(remaining);
+      if (remaining > 0) {
+        frameRef.current = requestAnimationFrame(animate);
+      }
+    };
+    frameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsExiting(true);
+      setTimeout(() => onRemove(toast.id), 300);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [toast.id, onRemove]);
+
+  const handleDismiss = () => {
+    setIsExiting(true);
+    setTimeout(() => onRemove(toast.id), 300);
+  };
+
+  const typeStyles = {
+    success: {
+      container:
+        "border-success-500 bg-success-50 dark:bg-success-500/15 shadow-success-sm",
+      icon: "text-success-500",
+      progress: "bg-success-500",
+    },
+    error: {
+      container:
+        "border-error-500 bg-error-50 dark:bg-error-500/15 shadow-error-sm",
+      icon: "text-error-500",
+      progress: "bg-error-500",
+    },
+    warning: {
+      container:
+        "border-warning-500 bg-warning-50 dark:bg-warning-500/15 shadow-warning-sm",
+      icon: "text-warning-500",
+      progress: "bg-warning-500",
+    },
+    info: {
+      container:
+        "border-blue-500 bg-blue-50 dark:bg-blue-500/15 shadow-info-sm",
+      icon: "text-blue-500",
+      progress: "bg-blue-500",
+    },
+  };
+
+  const icons = {
+    success: <FiCheckCircle className="size-5" />,
+    error: <FiXCircle className="size-5" />,
+    warning: <FiAlertTriangle className="size-5" />,
+    info: <FiInfo className="size-5" />,
+  };
+
+  const styles = typeStyles[toast.type];
+
+  return (
+    <div
+      className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl border shadow-lg transition-all duration-300 ease-in-out ${
+        isExiting
+          ? "opacity-0 translate-x-full -translate-y-2 scale-95"
+          : "opacity-100 translate-x-0 translate-y-0 scale-100 animate-slide-in-right"
+      } ${styles.container}`}
+    >
+      <div className="flex items-start gap-3 p-4 pb-3">
+        <div className={`shrink-0 mt-0.5 ${styles.icon}`}>{icons[toast.type]}</div>
+        <div className="flex-1 text-sm font-medium text-gray-800 dark:text-white/90">
+          {toast.message}
+        </div>
+        <button
+          onClick={handleDismiss}
+          className="shrink-0 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-white/80 transition-colors cursor-pointer rounded-md hover:bg-gray-200/50 dark:hover:bg-white/10"
+        >
+          <FiX className="size-4" />
+        </button>
+      </div>
+      {/* Progress bar */}
+      <div className="h-1 w-full bg-gray-200/40 dark:bg-white/10">
+        <div
+          className={`h-full rounded-full transition-all duration-75 ease-linear ${styles.progress}`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = useCallback((message: string, type: "success" | "error" | "warning" | "info" = "success") => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
-    
-    // Auto-remove after 4 seconds
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
   }, []);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "success":
-        return <FiCheckCircle className="size-5 text-success-500" />;
-      case "error":
-        return <FiXCircle className="size-5 text-error-500" />;
-      case "warning":
-        return <FiAlertTriangle className="size-5 text-warning-500" />;
-      case "info":
-        return <FiInfo className="size-5 text-blue-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getTypeStyles = (type: string) => {
-    switch (type) {
-      case "success":
-        return "border-success-500 bg-success-50 dark:bg-success-500/15";
-      case "error":
-        return "border-error-500 bg-error-50 dark:bg-error-500/15";
-      case "warning":
-        return "border-warning-500 bg-warning-50 dark:bg-warning-500/15";
-      case "info":
-        return "border-blue-500 bg-blue-50 dark:bg-blue-500/15";
-      default:
-        return "border-gray-200 bg-gray-50";
-    }
-  };
-
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {/* Floating container */}
-      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+      {/* Floating container - z-99999 to stay above the header's z-99999 */}
+      <div
+        aria-live="polite"
+        aria-label="Notifications"
+        className="fixed top-4 right-4 z-[999999] flex flex-col gap-3 max-w-sm w-full pointer-events-none"
+      >
         {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-lg transition-all duration-300 transform translate-y-0 ${getTypeStyles(
-              toast.type
-            )}`}
-          >
-            <div className="shrink-0 mt-0.5">{getIcon(toast.type)}</div>
-            <div className="flex-1 text-sm font-medium text-gray-800 dark:text-white/90">
-              {toast.message}
-            </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="shrink-0 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition cursor-pointer"
-            >
-              <FiX className="size-4" />
-            </button>
-          </div>
+          <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}
       </div>
     </ToastContext.Provider>

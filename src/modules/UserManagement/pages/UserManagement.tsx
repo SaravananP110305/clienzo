@@ -22,6 +22,7 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 
 interface User {
   id: number;
@@ -49,6 +50,7 @@ const availableRoles = [
 ];
 
 export default function UserManagement() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -141,7 +143,10 @@ export default function UserManagement() {
   };
 
   const handleSaveUser = () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      showToast("Please fix the form errors before saving.", "error");
+      return;
+    }
 
     if (modalMode === "create") {
       const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
@@ -154,6 +159,7 @@ export default function UserManagement() {
         status,
       };
       setUsers([...users, newUser]);
+      showToast(`User "${name.trim()}" created successfully.`, "success");
     } else if (modalMode === "edit" && selectedUser) {
       setUsers(
         users.map((u) =>
@@ -162,6 +168,7 @@ export default function UserManagement() {
             : u
         )
       );
+      showToast(`User "${name.trim()}" updated successfully.`, "success");
     }
     formModal.closeModal();
   };
@@ -169,6 +176,7 @@ export default function UserManagement() {
   const handleDeleteConfirm = () => {
     if (selectedUser) {
       setUsers(users.filter((u) => u.id !== selectedUser.id));
+      showToast(`User "${selectedUser.name}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
   };

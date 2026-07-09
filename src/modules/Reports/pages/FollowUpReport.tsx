@@ -19,9 +19,11 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiDownload } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 import { FOLLOW_UP_REPORT_DATA, FollowUpReportData } from "../data/reportsData";
 
 export default function FollowUpReport() {
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [reasonFilter, setReasonFilter] = useState("all");
@@ -269,7 +271,7 @@ export default function FollowUpReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => alert("Exporting Follow-up report...")}
+            onClick={() => showToast("Follow-up report exported successfully.", "success")}
           >
             Export
           </Button>

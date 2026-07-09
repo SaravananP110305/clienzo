@@ -22,6 +22,7 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 
 interface Role {
   id: number;
@@ -39,6 +40,7 @@ const initialRoles: Role[] = [
 ];
 
 export default function UserRoleManagement() {
+  const { showToast } = useToast();
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -113,7 +115,10 @@ export default function UserRoleManagement() {
   };
 
   const handleSaveRole = () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      showToast("Please fix the form errors before saving.", "error");
+      return;
+    }
 
     if (modalMode === "create") {
       const newId = roles.length > 0 ? Math.max(...roles.map((r) => r.id)) + 1 : 1;
@@ -124,6 +129,7 @@ export default function UserRoleManagement() {
         status,
       };
       setRoles([...roles, newRole]);
+      showToast(`Role "${roleName.trim()}" created successfully.`, "success");
     } else if (modalMode === "edit" && selectedRole) {
       setRoles(
         roles.map((r) =>
@@ -132,6 +138,7 @@ export default function UserRoleManagement() {
             : r
         )
       );
+      showToast(`Role "${roleName.trim()}" updated successfully.`, "success");
     }
     formModal.closeModal();
   };
@@ -139,6 +146,7 @@ export default function UserRoleManagement() {
   const handleDeleteConfirm = () => {
     if (selectedRole) {
       setRoles(roles.filter((r) => r.id !== selectedRole.id));
+      showToast(`Role "${selectedRole.roleName}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
   };

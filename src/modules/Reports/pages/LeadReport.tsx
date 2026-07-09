@@ -19,9 +19,11 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiDownload } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 import { LEAD_REPORT_DATA, LeadReportData } from "../data/reportsData";
 
 export default function LeadReport() {
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -271,7 +273,7 @@ export default function LeadReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => alert("Exporting Lead report...")}
+            onClick={() => showToast("Lead report exported successfully.", "success")}
           >
             Export
           </Button>

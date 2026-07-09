@@ -200,6 +200,8 @@
   --z-index-9999: 9999;
   --z-index-99999: 99999;
   --z-index-999999: 999999;
+
+  --animate-slide-in-right: slide-in-right 0.3s ease-out;
 }
 
 /*
@@ -835,4 +837,16 @@ span.flatpickr-weekday,
 
 .simplebar-scrollbar.simplebar-visible:before {
   @apply opacity-100;
+}
+
+/* Toast notification animations */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
 }
