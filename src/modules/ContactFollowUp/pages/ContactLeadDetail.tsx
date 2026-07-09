@@ -10,7 +10,7 @@ import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
 import { initialLeads, getStatusColor } from "../../LeadManagement/data/leadsData";
-import { FOLLOW_UP_REASONS, NOT_INTERESTED_REASONS } from "../data/contactData";
+import { FOLLOWUP_REASONS, LOST_REASONS } from "../../Master/data/masterData";
 import { useToast } from "../../../hooks/useToast";
 import {
   FiBriefcase,
@@ -412,7 +412,7 @@ export default function ContactLeadDetail() {
                     rules={{ required: "Reason is required" }}
                     render={({ field: { onChange, value } }) => (
                       <Select
-                        options={FOLLOW_UP_REASONS.map((r) => ({ value: r, label: r }))}
+                        options={FOLLOWUP_REASONS.filter(r => r.status === "Active").map(r => ({ value: r.name, label: r.name }))}
                         placeholder="Select reason"
                         onChange={onChange}
                         defaultValue={value}
@@ -452,7 +452,7 @@ export default function ContactLeadDetail() {
                   rules={{ required: "Reason is required" }}
                   render={({ field: { onChange, value } }) => (
                     <Select
-                      options={NOT_INTERESTED_REASONS.map((r) => ({ value: r, label: r }))}
+                      options={LOST_REASONS.filter(r => r.status === "Active").map(r => ({ value: r.name, label: r.name }))}
                       placeholder="Select reason"
                       onChange={onChange}
                       defaultValue={value}

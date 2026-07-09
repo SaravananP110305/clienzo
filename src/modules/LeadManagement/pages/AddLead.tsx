@@ -8,6 +8,7 @@ import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import { LEAD_STATUSES, ASSIGNEES, initialLeads, LeadStatus } from "../data/leadsData";
 import { useToast } from "../../../hooks/useToast";
+import { LEAD_SOURCES, INDUSTRIES } from "../../Master/data/masterData";
 
 interface LeadFormValues {
   company: string;
@@ -152,14 +153,7 @@ export default function AddLead() {
               rules={{ required: "Industry is required" }}
               render={({ field: { value, onChange } }) => (
                 <Select
-                  options={[
-                    { value: "Information Technology", label: "Information Technology" },
-                    { value: "Healthcare", label: "Healthcare" },
-                    { value: "Finance", label: "Finance" },
-                    { value: "Manufacturing", label: "Manufacturing" },
-                    { value: "Retail", label: "Retail" },
-                    { value: "Education", label: "Education" },
-                  ]}
+                  options={INDUSTRIES.filter(i => i.status === "Active").map(i => ({ value: i.name, label: i.name }))}
                   placeholder="Select industry"
                   onChange={onChange}
                   defaultValue={value}
@@ -212,14 +206,7 @@ export default function AddLead() {
               rules={{ required: "Lead source is required" }}
               render={({ field: { value, onChange } }) => (
                 <Select
-                  options={[
-                    { value: "Website", label: "Website" },
-                    { value: "Referral", label: "Referral" },
-                    { value: "Cold Call", label: "Cold Call" },
-                    { value: "LinkedIn", label: "LinkedIn" },
-                    { value: "Email Campaign", label: "Email Campaign" },
-                    { value: "Trade Show", label: "Trade Show" },
-                  ]}
+                  options={LEAD_SOURCES.filter(s => s.status === "Active").map(s => ({ value: s.name, label: s.name }))}
                   placeholder="Select source"
                   onChange={onChange}
                   defaultValue={value}

@@ -9,7 +9,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Dashboard from "./modules/Dashboard/pages/Dashboard";
 import UserManagement from "./modules/UserManagement/pages/UserManagement";
 import UserRoleManagement from "./modules/UserManagement/pages/UserRoleManagement";
-import MasterConfigPage, { MasterItem } from "./modules/Master/pages/MasterConfigPage";
+import MasterConfigPage from "./modules/Master/pages/MasterConfigPage";
 import LeadList from "./modules/LeadManagement/pages/LeadList";
 import AddLead from "./modules/LeadManagement/pages/AddLead";
 import LeadDetails from "./modules/LeadManagement/pages/LeadDetails";
@@ -26,52 +26,13 @@ import EmployeeReport from "./modules/Reports/pages/EmployeeReport";
 import FollowUpReport from "./modules/Reports/pages/FollowUpReport";
 import { ToastProvider } from "./context/ToastContext";
 
-// ── Master dummy datasets ────────────────────────────────────────────────────
-
-const LEAD_SOURCES: MasterItem[] = [
-  { id: 1, name: "Website", description: "Leads coming from the company website", status: "Active" },
-  { id: 2, name: "Referral", description: "Leads referred by existing clients", status: "Active" },
-  { id: 3, name: "Cold Call", description: "Outbound cold calling campaigns", status: "Active" },
-  { id: 4, name: "LinkedIn", description: "Leads sourced via LinkedIn outreach", status: "Active" },
-  { id: 5, name: "Email Campaign", description: "Marketing email campaigns", status: "Inactive" },
-  { id: 6, name: "Trade Show", description: "Leads collected at trade shows and events", status: "Active" },
-];
-
-const INDUSTRIES: MasterItem[] = [
-  { id: 1, name: "Information Technology", description: "Software, hardware, and IT services", status: "Active" },
-  { id: 2, name: "Healthcare", description: "Hospitals, clinics, and healthcare providers", status: "Active" },
-  { id: 3, name: "Finance", description: "Banking, insurance, and financial services", status: "Active" },
-  { id: 4, name: "Manufacturing", description: "Product manufacturing and supply chain", status: "Active" },
-  { id: 5, name: "Retail", description: "Consumer goods and retail businesses", status: "Active" },
-  { id: 6, name: "Education", description: "Schools, universities, and e-learning", status: "Inactive" },
-];
-
-const MEETING_TYPES: MasterItem[] = [
-  { id: 1, name: "Discovery Call", description: "Initial call to understand client needs", status: "Active" },
-  { id: 2, name: "Product Demo", description: "Live demonstration of product features", status: "Active" },
-  { id: 3, name: "Proposal Review", description: "Review and discuss the submitted proposal", status: "Active" },
-  { id: 4, name: "Negotiation", description: "Contract and pricing negotiation session", status: "Active" },
-  { id: 5, name: "Onboarding", description: "Client onboarding and account setup meeting", status: "Active" },
-  { id: 6, name: "Follow-up Call", description: "Post-meeting follow-up discussion", status: "Inactive" },
-];
-
-const FOLLOWUP_REASONS: MasterItem[] = [
-  { id: 1, name: "Pending Decision", description: "Client is evaluating options before deciding", status: "Active" },
-  { id: 2, name: "Budget Review", description: "Client needs to review internal budget", status: "Active" },
-  { id: 3, name: "Technical Evaluation", description: "Technical team is evaluating the solution", status: "Active" },
-  { id: 4, name: "Stakeholder Approval", description: "Awaiting approval from key stakeholders", status: "Active" },
-  { id: 5, name: "Proposal Sent", description: "Waiting for client response after proposal", status: "Active" },
-  { id: 6, name: "No Response", description: "Client not responding to outreach attempts", status: "Inactive" },
-];
-
-const LOST_REASONS: MasterItem[] = [
-  { id: 1, name: "Budget Constraints", description: "Client did not have adequate budget", status: "Active" },
-  { id: 2, name: "Chose Competitor", description: "Client selected a competing product/vendor", status: "Active" },
-  { id: 3, name: "No Decision Made", description: "Client decided not to move forward", status: "Active" },
-  { id: 4, name: "Poor Fit", description: "Product did not match client requirements", status: "Active" },
-  { id: 5, name: "Timeline Mismatch", description: "Client timeline did not align with delivery", status: "Active" },
-  { id: 6, name: "Lost Contact", description: "Client became unresponsive and unreachable", status: "Inactive" },
-];
+import {
+  LEAD_SOURCES,
+  INDUSTRIES,
+  MEETING_TYPES,
+  FOLLOWUP_REASONS,
+  LOST_REASONS,
+} from "./modules/Master/data/masterData";
 
 // ────────────────────────────────────────────────────────────────────────────
 
