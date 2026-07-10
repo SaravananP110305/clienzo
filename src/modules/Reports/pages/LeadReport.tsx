@@ -21,6 +21,7 @@ import {
 import { FiDownload } from "react-icons/fi";
 import { LEAD_REPORT_DATA, LeadReportData } from "../data/reportsData";
 import { useToast } from "../../../hooks/useToast";
+import { exportToCSV } from "../../../utils/export";
 
 export default function LeadReport() {
   const { showToast } = useToast();
@@ -266,6 +267,8 @@ export default function LeadReport() {
           </div>
         </div>
 
+
+
         {/* Export Button */}
         <div>
           <Button
@@ -273,7 +276,14 @@ export default function LeadReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => showToast("Exporting Lead report...", "info")}
+            onClick={() => {
+              exportToCSV(
+                processedData,
+                ["S.No", "Company", "Contact Person", "Email", "Phone", "Status", "Source", "Industry", "Created At"],
+                "Lead_Report"
+              );
+              showToast("Lead report exported successfully.", "success");
+            }}
           >
             Export
           </Button>

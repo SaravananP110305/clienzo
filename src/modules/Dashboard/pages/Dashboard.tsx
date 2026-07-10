@@ -21,7 +21,11 @@ import {
   FiCalendar,
   FiCheckCircle,
 } from "react-icons/fi";
+import { getStorage } from "../../../utils/storage";
+import { initialLeads as sourceLeads, Lead as SourceLead } from "../../LeadManagement/data/leadsData";
+import { initialMeetings, Meeting } from "../../MeetingManagement/data/meetingsData";
 
+// We map source leads schema to local layout type
 interface Lead {
   sNo: number;
   company: string;
@@ -31,27 +35,22 @@ interface Lead {
   assignedTo: string;
 }
 
-const initialLeads: Lead[] = [
-  { sNo: 1, company: "Tech solutions", contactPerson: "Alice Smith", phone: "+1 234 567 890", status: "New", assignedTo: "John Doe" },
-  { sNo: 2, company: "Innovate llc", contactPerson: "Bob Jones", phone: "+1 345 678 901", status: "Contacted", assignedTo: "Jane Smith" },
-  { sNo: 3, company: "Apex digital", contactPerson: "Charlie Brown", phone: "+1 456 789 012", status: "Qualified", assignedTo: "John Doe" },
-  { sNo: 4, company: "Nextgen software", contactPerson: "Diana Prince", phone: "+1 567 890 123", status: "Proposal sent", assignedTo: "Alice Johnson" },
-  { sNo: 5, company: "Quantum systems", contactPerson: "Evan Wright", phone: "+1 678 901 234", status: "Won", assignedTo: "Jane Smith" },
-  { sNo: 6, company: "Alpha media", contactPerson: "Fiona Gallagher", phone: "+1 789 012 345", status: "Lost", assignedTo: "John Doe" },
-  { sNo: 7, company: "Nexus creators", contactPerson: "George Clark", phone: "+1 890 123 456", status: "New", assignedTo: "Alice Johnson" },
-  { sNo: 8, company: "Horizon ventures", contactPerson: "Hannah Abbott", phone: "+1 901 234 567", status: "Contacted", assignedTo: "Jane Smith" },
-  { sNo: 9, company: "Summit labs", contactPerson: "Ian Malcolm", phone: "+1 012 345 678", status: "Qualified", assignedTo: "John Doe" },
-  { sNo: 10, company: "Vanguard corp", contactPerson: "Julia Roberts", phone: "+1 123 456 789", status: "Proposal sent", assignedTo: "Alice Johnson" },
-  { sNo: 11, company: "Delta networks", contactPerson: "Kevin Bacon", phone: "+1 234 567 891", status: "Won", assignedTo: "Jane Smith" },
-  { sNo: 12, company: "Omega logistics", contactPerson: "Laura Croft", phone: "+1 345 678 902", status: "Lost", assignedTo: "John Doe" },
-  { sNo: 13, company: "Pioneer systems", contactPerson: "Michael Scott", phone: "+1 456 789 013", status: "New", assignedTo: "Alice Johnson" },
-  { sNo: 14, company: "Elite consult", contactPerson: "Nancy Drew", phone: "+1 567 890 124", status: "Contacted", assignedTo: "Jane Smith" },
-  { sNo: 15, company: "Prime media", contactPerson: "Oscar Wilde", phone: "+1 678 901 235", status: "Qualified", assignedTo: "John Doe" }
-];
-
 export default function Dashboard() {
   const { isOpen, openModal, closeModal } = useModal();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  // Dynamic leads list from storage
+  const rawLeads = getStorage<SourceLead[]>("clienzo_leads", sourceLeads);
+  const localLeads = useMemo<Lead[]>(() => {
+    return rawLeads.map((l, index) => ({
+      sNo: index + 1,
+      company: l.company,
+      contactPerson: l.contactPerson,
+      phone: l.phone,
+      status: l.status as any,
+      assignedTo: l.assignedTo,
+    }));
+  }, [rawLeads]);
 
   // Custom Dropdown Open States
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -122,7 +121,7 @@ export default function Dashboard() {
 
   // Process data (Search, Filter, Sort)
   const processedLeads = useMemo(() => {
-    let result = [...initialLeads];
+    let result = [...localLeads];
 
     // 1. Search filter
     if (searchQuery.trim()) {
@@ -207,15 +206,17 @@ export default function Dashboard() {
 
   // Card summary statistics
   const summaryStats = useMemo(() => {
+    const activeMeetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const todayMeetingsCount = activeMeetings.filter((m) => m.date === "2026-07-09").length;
     return {
-      total: initialLeads.length,
-      myLeads: initialLeads.filter((l) => l.assignedTo === "John Doe").length,
-      followUps: initialLeads.filter((l) => l.status === "Contacted" || l.status === "Qualified").length,
-      todayMeetings: 5,
-      won: initialLeads.filter((l) => l.status === "Won").length,
-      lost: initialLeads.filter((l) => l.status === "Lost").length,
+      total: localLeads.length,
+      myLeads: localLeads.filter((l) => l.assignedTo === "John Doe").length,
+      followUps: localLeads.filter((l) => l.status === "Contacted" || l.status === "Qualified").length,
+      todayMeetings: todayMeetingsCount,
+      won: localLeads.filter((l) => l.status === "Won").length,
+      lost: localLeads.filter((l) => l.status === "Lost").length,
     };
-  }, []);
+  }, [localLeads]);
 
   const cards = [
     { label: "Total leads", value: summaryStats.total, icon: <FiLayers className="text-brand-500 w-5 h-5" /> },

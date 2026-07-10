@@ -21,6 +21,7 @@ import {
 import { FiDownload } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { FOLLOW_UP_REPORT_DATA, FollowUpReportData } from "../data/reportsData";
+import { exportToCSV } from "../../../utils/export";
 
 export default function FollowUpReport() {
   const { showToast } = useToast();
@@ -271,7 +272,14 @@ export default function FollowUpReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => showToast("Exporting Follow-up report...", "info")}
+            onClick={() => {
+              exportToCSV(
+                processedData,
+                ["S.No", "Company Name", "Contact Person", "Follow-up Date", "Follow-up Time", "Reason / Log", "Follow-up Status", "Assigned To"],
+                "FollowUp_Report"
+              );
+              showToast("Follow-up report exported successfully.", "success");
+            }}
           >
             Export
           </Button>

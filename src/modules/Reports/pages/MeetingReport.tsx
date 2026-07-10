@@ -21,6 +21,7 @@ import {
 import { FiDownload, FiVideo, FiMapPin } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { MEETING_REPORT_DATA, MeetingReportData } from "../data/reportsData";
+import { exportToCSV } from "../../../utils/export";
 
 export default function MeetingReport() {
   const { showToast } = useToast();
@@ -272,7 +273,14 @@ export default function MeetingReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => showToast("Exporting Meeting report...", "info")}
+            onClick={() => {
+              exportToCSV(
+                processedData,
+                ["S.No", "Subject", "Company", "Contact Person", "Meeting Date", "Meeting Time", "Meeting Type", "Meeting Status", "Created By"],
+                "Meeting_Report"
+              );
+              showToast("Meeting report exported successfully.", "success");
+            }}
           >
             Export
           </Button>

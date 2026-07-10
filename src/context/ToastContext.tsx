@@ -53,31 +53,26 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
 
   const typeStyles = {
     success: {
-      container:
-        "border-success-500 bg-success-50 dark:bg-success-500/15",
-      icon: "text-success-500",
-      progress: "bg-success-500",
+      container: "border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800",
+      icon: "text-green-600 dark:text-green-400",
+      progress: "bg-gradient-to-r from-green-400 to-green-600",
     },
     error: {
-      container:
-        "border-error-500 bg-error-50 dark:bg-error-500/15",
-      icon: "text-error-500",
-      progress: "bg-error-500",
+      container: "border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800",
+      icon: "text-red-600 dark:text-red-400",
+      progress: "bg-gradient-to-r from-red-400 to-red-600",
     },
     warning: {
-      container:
-        "border-warning-500 bg-warning-50 dark:bg-warning-500/15",
-      icon: "text-warning-500",
-      progress: "bg-warning-500",
+      container: "border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-800",
+      icon: "text-yellow-600 dark:text-yellow-400",
+      progress: "bg-gradient-to-r from-yellow-400 to-yellow-600",
     },
     info: {
-      container:
-        "border-blue-500 bg-blue-50 dark:bg-blue-500/15",
-      icon: "text-blue-500",
-      progress: "bg-blue-500",
+      container: "border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800",
+      icon: "text-blue-600 dark:text-blue-400",
+      progress: "bg-gradient-to-r from-blue-400 to-blue-600",
     },
   };
-
   const icons = {
     success: <FiCheckCircle className="size-5" />,
     error: <FiXCircle className="size-5" />,
@@ -89,11 +84,10 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
 
   return (
     <div
-      className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl border shadow-lg transition-all duration-300 ease-in-out ${
-        isExiting
-          ? "opacity-0 translate-x-full scale-95"
-          : "opacity-100 translate-x-0 translate-y-0 scale-100 animate-slide-in-right"
-      } ${styles.container}`}
+      className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl border shadow-lg transition-all duration-300 ease-in-out ${isExiting
+        ? "opacity-0 translate-x-full scale-95"
+        : "opacity-100 translate-x-0 translate-y-0 scale-100 animate-slide-in-right"
+        } ${styles.container}`}
     >
       <div className="flex items-start gap-3 p-4 pb-3">
         <div className={`shrink-0 mt-0.5 ${styles.icon}`}>{icons[toast.type]}</div>

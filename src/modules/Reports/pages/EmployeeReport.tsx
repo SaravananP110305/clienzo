@@ -21,6 +21,7 @@ import {
 import { FiDownload } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { EMPLOYEE_REPORT_DATA, EmployeeReportData } from "../data/reportsData";
+import { exportToCSV } from "../../../utils/export";
 
 export default function EmployeeReport() {
   const { showToast } = useToast();
@@ -250,7 +251,14 @@ export default function EmployeeReport() {
             variant="outline"
             startIcon={<FiDownload className="size-4" />}
             className="w-full sm:w-auto h-11 px-4 py-2.5"
-            onClick={() => showToast("Exporting Employee report...", "info")}
+            onClick={() => {
+              exportToCSV(
+                processedData,
+                ["S.No", "Employee Name", "Email Address", "Designation / Role", "Performance Status", "Leads Managed", "Won Count", "Lost Count", "Conversion Rate"],
+                "Employee_Report"
+              );
+              showToast("Employee report exported successfully.", "success");
+            }}
           >
             Export
           </Button>

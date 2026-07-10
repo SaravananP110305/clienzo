@@ -493,10 +493,78 @@ export default function LeadList() {
               size="sm"
               disabled={!uploadedFile}
               onClick={() => {
-                const fileName = uploadedFile?.name || "file";
+                const file = uploadedFile;
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  try {
+                    const text = e.target?.result as string;
+                    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+                    if (lines.length <= 1) {
+                      showToast("Uploaded file is empty or missing data rows.", "error");
+                      return;
+                    }
+
+                    const newLeadsList = [...leads];
+                    let addedCount = 0;
+                    let duplicateCount = 0;
+
+                    for (let i = 1; i < lines.length; i++) {
+                      const cols = lines[i].split(",").map(c => c.replace(/^["']|["']$/g, "").trim());
+                      if (cols.length < 3) continue;
+
+                      const [company, contactPerson, email, phone, industry, source] = cols;
+                      
+                      const isDuplicate = newLeadsList.some(
+                        (l) => l.email.toLowerCase() === (email || "").toLowerCase()
+                      );
+                      if (isDuplicate) {
+                        duplicateCount++;
+                        continue;
+                      }
+
+                      const nextId = newLeadsList.length > 0 ? Math.max(...newLeadsList.map(l => l.id)) + 1 : 1;
+                      newLeadsList.push({
+                        id: nextId,
+                        company: company || "Unknown Corp",
+                        contactPerson: contactPerson || "Jane Doe",
+                        email: email || `contact@${company?.toLowerCase().replace(/\s+/g, "") || "unknown"}.com`,
+                        phone: phone || "+91 98765 00000",
+                        status: "New",
+                        assignedTo: "John Doe",
+                        industry: industry || "Technology",
+                        source: source || "Website",
+                        website: `https://${company?.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
+                        address: "Imported Address",
+                        notes: "Imported via CSV file.",
+                        createdAt: new Date().toISOString().split("T")[0],
+                      });
+                      addedCount++;
+                    }
+
+                    if (addedCount > 0) {
+                      setLeads(newLeadsList);
+                      setStorage("clienzo_leads", newLeadsList);
+                      if (duplicateCount > 0) {
+                        showToast(`Imported ${addedCount} leads. Skipped ${duplicateCount} duplicates.`, "warning");
+                      } else {
+                        showToast(`Successfully imported ${addedCount} leads from CSV.`, "success");
+                      }
+                    } else if (duplicateCount > 0) {
+                      showToast(`Skipped import: All ${duplicateCount} records already exist.`, "error");
+                    } else {
+                      showToast("No valid rows found to import.", "error");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    showToast("Failed to parse CSV file content.", "error");
+                  }
+                };
+                reader.readAsText(file);
+
                 setUploadedFile(null);
                 uploadModal.closeModal();
-                showToast(`Leads imported successfully from "${fileName}".`, "success");
               }}
             >
               Import leads

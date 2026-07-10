@@ -3,19 +3,35 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { Link } from "react-router";
 import { FiUser, FiLock, FiLogOut } from "react-icons/fi";
+import { getStorage } from "../../utils/storage";
+import { useToast } from "../../hooks/useToast";
 import ownerImg from "/images/user/owner.jpg";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const { showToast } = useToast();
+
+  const loggedInUser = getStorage<any>("clienzo_logged_in_user", {
+    name: "Admin User",
+    email: "admin@gmail.com",
+    role: "Administrator",
+  });
+
+  const firstName = loggedInUser.name.split(" ")[0];
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
   }
 
-  // Handle closing of dropdown
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem("clienzo_logged_in_user");
+    showToast("You have been logged out successfully.", "success");
+    closeDropdown();
+  };
 
   return (
     <div className="relative">
@@ -27,7 +43,7 @@ export default function UserDropdown() {
           <img src={ownerImg} alt="User" className="object-cover w-full h-full" />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
+        <span className="block mr-1 font-medium text-theme-sm">{firstName}</span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
@@ -55,10 +71,10 @@ export default function UserDropdown() {
       >
         <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 pb-3 mb-2">
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Musharof Chowdhury
+            {loggedInUser.name}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            randomuser@pimjo.com
+            {loggedInUser.email}
           </span>
         </div>
 
@@ -89,7 +105,7 @@ export default function UserDropdown() {
         <div className="mt-2">
           <Link
             to="/signin"
-            onClick={closeDropdown}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
           >
             <FiLogOut className="w-5 h-5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300" />
