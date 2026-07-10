@@ -225,11 +225,21 @@ const AppSidebar: React.FC = () => {
                               <li key={sub.name}>
                                 <Link
                                   to={sub.path}
-                                  className={`menu-dropdown-item ${subActive
+                                  className={`menu-dropdown-item flex items-center gap-2.5 ${subActive
                                     ? "menu-dropdown-item-active font-semibold"
                                     : "menu-dropdown-item-inactive"
                                     }`}
                                 >
+                                  <span className="relative flex h-2 w-2 shrink-0">
+                                    {subActive ? (
+                                      <>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff3951] opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff3951]"></span>
+                                      </>
+                                    ) : (
+                                      <span className="inline-flex rounded-full h-2 w-2 bg-gray-300 dark:bg-gray-700"></span>
+                                    )}
+                                  </span>
                                   {sub.name}
                                 </Link>
                               </li>
