@@ -186,18 +186,16 @@ export default function Dashboard() {
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc"
-                ? "text-brand-500"
-                : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc"
+              ? "text-brand-500"
+              : "text-gray-300 dark:text-gray-600"
+              }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc"
-                ? "text-brand-500"
-                : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc"
+              ? "text-brand-500"
+              : "text-gray-300 dark:text-gray-600"
+              }`}
           />
         </span>
       </button>
@@ -321,7 +319,7 @@ export default function Dashboard() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   {card.label}
                 </span>
                 <h4 className="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
@@ -418,11 +416,10 @@ export default function Dashboard() {
                             setCurrentPage(1);
                             setIsStatusOpen(false);
                           }}
-                          className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                            statusFilter === opt.value
-                              ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
-                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                          }`}
+                          className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
+                            ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                            }`}
                         >
                           {opt.label}
                         </DropdownItem>
@@ -457,11 +454,10 @@ export default function Dashboard() {
                             setCurrentPage(1);
                             setIsAssigneeOpen(false);
                           }}
-                          className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                            assigneeFilter === opt.value
-                              ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
-                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                          }`}
+                          className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
+                            ? "bg-brand-50 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                            }`}
                         >
                           {opt.label}
                         </DropdownItem>
