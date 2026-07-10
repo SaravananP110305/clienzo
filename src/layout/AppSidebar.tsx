@@ -211,8 +211,14 @@ const AppSidebar: React.FC = () => {
                           />
                         )}
                       </button>
-                      {isSubOpen && (isExpanded || isHovered || isMobileOpen) && (
-                        <ul className="mt-1 pl-9 flex flex-col gap-1">
+                      <div
+                        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                          isSubOpen && (isExpanded || isHovered || isMobileOpen)
+                            ? "max-h-60 opacity-100 mt-1"
+                            : "max-h-0 opacity-0 pointer-events-none"
+                        }`}
+                      >
+                        <ul className="pl-9 flex flex-col gap-1 pb-1">
                           {nav.subItems!.map((sub) => {
                             const subActive = location.pathname === sub.path;
                             return (
@@ -230,7 +236,7 @@ const AppSidebar: React.FC = () => {
                             );
                           })}
                         </ul>
-                      )}
+                      </div>
                     </>
                   ) : (
                     <Link
