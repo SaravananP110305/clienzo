@@ -155,7 +155,7 @@ const AppSidebar: React.FC = () => {
         <Link to="/" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex items-center">
-              <img src={logo} alt="Logo" className="w-20 h-auto" />
+              <img src={logo} alt="Logo" className="w-17 h-auto" />
               <span className="text-2xl font-bold tracking-tight text-gray-600 dark:text-gray-400">ClienZo</span>
             </div>
           ) : (
