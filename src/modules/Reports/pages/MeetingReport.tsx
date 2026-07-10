@@ -21,10 +21,8 @@ import {
 import { FiDownload, FiVideo, FiMapPin } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { MEETING_REPORT_DATA, MeetingReportData } from "../data/reportsData";
-import { useToast } from "../../../hooks/useToast";
 
 export default function MeetingReport() {
-  const { showToast } = useToast();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

@@ -24,7 +24,6 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
-import { useToast } from "../../../hooks/useToast";
 
 interface User {
   id: number;
@@ -69,7 +68,6 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof User>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const { showToast } = useToast();
 
   // Dropdown states
   const [isRoleFilterOpen, setIsRoleFilterOpen] = useState(false);

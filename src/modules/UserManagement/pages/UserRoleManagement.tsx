@@ -145,7 +145,6 @@ export default function UserRoleManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Role>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const { showToast } = useToast();
 
   // Dropdown states
   const [statusFilter, setStatusFilter] = useState("all");

@@ -135,35 +135,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "success":
-        return <FiCheckCircle className="size-5 text-success-500" />;
-      case "error":
-        return <FiXCircle className="size-5 text-error-500" />;
-      case "warning":
-        return <FiAlertTriangle className="size-5 text-warning-500" />;
-      case "info":
-        return <FiInfo className="size-5 text-blue-500" />;
-      default:
-        return null;
-    }
-  };
 
-  const getTypeStyles = (type: string) => {
-    switch (type) {
-      case "success":
-        return "border-gray-500 bg-white dark:bg-success-900";
-      case "error":
-        return "border-gray-500 bg-white dark:bg-error-900";
-      case "warning":
-        return "border-gray-500 bg-white dark:bg-warning-900";
-      case "info":
-        return "border-gray-500 bg-white dark:bg-blue-900";
-      default:
-        return "border-gray-500 bg-white dark:bg-gray-900";
-    }
-  };
 
   return (
     <ToastContext.Provider value={{ showToast }}>
