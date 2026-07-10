@@ -21,6 +21,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus, FiUpload } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { getStorage, setStorage } from "../../../utils/storage";
+import * as XLSX from "xlsx";
 import {
   initialLeads,
   getStatusColor,
@@ -35,7 +36,22 @@ export default function LeadList() {
   const uploadModal = useModal();
   const deleteModal = useModal();
 
-  const [leads, setLeads] = useState<Lead[]>(() => getStorage("clienzo_leads", initialLeads));
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    const list = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    // Auto-clean any corrupt binary rows loaded previously from excel upload attempt
+    const cleaned = list.filter(
+      (l) =>
+        l.company &&
+        !l.company.includes("[Content_Types]") &&
+        !l.company.includes("xml") &&
+        !l.company.includes("xl/") &&
+        !l.email.includes("xml")
+    );
+    if (cleaned.length !== list.length) {
+      setStorage("clienzo_leads", cleaned);
+    }
+    return cleaned;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
@@ -499,10 +515,30 @@ export default function LeadList() {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                   try {
-                    const text = e.target?.result as string;
-                    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-                    if (lines.length <= 1) {
+                    const arrayBuffer = e.target?.result as ArrayBuffer;
+                    const data = new Uint8Array(arrayBuffer);
+                    const workbook = XLSX.read(data, { type: "array" });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert sheet rows into JS array of arrays
+                    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1 });
+                    if (rows.length <= 1) {
                       showToast("Uploaded file is empty or missing data rows.", "error");
+                      return;
+                    }
+
+                    // Dynamically scan headers row (row index 0) for lead property mapping
+                    const headers = rows[0].map(h => String(h || "").trim().toLowerCase());
+                    const companyIdx = headers.findIndex(h => h.includes("company") || h.includes("lead"));
+                    const contactIdx = headers.findIndex(h => h.includes("contact") || h.includes("person") || h.includes("name"));
+                    const emailIdx = headers.findIndex(h => h.includes("email") || h.includes("mail"));
+                    const phoneIdx = headers.findIndex(h => h.includes("phone") || h.includes("mobile") || h.includes("contact"));
+                    const industryIdx = headers.findIndex(h => h.includes("industry"));
+                    const sourceIdx = headers.findIndex(h => h.includes("source"));
+
+                    if (companyIdx === -1 && contactIdx === -1 && emailIdx === -1) {
+                      showToast("Required columns ('Company', 'Contact Person', or 'Email') not found.", "error");
                       return;
                     }
 
@@ -510,14 +546,22 @@ export default function LeadList() {
                     let addedCount = 0;
                     let duplicateCount = 0;
 
-                    for (let i = 1; i < lines.length; i++) {
-                      const cols = lines[i].split(",").map(c => c.replace(/^["']|["']$/g, "").trim());
-                      if (cols.length < 3) continue;
+                    for (let i = 1; i < rows.length; i++) {
+                      const row = rows[i];
+                      if (!row || row.length === 0) continue;
 
-                      const [company, contactPerson, email, phone, industry, source] = cols;
-                      
+                      const company = companyIdx !== -1 ? String(row[companyIdx] || "").trim() : "";
+                      const contactPerson = contactIdx !== -1 ? String(row[contactIdx] || "").trim() : "";
+                      const email = emailIdx !== -1 ? String(row[emailIdx] || "").trim() : "";
+                      const phone = phoneIdx !== -1 ? String(row[phoneIdx] || "").trim() : "";
+                      const industry = industryIdx !== -1 ? String(row[industryIdx] || "").trim() : "";
+                      const source = sourceIdx !== -1 ? String(row[sourceIdx] || "").trim() : "";
+
+                      if (!company && !contactPerson && !email) continue;
+
+                      // Duplicate email verification check
                       const isDuplicate = newLeadsList.some(
-                        (l) => l.email.toLowerCase() === (email || "").toLowerCase()
+                        (l) => l.email && email && l.email.toLowerCase() === email.toLowerCase()
                       );
                       if (isDuplicate) {
                         duplicateCount++;
@@ -529,15 +573,15 @@ export default function LeadList() {
                         id: nextId,
                         company: company || "Unknown Corp",
                         contactPerson: contactPerson || "Jane Doe",
-                        email: email || `contact@${company?.toLowerCase().replace(/\s+/g, "") || "unknown"}.com`,
+                        email: email || `contact@${company.toLowerCase().replace(/\s+/g, "") || "unknown"}.com`,
                         phone: phone || "+91 98765 00000",
                         status: "New",
                         assignedTo: "John Doe",
                         industry: industry || "Technology",
                         source: source || "Website",
-                        website: `https://${company?.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
+                        website: `https://${company.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
                         address: "Imported Address",
-                        notes: "Imported via CSV file.",
+                        notes: "Imported from file template.",
                         createdAt: new Date().toISOString().split("T")[0],
                       });
                       addedCount++;
@@ -547,9 +591,9 @@ export default function LeadList() {
                       setLeads(newLeadsList);
                       setStorage("clienzo_leads", newLeadsList);
                       if (duplicateCount > 0) {
-                        showToast(`Imported ${addedCount} leads. Skipped ${duplicateCount} duplicates.`, "warning");
+                        showToast(`Successfully imported ${addedCount} leads. Skipped ${duplicateCount} duplicates.`, "warning");
                       } else {
-                        showToast(`Successfully imported ${addedCount} leads from CSV.`, "success");
+                        showToast(`Successfully imported ${addedCount} leads from sheet!`, "success");
                       }
                     } else if (duplicateCount > 0) {
                       showToast(`Skipped import: All ${duplicateCount} records already exist.`, "error");
@@ -557,11 +601,11 @@ export default function LeadList() {
                       showToast("No valid rows found to import.", "error");
                     }
                   } catch (err) {
-                    console.error(err);
-                    showToast("Failed to parse CSV file content.", "error");
+                    console.error("Excel import failed:", err);
+                    showToast("Failed to parse file template.", "error");
                   }
                 };
-                reader.readAsText(file);
+                reader.readAsArrayBuffer(file);
 
                 setUploadedFile(null);
                 uploadModal.closeModal();
