@@ -138,6 +138,7 @@ interface RoleFormValues {
 }
 
 export default function UserRoleManagement() {
+  const { showToast } = useToast();
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);

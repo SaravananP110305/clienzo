@@ -24,6 +24,7 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 
 interface User {
   id: number;
@@ -59,6 +60,7 @@ interface UserFormValues {
 }
 
 export default function UserManagement() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");

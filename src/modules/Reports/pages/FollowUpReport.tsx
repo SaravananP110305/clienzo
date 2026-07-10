@@ -19,10 +19,12 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiDownload } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 import { FOLLOW_UP_REPORT_DATA, FollowUpReportData } from "../data/reportsData";
 import { useToast } from "../../../hooks/useToast";
 
 export default function FollowUpReport() {
+  const { showToast } = useToast();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

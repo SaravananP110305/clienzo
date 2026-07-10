@@ -22,6 +22,7 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { useToast } from "../../../hooks/useToast";
 
 export interface MasterItem {
   id: number;
@@ -43,6 +44,7 @@ export default function MasterConfigPage({
   itemNamePlural,
   initialData,
 }: MasterConfigPageProps) {
+  const { showToast } = useToast();
   const [items, setItems] = useState<MasterItem[]>(initialData);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -120,7 +122,10 @@ export default function MasterConfigPage({
   };
 
   const handleSaveItem = () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      showToast(`Please fix the form errors before saving.`, "error");
+      return;
+    }
 
     if (modalMode === "create") {
       const newId = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1;
@@ -130,6 +135,7 @@ export default function MasterConfigPage({
         status,
       };
       setItems([...items, newItem]);
+      showToast(`"${name.trim()}" ${itemNameSingular} created successfully.`, "success");
     } else if (modalMode === "edit" && selectedItem) {
       setItems(
         items.map((i) =>
@@ -138,6 +144,7 @@ export default function MasterConfigPage({
             : i
         )
       );
+      showToast(`"${name.trim()}" ${itemNameSingular} updated successfully.`, "success");
     }
     formModal.closeModal();
   };
@@ -145,6 +152,7 @@ export default function MasterConfigPage({
   const handleDeleteConfirm = () => {
     if (selectedItem) {
       setItems(items.filter((i) => i.id !== selectedItem.id));
+      showToast(`"${selectedItem.name}" ${itemNameSingular} deleted successfully.`, "success");
     }
     deleteModal.closeModal();
   };

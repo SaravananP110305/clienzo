@@ -24,6 +24,7 @@ export default function SignInForm() {
     handleSubmit,
     formState: { errors },
   } = useForm<SignInFormValues>({
+    mode: "onChange",
     defaultValues: {
       email: "",
       password: "",
@@ -132,11 +133,7 @@ export default function SignInForm() {
               </span>
             </div>
             <Link
-              to="/reset-password"
-              onClick={(e) => {
-                e.preventDefault();
-                showToast("Password reset feature is not yet available.", "info");
-              }}
+              to="/forgot-password"
               className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
             >
               Forgot password?
