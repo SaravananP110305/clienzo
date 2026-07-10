@@ -1,9 +1,16 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
-import { initialMeetings, getMeetingStatusColor } from "../data/meetingsData";
+import { initialMeetings, getMeetingStatusColor, Meeting } from "../data/meetingsData";
+import { getStorage, setStorage } from "../../../utils/storage";
+import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
+import { LOST_REASONS } from "../../Master/data/masterData";
+import { useToast } from "../../../hooks/useToast";
+import { Modal } from "../../../components/ui/modal";
+import Select from "../../../components/form/Select";
 import {
   FiBriefcase,
   FiUser,
@@ -43,8 +50,100 @@ function InfoCard({ icon, label, value }: InfoCardProps) {
 export default function MeetingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
-  const meeting = initialMeetings.find((m) => m.id === Number(id));
+  const [meeting, setMeeting] = useState<Meeting | null>(null);
+  const [matchingLead, setMatchingLead] = useState<Lead | null>(null);
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [selectedLostReason, setSelectedLostReason] = useState("");
+
+  const loadData = () => {
+    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const foundMeeting = meetings.find((m) => m.id === Number(id));
+    if (foundMeeting) {
+      setMeeting(foundMeeting);
+      const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const lead = leads.find((l) => l.company.toLowerCase() === foundMeeting.company.toLowerCase());
+      setMatchingLead(lead || null);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [id]);
+
+  const handleMarkWon = () => {
+    if (!meeting) return;
+    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const updatedMeetings = meetings.map((m) =>
+      m.id === meeting.id ? { ...m, status: "Completed" as const } : m
+    );
+    setStorage("clienzo_meetings", updatedMeetings);
+
+    if (matchingLead) {
+      const leadsList = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const updatedLeads = leadsList.map((l) =>
+        l.id === matchingLead.id ? { ...l, status: "Won" as const } : l
+      );
+      setStorage("clienzo_leads", updatedLeads);
+    }
+
+    showToast("Meeting marked as Completed and Lead marked as Won!", "success");
+    loadData();
+  };
+
+  const handleMarkLost = (reason: string) => {
+    if (!meeting) return;
+    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const updatedMeetings = meetings.map((m) =>
+      m.id === meeting.id ? { ...m, status: "Completed" as const } : m
+    );
+    setStorage("clienzo_meetings", updatedMeetings);
+
+    if (matchingLead) {
+      const leadsList = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const updatedLeads = leadsList.map((l) =>
+        l.id === matchingLead.id
+          ? {
+              ...l,
+              status: "Lost" as const,
+              notes: `${l.notes || ""}\nMeeting concluded. Lost reason: ${reason}`,
+            }
+          : l
+      );
+      setStorage("clienzo_leads", updatedLeads);
+    }
+
+    showToast("Meeting marked as Completed and Lead marked as Lost.", "error");
+    setShowLostModal(false);
+    loadData();
+  };
+
+  const handleCancelMeeting = () => {
+    if (!meeting) return;
+    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const updatedMeetings = meetings.map((m) =>
+      m.id === meeting.id ? { ...m, status: "Cancelled" as const } : m
+    );
+    setStorage("clienzo_meetings", updatedMeetings);
+    showToast("Meeting cancelled successfully.", "success");
+    loadData();
+  };
+
+  const lostReasons = getStorage<any[]>("clienzo_master_lost_reasons", LOST_REASONS)
+    .filter((r) => r.status === "Active");
 
   if (!meeting) {
     return (
@@ -54,38 +153,33 @@ export default function MeetingDetails() {
           <p className="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
             Meeting not found
           </p>
-          <Button size="sm" onClick={() => navigate(-1)}>
-            Go Back
+          <p className="text-sm text-gray-400 mb-6">
+            The meeting you're looking for does not exist or has been deleted.
+          </p>
+          <Button size="sm" onClick={() => navigate("/meetings")}>
+            Back to meeting list
           </Button>
         </div>
       </>
     );
   }
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   return (
     <>
       <PageMeta
         title="Meeting Details | ClienZo"
-        description="View detailed information about a meeting in ClienZo CRM."
+        description="View details and manage scheduled meeting outcome."
       />
       <PageBreadcrumb pageTitle="Meeting details" />
 
-      {/* Action bar */}
+      {/* Top action bar */}
       <div className="flex items-center justify-between mb-5">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/meetings")}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white transition cursor-pointer"
         >
           <FiArrowLeft className="size-4" />
-          Back
+          Back to list
         </button>
         <Button
           size="sm"
@@ -96,14 +190,14 @@ export default function MeetingDetails() {
         </Button>
       </div>
 
-      {/* Header Summary Card */}
+      {/* Header Card */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-200 bg-white px-6 py-5 mb-5 dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
             {meeting.subject}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Meeting with {meeting.company} ({meeting.contactPerson})
+            Conducted via {meeting.type}
           </p>
         </div>
         <div>
@@ -112,6 +206,53 @@ export default function MeetingDetails() {
           </Badge>
         </div>
       </div>
+
+      {/* Log Outcome Panel */}
+      {meeting.status !== "Completed" && meeting.status !== "Cancelled" && (
+        <div className="rounded-xl border border-warning-200 bg-warning-50/50 p-5 mb-5 dark:border-warning-500/20 dark:bg-warning-500/5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                Log Meeting Outcome
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Conclude the meeting and update lead status for{" "}
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {meeting.company}
+                </span>{" "}
+                (Current Lead Status:{" "}
+                <span className="font-semibold text-brand-500">
+                  {matchingLead ? matchingLead.status : "N/A"}
+                </span>
+                )
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                onClick={handleMarkWon}
+                className="bg-success-600 hover:bg-success-700 text-white border-transparent"
+              >
+                Mark Won
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowLostModal(true)}
+                className="bg-error-600 hover:bg-error-700 text-white border-transparent"
+              >
+                Mark Lost
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelMeeting}
+              >
+                Cancel Meeting
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Information Cards Grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -193,6 +334,48 @@ export default function MeetingDetails() {
           </div>
         </div>
       </div>
+
+      {/* Lost Reason Modal */}
+      <Modal
+        isOpen={showLostModal}
+        onClose={() => setShowLostModal(false)}
+        className="max-w-[450px] m-4"
+      >
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
+              Mark Lead as Lost
+            </h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Please specify the reason why this lead was lost.
+            </p>
+            <Select
+              options={lostReasons.map((r) => ({ value: r.name, label: r.name }))}
+              placeholder="Select lost reason"
+              onChange={(val: string) => setSelectedLostReason(val)}
+              defaultValue={selectedLostReason}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowLostModal(false)}
+              className="w-1/2"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleMarkLost(selectedLostReason || "No reason specified")}
+              className="w-1/2 bg-error-600 hover:bg-error-700 text-white"
+              disabled={!selectedLostReason}
+            >
+              Confirm Lost
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { getStorage, setStorage } from "../../../utils/storage";
 import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -60,7 +61,7 @@ interface UserFormValues {
 
 export default function UserManagement() {
   const { showToast } = useToast();
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(() => getStorage("clienzo_users", initialUsers));
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -147,23 +148,25 @@ export default function UserManagement() {
         role: data.role,
         status: data.status,
       };
-      setUsers([...users, newUser]);
+      const updated = [...users, newUser];
+      setUsers(updated);
+      setStorage("clienzo_users", updated);
       showToast("User created successfully.", "success");
     } else if (modalMode === "edit" && selectedUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id
-            ? {
-                ...u,
-                name: data.name.trim(),
-                email: data.email.trim(),
-                phone: data.phone.trim(),
-                role: data.role,
-                status: data.status,
-              }
-            : u
-        )
+      const updated = users.map((u) =>
+        u.id === selectedUser.id
+          ? {
+              ...u,
+              name: data.name.trim(),
+              email: data.email.trim(),
+              phone: data.phone.trim(),
+              role: data.role,
+              status: data.status,
+            }
+          : u
       );
+      setUsers(updated);
+      setStorage("clienzo_users", updated);
       showToast("User updated successfully.", "success");
     }
     formModal.closeModal();
@@ -175,7 +178,9 @@ export default function UserManagement() {
 
   const handleDeleteConfirm = () => {
     if (selectedUser) {
-      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      const updated = users.filter((u) => u.id !== selectedUser.id);
+      setUsers(updated);
+      setStorage("clienzo_users", updated);
       showToast("User deleted successfully.", "success");
     }
     deleteModal.closeModal();

@@ -3,7 +3,8 @@ import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
-import { initialLeads, getStatusColor } from "../data/leadsData";
+import { initialLeads, getStatusColor, Lead } from "../data/leadsData";
+import { getStorage } from "../../../utils/storage";
 import {
   FiBriefcase,
   FiUser,
@@ -47,7 +48,8 @@ export default function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const lead = initialLeads.find((l) => l.id === Number(id));
+  const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+  const lead = leads.find((l) => l.id === Number(id));
 
   if (!lead) {
     return (
@@ -85,13 +87,25 @@ export default function LeadDetails() {
           <FiArrowLeft className="size-4" />
           Back to list
         </button>
-        <Button
-          size="sm"
-          onClick={() => navigate(`/leads/${lead.id}/edit`)}
-          startIcon={<FiEdit className="size-4" />}
-        >
-          Edit lead
-        </Button>
+        <div className="flex items-center gap-3">
+          {lead.status === "Qualified" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/meetings/add?leadId=${lead.id}`)}
+              startIcon={<FiCalendar className="size-4" />}
+            >
+              Schedule meeting
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={() => navigate(`/leads/${lead.id}/edit`)}
+            startIcon={<FiEdit className="size-4" />}
+          >
+            Edit lead
+          </Button>
+        </div>
       </div>
 
       {/* Header Card */}

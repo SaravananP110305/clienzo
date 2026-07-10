@@ -16,11 +16,17 @@ import {
 } from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import { FiEye, FiPhone } from "react-icons/fi";
-import { myLeads, CURRENT_USER } from "../data/contactData";
-import { getStatusColor, LEAD_STATUSES, type Lead } from "../../LeadManagement/data/leadsData";
+import { CURRENT_USER } from "../data/contactData";
+import { getStatusColor, LEAD_STATUSES, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
+import { getStorage } from "../../../utils/storage";
 
 export default function MyLeads() {
   const navigate = useNavigate();
+
+  const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+  const activeMyLeads = useMemo(() => {
+    return leads.filter((l) => l.assignedTo === CURRENT_USER);
+  }, [leads]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -46,7 +52,7 @@ export default function MyLeads() {
   };
 
   const processedLeads = useMemo(() => {
-    let result = [...myLeads];
+    let result = [...activeMyLeads];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();

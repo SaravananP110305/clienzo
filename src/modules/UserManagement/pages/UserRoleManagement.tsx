@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { getStorage, setStorage } from "../../../utils/storage";
 import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -139,7 +140,7 @@ interface RoleFormValues {
 
 export default function UserRoleManagement() {
   const { showToast } = useToast();
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [roles, setRoles] = useState<Role[]>(() => getStorage("clienzo_roles", initialRoles));
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -235,21 +236,23 @@ export default function UserRoleManagement() {
         status: data.status,
         permissions: data.permissions,
       };
-      setRoles([...roles, newRole]);
+      const updated = [...roles, newRole];
+      setRoles(updated);
+      setStorage("clienzo_roles", updated);
       showToast("Role created successfully.", "success");
     } else if (modalMode === "edit" && selectedRole) {
-      setRoles(
-        roles.map((r) =>
-          r.id === selectedRole.id
-            ? {
-                ...r,
-                roleName: data.roleName.trim(),
-                status: data.status,
-                permissions: data.permissions,
-              }
-            : r
-        )
+      const updated = roles.map((r) =>
+        r.id === selectedRole.id
+          ? {
+              ...r,
+              roleName: data.roleName.trim(),
+              status: data.status,
+              permissions: data.permissions,
+            }
+          : r
       );
+      setRoles(updated);
+      setStorage("clienzo_roles", updated);
       showToast("Role updated successfully.", "success");
     }
     formModal.closeModal();
@@ -261,7 +264,9 @@ export default function UserRoleManagement() {
 
   const handleDeleteConfirm = () => {
     if (selectedRole) {
-      setRoles(roles.filter((r) => r.id !== selectedRole.id));
+      const updated = roles.filter((r) => r.id !== selectedRole.id);
+      setRoles(updated);
+      setStorage("clienzo_roles", updated);
       showToast("Role deleted successfully.", "success");
     }
     deleteModal.closeModal();

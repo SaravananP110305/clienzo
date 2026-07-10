@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -36,6 +37,7 @@ interface MasterConfigPageProps {
   itemNameSingular: string; // e.g. "lead source"
   itemNamePlural: string; // e.g. "lead sources"
   initialData: MasterItem[];
+  storageKey: string;
 }
 
 export default function MasterConfigPage({
@@ -43,9 +45,10 @@ export default function MasterConfigPage({
   itemNameSingular,
   itemNamePlural,
   initialData,
+  storageKey,
 }: MasterConfigPageProps) {
   const { showToast } = useToast();
-  const [items, setItems] = useState<MasterItem[]>(initialData);
+  const [items, setItems] = useState<MasterItem[]>(() => getStorage(storageKey, initialData));
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -70,15 +73,15 @@ export default function MasterConfigPage({
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
   const [errors, setErrors] = useState<{ name?: string }>({});
 
-  // Reset list if configuration initialData changes (routing changes)
+  // Reset list if configuration initialData or storageKey changes (routing changes)
   useEffect(() => {
-    setItems(initialData);
+    setItems(getStorage(storageKey, initialData));
     setSearchQuery("");
     setStatusFilter("all");
     setCurrentPage(1);
     setSortField("id");
     setSortOrder("asc");
-  }, [initialData]);
+  }, [initialData, storageKey]);
 
   // Handlers
   const handleOpenView = (item: MasterItem) => {
@@ -134,16 +137,18 @@ export default function MasterConfigPage({
         name: name.trim(),
         status,
       };
-      setItems([...items, newItem]);
+      const updated = [...items, newItem];
+      setItems(updated);
+      setStorage(storageKey, updated);
       showToast(`"${name.trim()}" ${itemNameSingular} created successfully.`, "success");
     } else if (modalMode === "edit" && selectedItem) {
-      setItems(
-        items.map((i) =>
-          i.id === selectedItem.id
-            ? { ...i, name: name.trim(), status }
-            : i
-        )
+      const updated = items.map((i) =>
+        i.id === selectedItem.id
+          ? { ...i, name: name.trim(), status }
+          : i
       );
+      setItems(updated);
+      setStorage(storageKey, updated);
       showToast(`"${name.trim()}" ${itemNameSingular} updated successfully.`, "success");
     }
     formModal.closeModal();
@@ -151,7 +156,9 @@ export default function MasterConfigPage({
 
   const handleDeleteConfirm = () => {
     if (selectedItem) {
-      setItems(items.filter((i) => i.id !== selectedItem.id));
+      const updated = items.filter((i) => i.id !== selectedItem.id);
+      setItems(updated);
+      setStorage(storageKey, updated);
       showToast(`"${selectedItem.name}" ${itemNameSingular} deleted successfully.`, "success");
     }
     deleteModal.closeModal();

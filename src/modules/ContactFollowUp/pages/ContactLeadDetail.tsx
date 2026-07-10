@@ -9,8 +9,10 @@ import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
-import { initialLeads, getStatusColor } from "../../LeadManagement/data/leadsData";
+import { initialLeads, getStatusColor, Lead } from "../../LeadManagement/data/leadsData";
 import { FOLLOWUP_REASONS, LOST_REASONS } from "../../Master/data/masterData";
+import { FollowUp, initialFollowUps } from "../data/contactData";
+import { getStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
 import {
   FiBriefcase,
@@ -69,7 +71,8 @@ export default function ContactLeadDetail() {
   const successModal = useModal();
   const { showToast } = useToast();
 
-  const lead = initialLeads.find((l) => l.id === Number(id));
+  const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+  const lead = leads.find((l) => l.id === Number(id));
 
   // Contact Result wizard selector state
   const [contactResult, setContactResult] = useState<ContactResult | null>(null);
@@ -111,6 +114,11 @@ export default function ContactLeadDetail() {
   };
 
   const handleSaveInterested = () => {
+    const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    const updated = currentLeads.map((l) =>
+      l.id === Number(id) ? { ...l, status: "Qualified" as const } : l
+    );
+    setStorage("clienzo_leads", updated);
     setSavedOutcome("Marked as Interested");
     showToast("Lead updated successfully.", "success");
     contactModal.closeModal();
@@ -118,6 +126,32 @@ export default function ContactLeadDetail() {
   };
 
   const handleSaveCallLater = (data: ContactOutcomeFormValues) => {
+    // 1. Update lead status
+    const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    const updatedLeads = currentLeads.map((l) =>
+      l.id === Number(id) ? { ...l, status: "Contacted" as const } : l
+    );
+    setStorage("clienzo_leads", updatedLeads);
+
+    // 2. Add follow-up record
+    const followups = getStorage<FollowUp[]>("clienzo_followups", initialFollowUps);
+    const nextId = followups.length > 0 ? Math.max(...followups.map((f) => f.id)) + 1 : 1;
+    if (lead) {
+      const newFollowup: FollowUp = {
+        id: nextId,
+        leadId: lead.id,
+        company: lead.company,
+        contactPerson: lead.contactPerson,
+        phone: lead.phone,
+        assignedTo: lead.assignedTo || "John Doe",
+        date: data.followUpDate,
+        time: data.followUpTime,
+        reason: data.followUpReason,
+        status: "Scheduled" as const,
+      };
+      setStorage("clienzo_followups", [...followups, newFollowup]);
+    }
+
     setSavedOutcome(`Follow-up scheduled for ${data.followUpDate} at ${data.followUpTime}`);
     showToast("Meeting scheduled successfully.", "success");
     contactModal.closeModal();
@@ -125,6 +159,11 @@ export default function ContactLeadDetail() {
   };
 
   const handleSaveNotInterested = (data: ContactOutcomeFormValues) => {
+    const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    const updated = currentLeads.map((l) =>
+      l.id === Number(id) ? { ...l, status: "Lost" as const, notes: `${l.notes || ""}\nLost reason: ${data.notInterestedReason}` } : l
+    );
+    setStorage("clienzo_leads", updated);
     setSavedOutcome(`Marked as Not Interested — ${data.notInterestedReason}`);
     showToast("Lead updated successfully.", "success");
     contactModal.closeModal();

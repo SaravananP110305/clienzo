@@ -20,6 +20,7 @@ import {
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus, FiUpload } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
+import { getStorage, setStorage } from "../../../utils/storage";
 import {
   initialLeads,
   getStatusColor,
@@ -34,7 +35,7 @@ export default function LeadList() {
   const uploadModal = useModal();
   const deleteModal = useModal();
 
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [leads, setLeads] = useState<Lead[]>(() => getStorage("clienzo_leads", initialLeads));
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
@@ -59,7 +60,9 @@ export default function LeadList() {
 
   const handleDeleteConfirm = () => {
     if (selectedLead) {
-      setLeads((prev) => prev.filter((l) => l.id !== selectedLead.id));
+      const updated = leads.filter((l) => l.id !== selectedLead.id);
+      setLeads(updated);
+      setStorage("clienzo_leads", updated);
       showToast(`Lead "${selectedLead.company}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();

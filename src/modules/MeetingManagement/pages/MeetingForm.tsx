@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
@@ -7,8 +7,10 @@ import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import DatePicker from "../../../components/form/date-picker";
-import { MeetingType, MeetingStatus, initialMeetings } from "../data/meetingsData";
+import { MeetingType, MeetingStatus, initialMeetings, Meeting } from "../data/meetingsData";
 import { useToast } from "../../../hooks/useToast";
+import { getStorage, setStorage } from "../../../utils/storage";
+import { Lead } from "../../LeadManagement/data/leadsData";
 
 interface MeetingFormValues {
   subject: string;
@@ -22,12 +24,23 @@ interface MeetingFormValues {
   notes: string;
 }
 
-export default function MeetingForm() {
+interface MeetingFormProps {
+  onSave?: (meeting: Meeting, isEdit: boolean) => void;
+}
+
+export default function MeetingForm({ onSave }: MeetingFormProps) {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [isCustomCompany, setIsCustomCompany] = useState(false);
+
+  // Load qualified leads from localStorage
+  const qualifiedLeads = useMemo<Lead[]>(() => {
+    const leads = getStorage<Lead[]>("clienzo_leads", []);
+    return leads.filter((l) => l.status === "Qualified");
+  }, []);
 
   const {
     control,
@@ -54,7 +67,8 @@ export default function MeetingForm() {
 
   useEffect(() => {
     if (isEditMode) {
-      const meeting = initialMeetings.find((m) => m.id === Number(id));
+      const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+      const meeting = meetings.find((m) => m.id === Number(id));
       if (meeting) {
         reset({
           subject: meeting.subject,
@@ -68,11 +82,60 @@ export default function MeetingForm() {
           notes: meeting.notes,
         });
       }
+    } else {
+      // Check for leadId param to pre-fill
+      const queryParams = new URLSearchParams(window.location.search);
+      const leadIdParam = queryParams.get("leadId");
+      if (leadIdParam) {
+        const leads = getStorage<any[]>("clienzo_leads", []);
+        const lead = leads.find((l) => l.id === Number(leadIdParam));
+        if (lead) {
+          reset({
+            subject: "Discovery Call & Product Demo",
+            company: lead.company,
+            contactPerson: lead.contactPerson,
+            date: "",
+            time: "",
+            type: "Google Meet",
+            linkOrLocation: "",
+            status: "Scheduled",
+            notes: `Meeting scheduled for Qualified lead from ${lead.source}.`,
+          });
+        }
+      }
     }
     setLoading(false);
   }, [id, isEditMode, reset]);
 
-  const handleSave = () => {
+  const handleSave = (data: MeetingFormValues) => {
+    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    let updatedMeeting: Meeting;
+    if (isEditMode) {
+      updatedMeeting = {
+        id: Number(id),
+        ...data,
+      };
+    } else {
+      const newId = meetings.length > 0 ? Math.max(...meetings.map((m) => m.id)) + 1 : 1;
+      updatedMeeting = {
+        id: newId,
+        ...data,
+      };
+    }
+
+    if (onSave) {
+      onSave(updatedMeeting, isEditMode);
+    } else {
+      // Fallback fallback direct storage write
+      let updatedList: Meeting[];
+      if (isEditMode) {
+        updatedList = meetings.map((m) => m.id === updatedMeeting.id ? updatedMeeting : m);
+      } else {
+        updatedList = [...meetings, updatedMeeting];
+      }
+      setStorage("clienzo_meetings", updatedList);
+    }
+
     showToast(
       isEditMode ? "Meeting updated successfully." : "Meeting scheduled successfully.",
       "success"
@@ -137,28 +200,66 @@ export default function MeetingForm() {
 
           {/* Company / Lead */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Company / Lead <span className="text-error-500">*</span>
-            </label>
-            <Controller
-              name="company"
-              control={control}
-              rules={{
-                required: "Company/Lead name is required",
-                pattern: {
-                  value: /^[a-zA-Z0-9\s&.,-]+$/,
-                  message: "Allow letters, numbers, spaces, &, ., -, and commas only",
-                },
-              }}
-              render={({ field }) => (
-                <Input
-                  {...field}
-                  type="text"
-                  placeholder="Enter company name"
-                  className={errors.company ? "border-error-500 focus:ring-error-500/10" : ""}
-                />
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Company / Lead <span className="text-error-500">*</span>
+              </label>
+              {!isEditMode && qualifiedLeads.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomCompany(!isCustomCompany);
+                    setValue("company", "");
+                    setValue("contactPerson", "");
+                  }}
+                  className="text-xs text-brand-500 hover:text-brand-600 font-medium cursor-pointer"
+                >
+                  {isCustomCompany ? "Select qualified lead" : "Or type custom name"}
+                </button>
               )}
-            />
+            </div>
+
+            {!isEditMode && qualifiedLeads.length > 0 && !isCustomCompany ? (
+              <Controller
+                name="company"
+                control={control}
+                rules={{ required: "Company/Lead name is required" }}
+                render={({ field: { value, onChange } }) => (
+                  <Select
+                    options={qualifiedLeads.map((l) => ({ value: l.company, label: l.company }))}
+                    placeholder="Select qualified lead company"
+                    onChange={(val) => {
+                      onChange(val);
+                      const lead = qualifiedLeads.find((l) => l.company === val);
+                      if (lead) {
+                        setValue("contactPerson", lead.contactPerson);
+                      }
+                    }}
+                    defaultValue={value}
+                  />
+                )}
+              />
+            ) : (
+              <Controller
+                name="company"
+                control={control}
+                rules={{
+                  required: "Company/Lead name is required",
+                  pattern: {
+                    value: /^[a-zA-Z0-9\s&.,-]+$/,
+                    message: "Allow letters, numbers, spaces, &, ., -, and commas only",
+                  },
+                }}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    type="text"
+                    placeholder="Enter company name"
+                    className={errors.company ? "border-error-500 focus:ring-error-500/10" : ""}
+                  />
+                )}
+              />
+            )}
             {errors.company && (
               <span className="mt-1.5 text-xs text-error-600 block">{errors.company.message}</span>
             )}

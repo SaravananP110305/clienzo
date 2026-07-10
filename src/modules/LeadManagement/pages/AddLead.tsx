@@ -6,9 +6,10 @@ import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
-import { LEAD_STATUSES, ASSIGNEES, initialLeads, LeadStatus } from "../data/leadsData";
+import { LEAD_STATUSES, ASSIGNEES, initialLeads, LeadStatus, Lead } from "../data/leadsData";
 import { useToast } from "../../../hooks/useToast";
 import { LEAD_SOURCES, INDUSTRIES } from "../../Master/data/masterData";
+import { getStorage, setStorage } from "../../../utils/storage";
 
 interface LeadFormValues {
   company: string;
@@ -55,7 +56,8 @@ export default function AddLead() {
 
   useEffect(() => {
     if (isEditMode) {
-      const lead = initialLeads.find((l) => l.id === Number(id));
+      const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const lead = currentLeads.find((l) => l.id === Number(id));
       if (lead) {
         reset({
           company: lead.company,
@@ -75,11 +77,49 @@ export default function AddLead() {
     setLoading(false);
   }, [id, isEditMode, reset]);
 
-  const handleSave = () => {
-    showToast(
-      isEditMode ? "Lead updated successfully." : "Lead created successfully.",
-      "success"
-    );
+  const handleSave = (data: LeadFormValues) => {
+    const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    if (isEditMode) {
+      const updated = currentLeads.map((l) =>
+        l.id === Number(id)
+          ? {
+              ...l,
+              company: data.company,
+              contactPerson: data.contactPerson,
+              email: data.email,
+              phone: data.phone,
+              status: data.status as LeadStatus,
+              assignedTo: data.assignedTo,
+              industry: data.industry,
+              source: data.source,
+              website: data.website,
+              address: data.address,
+              notes: data.notes,
+            }
+          : l
+      );
+      setStorage("clienzo_leads", updated);
+      showToast("Lead updated successfully.", "success");
+    } else {
+      const nextId = currentLeads.length > 0 ? Math.max(...currentLeads.map((l) => l.id)) + 1 : 1;
+      const newLead: Lead = {
+        id: nextId,
+        company: data.company,
+        contactPerson: data.contactPerson,
+        email: data.email,
+        phone: data.phone,
+        status: (data.status || "New") as LeadStatus,
+        assignedTo: data.assignedTo || "John Doe",
+        industry: data.industry,
+        source: data.source,
+        website: data.website,
+        address: data.address,
+        notes: data.notes,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setStorage("clienzo_leads", [...currentLeads, newLead]);
+      showToast("Lead created successfully.", "success");
+    }
     navigate("/leads");
   };
 
@@ -153,7 +193,7 @@ export default function AddLead() {
               rules={{ required: "Industry is required" }}
               render={({ field: { value, onChange } }) => (
                 <Select
-                  options={INDUSTRIES.filter(i => i.status === "Active").map(i => ({ value: i.name, label: i.name }))}
+                  options={getStorage("clienzo_master_industries", INDUSTRIES).filter(i => i.status === "Active").map(i => ({ value: i.name, label: i.name }))}
                   placeholder="Select industry"
                   onChange={onChange}
                   defaultValue={value}
@@ -206,7 +246,7 @@ export default function AddLead() {
               rules={{ required: "Lead source is required" }}
               render={({ field: { value, onChange } }) => (
                 <Select
-                  options={LEAD_SOURCES.filter(s => s.status === "Active").map(s => ({ value: s.name, label: s.name }))}
+                  options={getStorage("clienzo_master_lead_sources", LEAD_SOURCES).filter(s => s.status === "Active").map(s => ({ value: s.name, label: s.name }))}
                   placeholder="Select source"
                   onChange={onChange}
                   defaultValue={value}

@@ -28,6 +28,7 @@ import MeetingReport from "./modules/Reports/pages/MeetingReport";
 import EmployeeReport from "./modules/Reports/pages/EmployeeReport";
 import FollowUpReport from "./modules/Reports/pages/FollowUpReport";
 import { ToastProvider } from "./context/ToastContext";
+import { getStorage, setStorage } from "./utils/storage";
 
 import {
   LEAD_SOURCES,
@@ -40,10 +41,23 @@ import {
 // ────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
+  const [meetings, setMeetings] = useState<Meeting[]>(() => getStorage("clienzo_meetings", initialMeetings));
 
   const handleDeleteMeeting = (id: number) => {
-    setMeetings((prev) => prev.filter((m) => m.id !== id));
+    const updated = meetings.filter((m) => m.id !== id);
+    setMeetings(updated);
+    setStorage("clienzo_meetings", updated);
+  };
+
+  const handleSaveMeeting = (meeting: Meeting, isEdit: boolean) => {
+    let updated: Meeting[];
+    if (isEdit) {
+      updated = meetings.map((m) => m.id === meeting.id ? meeting : m);
+    } else {
+      updated = [...meetings, meeting];
+    }
+    setMeetings(updated);
+    setStorage("clienzo_meetings", updated);
   };
 
   return (
@@ -79,8 +93,8 @@ export default function App() {
                 />
               }
             />
-            <Route path="/meetings/add" element={<MeetingForm />} />
-            <Route path="/meetings/:id/edit" element={<MeetingForm />} />
+            <Route path="/meetings/add" element={<MeetingForm onSave={handleSaveMeeting} />} />
+            <Route path="/meetings/:id/edit" element={<MeetingForm onSave={handleSaveMeeting} />} />
             <Route path="/meetings/:id" element={<MeetingDetails />} />
 
             {/* Reports Routes */}
@@ -103,6 +117,7 @@ export default function App() {
                   itemNameSingular="lead source"
                   itemNamePlural="lead sources"
                   initialData={LEAD_SOURCES}
+                  storageKey="clienzo_master_lead_sources"
                 />
               }
             />
@@ -114,6 +129,7 @@ export default function App() {
                   itemNameSingular="industry"
                   itemNamePlural="industries"
                   initialData={INDUSTRIES}
+                  storageKey="clienzo_master_industries"
                 />
               }
             />
@@ -125,6 +141,7 @@ export default function App() {
                   itemNameSingular="meeting type"
                   itemNamePlural="meeting types"
                   initialData={MEETING_TYPES}
+                  storageKey="clienzo_master_meeting_types"
                 />
               }
             />
@@ -136,6 +153,7 @@ export default function App() {
                   itemNameSingular="follow-up reason"
                   itemNamePlural="follow-up reasons"
                   initialData={FOLLOWUP_REASONS}
+                  storageKey="clienzo_master_followup_reasons"
                 />
               }
             />
@@ -147,6 +165,7 @@ export default function App() {
                   itemNameSingular="lost reason"
                   itemNamePlural="lost reasons"
                   initialData={LOST_REASONS}
+                  storageKey="clienzo_master_lost_reasons"
                 />
               }
             />

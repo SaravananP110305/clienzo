@@ -14,6 +14,7 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
+import { getStorage } from "../../../utils/storage";
 import {
   initialFollowUps,
   getFollowUpStatusColor,
@@ -28,6 +29,7 @@ const FOLLOW_UP_STATUS_OPTIONS = [
 ];
 
 export default function FollowUps() {
+  const followupsList = getStorage<FollowUp[]>("clienzo_followups", initialFollowUps);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -47,7 +49,7 @@ export default function FollowUps() {
   };
 
   const processedItems = useMemo(() => {
-    let result = [...initialFollowUps];
+    let result = [...followupsList];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
