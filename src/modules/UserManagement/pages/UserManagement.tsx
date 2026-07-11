@@ -336,7 +336,7 @@ export default function UserManagement() {
                     }}
                     className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
                       roleFilter === "all"
-                        ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                        ? "bg-brand-500 text-white font-medium"
                         : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                     }`}
                   >
@@ -353,7 +353,7 @@ export default function UserManagement() {
                       }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
                         roleFilter === roleOpt
-                          ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                          ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                       }`}
                     >
@@ -394,7 +394,7 @@ export default function UserManagement() {
                       }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
                         statusFilter === opt.value
-                          ? "bg-brand-5 text-brand-500 font-medium dark:bg-brand-500/15 dark:text-brand-400"
+                          ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                       }`}
                     >
