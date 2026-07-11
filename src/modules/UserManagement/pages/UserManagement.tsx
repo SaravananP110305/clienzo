@@ -33,14 +33,15 @@ interface User {
   phone: string;
   role: string;
   status: "Active" | "Inactive";
+  password?: string;
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "John Doe", email: "john.doe@clienzo.com", phone: "+91 98765 43210", role: "Administrator", status: "Active" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@clienzo.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active" },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@clienzo.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active" },
-  { id: 4, name: "Robert Lee", email: "robert.lee@clienzo.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active" },
-  { id: 5, name: "Emma Watson", email: "emma.watson@clienzo.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive" }
+  { id: 1, name: "John Doe", email: "john.doe@clienzo.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123" },
+  { id: 2, name: "Jane Smith", email: "jane.smith@clienzo.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123" },
+  { id: 3, name: "Alice Johnson", email: "alice.johnson@clienzo.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123" },
+  { id: 4, name: "Robert Lee", email: "robert.lee@clienzo.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123" },
+  { id: 5, name: "Emma Watson", email: "emma.watson@clienzo.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123" }
 ];
 
 const availableRoles = [
@@ -57,6 +58,7 @@ interface UserFormValues {
   phone: string;
   role: string;
   status: "Active" | "Inactive";
+  password?: string;
 }
 
 export default function UserManagement() {
@@ -82,6 +84,7 @@ export default function UserManagement() {
   // Active items mapping
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [showPassword, setShowPassword] = useState(false);
 
   // React Hook Form
   const {
@@ -97,6 +100,7 @@ export default function UserManagement() {
       phone: "",
       role: "",
       status: "Active",
+      password: "",
     },
   });
 
@@ -109,12 +113,14 @@ export default function UserManagement() {
   const handleOpenCreate = () => {
     setModalMode("create");
     setSelectedUser(null);
+    setShowPassword(false);
     reset({
       name: "",
       email: "",
       phone: "",
       role: "",
       status: "Active",
+      password: "",
     });
     formModal.openModal();
   };
@@ -122,12 +128,14 @@ export default function UserManagement() {
   const handleOpenEdit = (user: User) => {
     setModalMode("edit");
     setSelectedUser(user);
+    setShowPassword(false);
     reset({
       name: user.name,
       email: user.email,
       phone: user.phone.replace(/\D/g, "").slice(-10),
       role: user.role,
       status: user.status,
+      password: user.password || "",
     });
     formModal.openModal();
   };
@@ -147,6 +155,7 @@ export default function UserManagement() {
         phone: data.phone.trim(),
         role: data.role,
         status: data.status,
+        password: data.password?.trim() || "Password@123",
       };
       const updated = [...users, newUser];
       setUsers(updated);
@@ -162,6 +171,7 @@ export default function UserManagement() {
               phone: data.phone.trim(),
               role: data.role,
               status: data.status,
+              password: data.password?.trim() || u.password,
             }
           : u
       );
@@ -595,6 +605,12 @@ export default function UserManagement() {
                     {selectedUser.phone}
                   </span>
                 </div>
+                <div>
+                  <span className="text-xs text-gray-400 block">Password</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {selectedUser.password || "••••••••"}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -646,6 +662,28 @@ export default function UserManagement() {
 
               <div>
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Role <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="role"
+                  control={control}
+                  rules={{ required: "Role is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={availableRoles.map((r) => ({ value: r, label: r }))}
+                      placeholder="Select role"
+                      defaultValue={value}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+                {errors.role && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.role.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email address <span className="text-error-500">*</span>
                 </label>
                 <Controller
@@ -669,6 +707,43 @@ export default function UserManagement() {
                 />
                 {errors.email && (
                   <span className="mt-1.5 text-xs text-error-600 block">{errors.email.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="password"
+                  control={control}
+                  rules={{
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters long",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        className={errors.password ? "border-error-500 pr-10" : "pr-10"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none cursor-pointer"
+                      >
+                        {showPassword ? <FiEye className="size-5" /> : <FiEye className="size-5 opacity-60" />}
+                      </button>
+                    </div>
+                  )}
+                />
+                {errors.password && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.password.message}</span>
                 )}
               </div>
 
@@ -707,28 +782,6 @@ export default function UserManagement() {
               </div>
 
               <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Role <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="role"
-                  control={control}
-                  rules={{ required: "Role is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={availableRoles.map((r) => ({ value: r, label: r }))}
-                      placeholder="Select role"
-                      defaultValue={value}
-                      onChange={onChange}
-                    />
-                  )}
-                />
-                {errors.role && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.role.message}</span>
-                )}
-              </div>
-
-              <div className="sm:col-span-2">
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Status <span className="text-error-500">*</span>
                 </label>
