@@ -165,14 +165,14 @@ export default function UserManagement() {
       const updated = users.map((u) =>
         u.id === selectedUser.id
           ? {
-              ...u,
-              name: data.name.trim(),
-              email: data.email.trim(),
-              phone: data.phone.trim(),
-              role: data.role,
-              status: data.status,
-              password: data.password?.trim() || u.password,
-            }
+            ...u,
+            name: data.name.trim(),
+            email: data.email.trim(),
+            phone: data.phone.trim(),
+            role: data.role,
+            status: data.status,
+            password: data.password?.trim() || u.password,
+          }
           : u
       );
       setUsers(updated);
@@ -274,14 +274,12 @@ export default function UserManagement() {
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
           />
         </span>
       </button>
@@ -291,11 +289,11 @@ export default function UserManagement() {
   return (
     <>
       <PageMeta
-        title="User Management | ClienZo"
+        title="Manage Users | ClienZo"
         description="Manage employee accounts and roles in ClienZo CRM."
       />
       {/* Page Title & Breadcrumb */}
-      <PageBreadcrumb pageTitle="User Management" />
+      <PageBreadcrumb pageTitle="Manage Users" />
 
       {/* Control Area above Table */}
       <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
@@ -334,11 +332,10 @@ export default function UserManagement() {
                       setCurrentPage(1);
                       setIsRoleFilterOpen(false);
                     }}
-                    className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                      roleFilter === "all"
+                    className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${roleFilter === "all"
                         ? "bg-brand-500 text-white font-medium"
                         : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                    }`}
+                      }`}
                   >
                     All roles
                   </DropdownItem>
@@ -351,11 +348,10 @@ export default function UserManagement() {
                         setCurrentPage(1);
                         setIsRoleFilterOpen(false);
                       }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        roleFilter === roleOpt
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${roleFilter === roleOpt
                           ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {roleOpt}
                     </DropdownItem>
@@ -392,11 +388,10 @@ export default function UserManagement() {
                         setCurrentPage(1);
                         setIsStatusFilterOpen(false);
                       }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        statusFilter === opt.value
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
                           ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </DropdownItem>

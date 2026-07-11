@@ -36,7 +36,7 @@ export default function AuthLayout({
 
             {/* Tagline */}
             <p className="text-lg text-white/80 font-medium mb-2">
-              Lead Management &amp; Appointment System
+              Leads &amp; Appointment System
             </p>
             <p className="text-sm text-white/50 mb-10">
               Purpose-built for IT business development teams.
@@ -49,7 +49,7 @@ export default function AuthLayout({
                   <MdOutlineLeaderboard className="text-white size-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">Lead management</p>
+                  <p className="text-sm font-semibold text-white">Leads</p>
                   <p className="text-xs text-white/50 mt-0.5">
                     Track leads from source to deal — all in one place.
                   </p>

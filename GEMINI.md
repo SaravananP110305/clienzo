@@ -18,7 +18,7 @@ Clienzo
 
 Project Type
 
-Lead Management & Appointment Management System for IT Companies.
+Leads & Appointment Management System for IT Companies.
 
 Purpose
 

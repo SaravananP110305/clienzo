@@ -104,7 +104,7 @@ export default function App() {
             <Route path="/reports/employees" element={<EmployeeReport />} />
             <Route path="/reports/follow-ups" element={<FollowUpReport />} />
 
-            {/* User Management Routes */}
+            {/* Manage Users Routes */}
             <Route path="/users" element={<UserManagement />} />
             <Route path="/roles" element={<UserRoleManagement />} />
 

@@ -46,8 +46,8 @@ interface Role {
 const defaultPermissionsList: Permission[] = [
   { menu: "Dashboard", view: false, create: false, edit: false, delete: false },
   { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-  { menu: "User Management", view: false, create: false, edit: false, delete: false },
-  { menu: "Lead Management", view: false, create: false, edit: false, delete: false },
+  { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
+  { menu: "Leads", view: false, create: false, edit: false, delete: false },
   { menu: "Connect", view: false, create: false, edit: false, delete: false },
   { menu: "Meeting Management", view: false, create: false, edit: false, delete: false },
   { menu: "Reports", view: false, create: false, edit: false, delete: false },
@@ -62,8 +62,8 @@ const initialRoles: Role[] = [
     permissions: [
       { menu: "Dashboard", view: true, create: true, edit: true, delete: true },
       { menu: "Master Config", view: true, create: true, edit: true, delete: true },
-      { menu: "User Management", view: true, create: true, edit: true, delete: true },
-      { menu: "Lead Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Manage Users", view: true, create: true, edit: true, delete: true },
+      { menu: "Leads", view: true, create: true, edit: true, delete: true },
       { menu: "Connect", view: true, create: true, edit: true, delete: true },
       { menu: "Meeting Management", view: true, create: true, edit: true, delete: true },
       { menu: "Reports", view: true, create: true, edit: true, delete: true },
@@ -77,8 +77,8 @@ const initialRoles: Role[] = [
     permissions: [
       { menu: "Dashboard", view: true, create: true, edit: true, delete: true },
       { menu: "Master Config", view: true, create: false, edit: false, delete: false },
-      { menu: "User Management", view: true, create: true, edit: true, delete: false },
-      { menu: "Lead Management", view: true, create: true, edit: true, delete: true },
+      { menu: "Manage Users", view: true, create: true, edit: true, delete: false },
+      { menu: "Leads", view: true, create: true, edit: true, delete: true },
       { menu: "Connect", view: true, create: true, edit: true, delete: true },
       { menu: "Meeting Management", view: true, create: true, edit: true, delete: true },
       { menu: "Reports", view: true, create: false, edit: false, delete: false },
@@ -92,8 +92,8 @@ const initialRoles: Role[] = [
     permissions: [
       { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
       { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-      { menu: "User Management", view: false, create: false, edit: false, delete: false },
-      { menu: "Lead Management", view: true, create: true, edit: true, delete: false },
+      { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
+      { menu: "Leads", view: true, create: true, edit: true, delete: false },
       { menu: "Connect", view: true, create: true, edit: true, delete: false },
       { menu: "Meeting Management", view: true, create: true, edit: true, delete: false },
       { menu: "Reports", view: false, create: false, edit: false, delete: false },
@@ -107,8 +107,8 @@ const initialRoles: Role[] = [
     permissions: [
       { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
       { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-      { menu: "User Management", view: false, create: false, edit: false, delete: false },
-      { menu: "Lead Management", view: true, create: false, edit: true, delete: false },
+      { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
+      { menu: "Leads", view: true, create: false, edit: true, delete: false },
       { menu: "Connect", view: false, create: false, edit: false, delete: false },
       { menu: "Meeting Management", view: true, create: false, edit: true, delete: false },
       { menu: "Reports", view: false, create: false, edit: false, delete: false },
@@ -122,8 +122,8 @@ const initialRoles: Role[] = [
     permissions: [
       { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
       { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-      { menu: "User Management", view: false, create: false, edit: false, delete: false },
-      { menu: "Lead Management", view: false, create: false, edit: false, delete: false },
+      { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
+      { menu: "Leads", view: false, create: false, edit: false, delete: false },
       { menu: "Connect", view: false, create: false, edit: false, delete: false },
       { menu: "Meeting Management", view: false, create: false, edit: false, delete: false },
       { menu: "Reports", view: false, create: false, edit: false, delete: false },
@@ -244,11 +244,11 @@ export default function UserRoleManagement() {
       const updated = roles.map((r) =>
         r.id === selectedRole.id
           ? {
-              ...r,
-              roleName: data.roleName.trim(),
-              status: data.status,
-              permissions: data.permissions,
-            }
+            ...r,
+            roleName: data.roleName.trim(),
+            status: data.status,
+            permissions: data.permissions,
+          }
           : r
       );
       setRoles(updated);
@@ -337,21 +337,18 @@ export default function UserRoleManagement() {
     return (
       <button
         onClick={() => handleSort(field)}
-        className={`flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer ${
-          centered ? "mx-auto justify-center" : ""
-        }`}
+        className={`flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer ${centered ? "mx-auto justify-center" : ""
+          }`}
       >
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
           />
         </span>
       </button>
@@ -409,11 +406,10 @@ export default function UserRoleManagement() {
                         setCurrentPage(1);
                         setIsStatusFilterOpen(false);
                       }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        statusFilter === opt.value
-                          ? "bg-brand-500 text-white font-medium"
-                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
+                        ? "bg-brand-500 text-white font-medium"
+                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                        }`}
                     >
                       {opt.label}
                     </DropdownItem>

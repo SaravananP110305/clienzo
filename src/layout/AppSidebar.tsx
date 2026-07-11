@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    name: "User Management",
+    name: "Manage Users",
     icon: <MdPeople className="size-5" />,
     subItems: [
       { name: "User Roles", path: "/roles" },
@@ -50,7 +50,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    name: "Lead Management",
+    name: "Leads",
     icon: <MdBusinessCenter className="size-5" />,
     subItems: [
       { name: "Add Lead", path: "/leads/add" },
@@ -94,8 +94,8 @@ const AppSidebar: React.FC = () => {
 
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
     "Master": isMasterPath,
-    "User Management": isUserMgmtPath,
-    "Lead Management": isLeadMgmtPath,
+    "Manage Users": isUserMgmtPath,
+    "Leads": isLeadMgmtPath,
     "Connect": isConnectPath,
     "Reports": isReportsPath,
   });
@@ -104,9 +104,9 @@ const AppSidebar: React.FC = () => {
     if (location.pathname.startsWith("/master/")) {
       setOpenSubMenus({ "Master": true });
     } else if (location.pathname === "/users" || location.pathname === "/roles") {
-      setOpenSubMenus({ "User Management": true });
+      setOpenSubMenus({ "Manage Users": true });
     } else if (location.pathname.startsWith("/leads")) {
-      setOpenSubMenus({ "Lead Management": true });
+      setOpenSubMenus({ "Leads": true });
     } else if (location.pathname.startsWith("/contacts")) {
       setOpenSubMenus({ "Connect": true });
     } else if (location.pathname.startsWith("/reports")) {
@@ -212,11 +212,10 @@ const AppSidebar: React.FC = () => {
                         )}
                       </button>
                       <div
-                        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                          isSubOpen && (isExpanded || isHovered || isMobileOpen)
-                            ? "max-h-60 opacity-100 mt-1"
-                            : "max-h-0 opacity-0 pointer-events-none"
-                        }`}
+                        className={`transition-all duration-300 ease-in-out overflow-hidden ${isSubOpen && (isExpanded || isHovered || isMobileOpen)
+                          ? "max-h-60 opacity-100 mt-1"
+                          : "max-h-0 opacity-0 pointer-events-none"
+                          }`}
                       >
                         <ul className="pl-9 flex flex-col gap-1 pb-1">
                           {nav.subItems!.map((sub) => {

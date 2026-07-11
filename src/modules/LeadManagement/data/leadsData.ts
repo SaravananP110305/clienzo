@@ -1,4 +1,4 @@
-// Shared Lead types and dummy data for Lead Management module
+// Shared Lead types and dummy data for Leads module
 
 export type LeadStatus =
   | "New"
