@@ -4,7 +4,7 @@ import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
-import { initialLeads, getStatusColor, Lead } from "../data/leadsData";
+import { initialLeads, getStatusColor, getPriorityColor, Lead } from "../data/leadsData";
 import { getStorage } from "../../../utils/storage";
 import {
   FiBriefcase,
@@ -184,7 +184,7 @@ export default function LeadDetails() {
           <Badge size="md" color={getStatusColor(lead.status)}>
             {lead.status}
           </Badge>
-          <Badge size="md" color={lead.priority === "High" ? "error" : lead.priority === "Medium" ? "warning" : "info"}>
+          <Badge size="md" color={getPriorityColor(lead.priority)}>
             {lead.priority || "Medium"} Priority
           </Badge>
         </div>
@@ -304,7 +304,7 @@ export default function LeadDetails() {
               icon={<FiTag className="size-4" />}
               label="Priority"
               value={
-                <Badge size="sm" color={lead.priority === "High" ? "error" : lead.priority === "Medium" ? "warning" : "info"}>
+                <Badge size="sm" color={getPriorityColor(lead.priority)}>
                   {lead.priority || "Medium"}
                 </Badge>
               }

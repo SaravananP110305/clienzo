@@ -25,6 +25,7 @@ import * as XLSX from "xlsx";
 import {
   initialLeads,
   getStatusColor,
+  getPriorityColor,
   LEAD_STATUSES,
   LEAD_PRIORITIES,
   ASSIGNEES,
@@ -678,7 +679,7 @@ export default function LeadList() {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                      <Badge size="sm" color={lead.priority === "High" ? "error" : lead.priority === "Medium" ? "warning" : "info"}>
+                      <Badge size="sm" color={getPriorityColor(lead.priority)}>
                         {lead.priority || "Medium"}
                       </Badge>
                     </TableCell>

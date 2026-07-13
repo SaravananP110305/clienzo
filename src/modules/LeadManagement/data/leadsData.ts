@@ -45,6 +45,21 @@ export const ASSIGNEES = [
   "Robert Lee",
 ];
 
+export const getPriorityColor = (
+  priority?: LeadPriority
+): "error" | "warning" | "success" | "light" => {
+  switch (priority) {
+    case "High":
+      return "error";
+    case "Medium":
+      return "warning";
+    case "Low":
+      return "success";
+    default:
+      return "light";
+  }
+};
+
 export const getStatusColor = (
   status: LeadStatus
 ): "primary" | "info" | "warning" | "success" | "error" | "light" => {
