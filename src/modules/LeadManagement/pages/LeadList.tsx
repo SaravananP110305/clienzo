@@ -26,8 +26,10 @@ import {
   initialLeads,
   getStatusColor,
   LEAD_STATUSES,
+  LEAD_PRIORITIES,
   ASSIGNEES,
   type Lead,
+  type LeadPriority,
 } from "../data/leadsData";
 
 export default function LeadList() {
@@ -55,6 +57,7 @@ export default function LeadList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Lead>("id");
@@ -64,6 +67,7 @@ export default function LeadList() {
   // Filter dropdown open states
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
+  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
 
   // Upload dialog state
   const [dragOver, setDragOver] = useState(false);
@@ -101,6 +105,7 @@ export default function LeadList() {
         "Email": "larry@google.com",
         "Phone": "9876543210",
         "Status": "New",
+        "Priority": "High",
         "Assigned To": ASSIGNEES[0] || "John Doe",
       },
       {
@@ -109,6 +114,7 @@ export default function LeadList() {
         "Email": "bill@microsoft.com",
         "Phone": "9876543211",
         "Status": "Contacted",
+        "Priority": "Medium",
         "Assigned To": ASSIGNEES[1] || "Jane Smith",
       }
     ];
@@ -140,6 +146,11 @@ export default function LeadList() {
     ...ASSIGNEES.map((a) => ({ value: a, label: a })),
   ];
 
+  const priorityOptions = [
+    { value: "all", label: "All priorities" },
+    ...LEAD_PRIORITIES.map((p) => ({ value: p, label: p })),
+  ];
+
   const processedLeads = useMemo(() => {
     let result = [...leads];
 
@@ -164,6 +175,10 @@ export default function LeadList() {
       result = result.filter((l) => l.assignedTo === assigneeFilter);
     }
 
+    if (priorityFilter !== "all") {
+      result = result.filter((l) => l.priority === priorityFilter);
+    }
+
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -178,7 +193,7 @@ export default function LeadList() {
     });
 
     return result;
-  }, [leads, searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
+  }, [leads, searchQuery, statusFilter, assigneeFilter, priorityFilter, sortField, sortOrder]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -245,6 +260,7 @@ export default function LeadList() {
                 onClick={() => {
                   setIsStatusOpen(!isStatusOpen);
                   setIsAssigneeOpen(false);
+                  setIsPriorityOpen(false);
                 }}
                 className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
               >
@@ -286,6 +302,7 @@ export default function LeadList() {
                 onClick={() => {
                   setIsAssigneeOpen(!isAssigneeOpen);
                   setIsStatusOpen(false);
+                  setIsPriorityOpen(false);
                 }}
                 className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
               >
@@ -309,6 +326,48 @@ export default function LeadList() {
                           setIsAssigneeOpen(false);
                         }}
                         className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
+                            ? "bg-brand-500 text-white font-medium"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                          }`}
+                      >
+                        {opt.label}
+                      </DropdownItem>
+                    </li>
+                  ))}
+                </ul>
+              </Dropdown>
+            </div>
+
+            {/* Priority Filter */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsPriorityOpen(!isPriorityOpen);
+                  setIsStatusOpen(false);
+                  setIsAssigneeOpen(false);
+                }}
+                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <span className="truncate">
+                  {priorityOptions.find((o) => o.value === priorityFilter)?.label}
+                </span>
+                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+              </button>
+              <Dropdown
+                isOpen={isPriorityOpen}
+                onClose={() => setIsPriorityOpen(false)}
+                className="left-0 right-auto w-44 p-1 mt-2"
+              >
+                <ul className="flex flex-col gap-0.5">
+                  {priorityOptions.map((opt) => (
+                    <li key={opt.value}>
+                      <DropdownItem
+                        onItemClick={() => {
+                          setPriorityFilter(opt.value);
+                          setCurrentPage(1);
+                          setIsPriorityOpen(false);
+                        }}
+                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${priorityFilter === opt.value
                             ? "bg-brand-500 text-white font-medium"
                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                           }`}
@@ -370,6 +429,9 @@ export default function LeadList() {
                   {renderSortHeader("Status", "status")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  {renderSortHeader("Priority", "priority")}
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Assigned to", "assignedTo")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -402,6 +464,11 @@ export default function LeadList() {
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
                       <Badge size="sm" color={getStatusColor(lead.status)}>
                         {lead.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                      <Badge size="sm" color={lead.priority === "High" ? "error" : lead.priority === "Medium" ? "warning" : "info"}>
+                        {lead.priority || "Medium"}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
@@ -607,6 +674,7 @@ export default function LeadList() {
                     const phoneIdx = headers.findIndex(h => h.includes("phone") || h.includes("mobile") || h.includes("contact"));
                     const industryIdx = headers.findIndex(h => h.includes("industry"));
                     const sourceIdx = headers.findIndex(h => h.includes("source"));
+                    const priorityIdx = headers.findIndex(h => h.includes("priority"));
 
                     if (companyIdx === -1 && contactIdx === -1 && emailIdx === -1) {
                       showToast("Required columns ('Company', 'Contact Person', or 'Email') not found.", "error");
@@ -627,6 +695,8 @@ export default function LeadList() {
                       const phone = phoneIdx !== -1 ? String(row[phoneIdx] || "").trim() : "";
                       const industry = industryIdx !== -1 ? String(row[industryIdx] || "").trim() : "";
                       const source = sourceIdx !== -1 ? String(row[sourceIdx] || "").trim() : "";
+                      const rawPriority = priorityIdx !== -1 ? String(row[priorityIdx] || "").trim() : "";
+                      const priority = ["Low", "Medium", "High"].includes(rawPriority) ? rawPriority as LeadPriority : "Medium";
 
                       if (!company && !contactPerson && !email) continue;
 
@@ -647,6 +717,7 @@ export default function LeadList() {
                         email: email || `contact@${company.toLowerCase().replace(/\s+/g, "") || "unknown"}.com`,
                         phone: phone || "+91 98765 00000",
                         status: "New",
+                        priority: priority,
                         assignedTo: "John Doe",
                         industry: industry || "Technology",
                         source: source || "Website",

@@ -6,7 +6,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
-import { LEAD_STATUSES, ASSIGNEES, initialLeads, LeadStatus, Lead } from "../data/leadsData";
+import { LEAD_STATUSES, LEAD_PRIORITIES, ASSIGNEES, initialLeads, LeadStatus, LeadPriority, Lead } from "../data/leadsData";
 import { useToast } from "../../../hooks/useToast";
 import { LEAD_SOURCES, INDUSTRIES } from "../../Master/data/masterData";
 import { getStorage, setStorage } from "../../../utils/storage";
@@ -17,6 +17,7 @@ interface LeadFormValues {
   email: string;
   phone: string;
   status: LeadStatus | "";
+  priority: LeadPriority | "";
   assignedTo: string;
   industry: string;
   source: string;
@@ -45,6 +46,7 @@ export default function AddLead() {
       email: "",
       phone: "",
       status: "",
+      priority: "",
       assignedTo: "",
       industry: "",
       source: "",
@@ -65,6 +67,7 @@ export default function AddLead() {
           email: lead.email,
           phone: lead.phone.replace(/\D/g, "").slice(-10),
           status: lead.status,
+          priority: lead.priority || "Medium",
           assignedTo: lead.assignedTo,
           industry: lead.industry || "",
           source: lead.source || "",
@@ -89,6 +92,7 @@ export default function AddLead() {
               email: data.email,
               phone: data.phone,
               status: data.status as LeadStatus,
+              priority: data.priority as LeadPriority,
               assignedTo: data.assignedTo,
               industry: data.industry,
               source: data.source,
@@ -109,6 +113,7 @@ export default function AddLead() {
         email: data.email,
         phone: data.phone,
         status: (data.status || "New") as LeadStatus,
+        priority: (data.priority || "Medium") as LeadPriority,
         assignedTo: data.assignedTo || "John Doe",
         industry: data.industry,
         source: data.source,
@@ -434,6 +439,31 @@ export default function AddLead() {
             {errors.assignedTo && (
               <span className="mt-1.5 text-xs text-error-600 block">
                 {errors.assignedTo.message}
+              </span>
+            )}
+          </div>
+
+          {/* Priority */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Priority <span className="text-error-500">*</span>
+            </label>
+            <Controller
+              name="priority"
+              control={control}
+              rules={{ required: "Priority is required" }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={LEAD_PRIORITIES.map((p) => ({ value: p, label: p }))}
+                  placeholder="Select priority"
+                  onChange={onChange}
+                  defaultValue={value}
+                />
+              )}
+            />
+            {errors.priority && (
+              <span className="mt-1.5 text-xs text-error-600 block">
+                {errors.priority.message}
               </span>
             )}
           </div>

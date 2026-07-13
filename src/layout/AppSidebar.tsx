@@ -91,6 +91,16 @@ const AppSidebar: React.FC = () => {
   });
   const isAdmin = loggedInUser?.role === "Administrator";
 
+  const visibleNavItems = navItems.filter((nav) => {
+    if (isAdmin) {
+      // Administrator: hide "Connect", "Meetings", and "Leads"
+      return nav.name !== "Connect" && nav.name !== "Meetings" && nav.name !== "Leads";
+    } else {
+      // Non-admin (specific users): hide "Master", "Manage Users", and "Reports"
+      return nav.name !== "Master" && nav.name !== "Manage Users" && nav.name !== "Reports";
+    }
+  });
+
   const isMasterPath = location.pathname.startsWith("/master/");
   const isUserMgmtPath = location.pathname === "/users" || location.pathname === "/roles";
   const isLeadMgmtPath = location.pathname.startsWith("/leads");
@@ -173,10 +183,8 @@ const AppSidebar: React.FC = () => {
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar grow">
         <nav className="mb-6">
           <ul className="flex flex-col gap-2">
-            {navItems.map((nav) => {
-              const subItems = (nav.subItems || []).filter(
-                (sub) => !(isAdmin && sub.name === "My Leads")
-              );
+            {visibleNavItems.map((nav) => {
+              const subItems = nav.subItems || [];
               const hasSubItems = subItems.length > 0;
               const isSubOpen = openSubMenus[nav.name] || isSubActive(subItems);
               const parentActive = hasSubItems ? isSubActive(subItems) : (nav.path ? isActive(nav.path) : false);

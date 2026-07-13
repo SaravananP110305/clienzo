@@ -8,6 +8,8 @@ export type LeadStatus =
   | "Won"
   | "Lost";
 
+export type LeadPriority = "Low" | "Medium" | "High";
+
 export interface Lead {
   id: number;
   company: string;
@@ -15,6 +17,7 @@ export interface Lead {
   email: string;
   phone: string;
   status: LeadStatus;
+  priority?: LeadPriority;
   assignedTo: string;
   industry: string;
   source: string;
@@ -32,6 +35,8 @@ export const LEAD_STATUSES: LeadStatus[] = [
   "Won",
   "Lost",
 ];
+
+export const LEAD_PRIORITIES: LeadPriority[] = ["Low", "Medium", "High"];
 
 export const ASSIGNEES = [
   "John Doe",
@@ -69,6 +74,7 @@ export const initialLeads: Lead[] = [
     email: "alice@techsolutions.com",
     phone: "+91 98765 43210",
     status: "New",
+    priority: "High",
     assignedTo: "John Doe",
     industry: "Information Technology",
     source: "Website",
@@ -84,6 +90,7 @@ export const initialLeads: Lead[] = [
     email: "bob@innovatellc.com",
     phone: "+91 98765 43211",
     status: "Contacted",
+    priority: "Medium",
     assignedTo: "Jane Smith",
     industry: "Finance",
     source: "Referral",
@@ -99,6 +106,7 @@ export const initialLeads: Lead[] = [
     email: "charlie@apexdigital.com",
     phone: "+91 98765 43212",
     status: "Qualified",
+    priority: "High",
     assignedTo: "John Doe",
     industry: "Healthcare",
     source: "LinkedIn",
@@ -114,6 +122,7 @@ export const initialLeads: Lead[] = [
     email: "diana@nextgensoftware.com",
     phone: "+91 98765 43213",
     status: "Proposal sent",
+    priority: "Medium",
     assignedTo: "Alice Johnson",
     industry: "Manufacturing",
     source: "Cold Call",
@@ -129,6 +138,7 @@ export const initialLeads: Lead[] = [
     email: "evan@quantumsystems.com",
     phone: "+91 98765 43214",
     status: "Won",
+    priority: "High",
     assignedTo: "Jane Smith",
     industry: "Information Technology",
     source: "Trade Show",
@@ -144,6 +154,7 @@ export const initialLeads: Lead[] = [
     email: "fiona@alphamedia.com",
     phone: "+91 98765 43215",
     status: "Lost",
+    priority: "Low",
     assignedTo: "John Doe",
     industry: "Retail",
     source: "Email Campaign",
@@ -159,6 +170,7 @@ export const initialLeads: Lead[] = [
     email: "george@nexuscreators.com",
     phone: "+91 98765 43216",
     status: "New",
+    priority: "Low",
     assignedTo: "Alice Johnson",
     industry: "Education",
     source: "Website",
@@ -174,6 +186,7 @@ export const initialLeads: Lead[] = [
     email: "hannah@horizonventures.com",
     phone: "+91 98765 43217",
     status: "Contacted",
+    priority: "Medium",
     assignedTo: "Jane Smith",
     industry: "Finance",
     source: "Referral",
@@ -189,6 +202,7 @@ export const initialLeads: Lead[] = [
     email: "ian@summitlabs.com",
     phone: "+91 98765 43218",
     status: "Qualified",
+    priority: "High",
     assignedTo: "John Doe",
     industry: "Healthcare",
     source: "LinkedIn",
@@ -204,6 +218,7 @@ export const initialLeads: Lead[] = [
     email: "julia@vanguardcorp.com",
     phone: "+91 98765 43219",
     status: "Proposal sent",
+    priority: "Medium",
     assignedTo: "Alice Johnson",
     industry: "Manufacturing",
     source: "Cold Call",
@@ -219,6 +234,7 @@ export const initialLeads: Lead[] = [
     email: "kevin@deltanetworks.com",
     phone: "+91 98765 43220",
     status: "Won",
+    priority: "High",
     assignedTo: "Jane Smith",
     industry: "Information Technology",
     source: "Trade Show",
@@ -234,6 +250,7 @@ export const initialLeads: Lead[] = [
     email: "laura@omegatlogistics.com",
     phone: "+91 98765 43221",
     status: "Lost",
+    priority: "Low",
     assignedTo: "John Doe",
     industry: "Retail",
     source: "Email Campaign",

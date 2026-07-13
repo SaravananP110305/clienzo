@@ -118,9 +118,12 @@ export default function LeadDetails() {
             {lead.contactPerson}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Badge size="md" color={getStatusColor(lead.status)}>
             {lead.status}
+          </Badge>
+          <Badge size="md" color={lead.priority === "High" ? "error" : lead.priority === "Medium" ? "warning" : "info"}>
+            {lead.priority || "Medium"} Priority
           </Badge>
         </div>
       </div>
@@ -232,6 +235,15 @@ export default function LeadDetails() {
               value={
                 <Badge size="sm" color={getStatusColor(lead.status)}>
                   {lead.status}
+                </Badge>
+              }
+            />
+            <InfoCard
+              icon={<FiTag className="size-4" />}
+              label="Priority"
+              value={
+                <Badge size="sm" color={lead.priority === "High" ? "error" : lead.priority === "Medium" ? "warning" : "info"}>
+                  {lead.priority || "Medium"}
                 </Badge>
               }
             />
