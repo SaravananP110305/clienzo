@@ -80,13 +80,8 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
 
           <Link to="/" className="lg:hidden">
             <img
-              className="dark:hidden"
-              src="/clienzo/images/logo/logo.svg"
-              alt="Logo"
-            />
-            <img
-              className="hidden dark:block"
-              src="/clienzo/images/logo/logo-dark.svg"
+              className="h-8 w-auto dark:invert dark:hue-rotate-180"
+              src="/images/logo/Saiflow.png"
               alt="Logo"
             />
           </Link>

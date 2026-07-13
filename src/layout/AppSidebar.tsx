@@ -11,7 +11,7 @@ import {
   MdPeople,
 } from "react-icons/md";
 import { ChevronDownIcon } from "../icons";
-import logo from "/images/logo/logo.png"
+import logo from "/images/logo/Saiflow.png"
 import { getStorage } from "../utils/storage";
 
 
@@ -84,7 +84,7 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", {
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
     name: "Admin User",
     email: "admin@gmail.com",
     role: "Administrator",
@@ -163,18 +163,14 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Logo Section */}
-      <div
-        className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-          }`}
-      >
-        <Link to="/" className="flex items-center gap-2">
+      <div className="py-8 flex justify-center">
+        <Link to="/" className="flex items-center justify-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex items-center">
-              <img src={logo} alt="Logo" className="w-17 h-auto" />
-              <span className="text-2xl font-bold tracking-tight text-gray-600 dark:text-gray-400">ClienZo</span>
+            <div className="flex items-center justify-center">
+              <img src={logo} alt="Logo" className="w-32 h-auto dark:invert dark:hue-rotate-180" />
             </div>
           ) : (
-            <img src={logo} alt="Logo" className="w-15 h-auto" />
+            <img src={logo} alt="Logo" className="w-15 h-auto dark:invert dark:hue-rotate-180" />
           )}
         </Link>
       </div>

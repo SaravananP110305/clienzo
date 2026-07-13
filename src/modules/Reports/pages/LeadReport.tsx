@@ -160,8 +160,8 @@ export default function LeadReport() {
   return (
     <>
       <PageMeta
-        title="Lead Report | ClienZo"
-        description="View lead performance reports in ClienZo CRM."
+        title="Lead Report | SaiFlow"
+        description="View lead performance reports in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Lead report" />
 

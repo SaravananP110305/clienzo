@@ -156,16 +156,16 @@ export default function MasterConfigPage({
 
   const handleDeleteConfirm = () => {
     if (selectedItem) {
-      const currentLeads = getStorage<any[]>("clienzo_leads", []);
+      const currentLeads = getStorage<any[]>("saiflow_leads", []);
       let isUsed = false;
-      if (storageKey === "clienzo_master_lead_sources") {
+      if (storageKey === "saiflow_master_lead_sources") {
         isUsed = currentLeads.some((l) => l.source === selectedItem.name);
-      } else if (storageKey === "clienzo_master_industries") {
+      } else if (storageKey === "saiflow_master_industries") {
         isUsed = currentLeads.some((l) => l.industry === selectedItem.name);
-      } else if (storageKey === "clienzo_master_meeting_types") {
-        const meetings = getStorage<any[]>("clienzo_meetings", []);
+      } else if (storageKey === "saiflow_master_meeting_types") {
+        const meetings = getStorage<any[]>("saiflow_meetings", []);
         isUsed = meetings.some((m) => m.type === selectedItem.name);
-      } else if (storageKey === "clienzo_master_followup_reasons") {
+      } else if (storageKey === "saiflow_master_followup_reasons") {
         isUsed = currentLeads.some((l) => l.followUpReason === selectedItem.name);
       }
 
@@ -275,8 +275,8 @@ export default function MasterConfigPage({
   return (
     <>
       <PageMeta
-        title={`${pageTitle} | ClienZo`}
-        description="Manage configuration settings in ClienZo CRM."
+        title={`${pageTitle} | SaiFlow`}
+        description="Manage configuration settings in SaiFlow CRM."
       />
       {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle={pageTitle} />

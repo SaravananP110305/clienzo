@@ -137,8 +137,8 @@ export default function EmployeeReport() {
   return (
     <>
       <PageMeta
-        title="Employee Report | ClienZo"
-        description="View employee performance reports in ClienZo CRM."
+        title="Employee Report | SaiFlow"
+        description="View employee performance reports in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Employee report" />
 

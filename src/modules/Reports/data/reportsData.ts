@@ -62,11 +62,11 @@ export const MEETING_REPORT_DATA: MeetingReportData[] = [
 ];
 
 export const EMPLOYEE_REPORT_DATA: EmployeeReportData[] = [
-  { id: 1, name: "John Doe", email: "john.doe@clienzo.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", totalLeads: 12, wonLeads: 4, lostLeads: 2 },
-  { id: 2, name: "Jane Smith", email: "jane.smith@clienzo.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", totalLeads: 15, wonLeads: 6, lostLeads: 3 },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@clienzo.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", totalLeads: 8, wonLeads: 2, lostLeads: 1 },
-  { id: 4, name: "Robert Lee", email: "robert.lee@clienzo.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", totalLeads: 4, wonLeads: 1, lostLeads: 0 },
-  { id: 5, name: "Emma Watson", email: "emma.watson@clienzo.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", totalLeads: 0, wonLeads: 0, lostLeads: 0 }
+  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", totalLeads: 12, wonLeads: 4, lostLeads: 2 },
+  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", totalLeads: 15, wonLeads: 6, lostLeads: 3 },
+  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", totalLeads: 8, wonLeads: 2, lostLeads: 1 },
+  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", totalLeads: 4, wonLeads: 1, lostLeads: 0 },
+  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", totalLeads: 0, wonLeads: 0, lostLeads: 0 }
 ];
 
 export const FOLLOW_UP_REPORT_DATA: FollowUpReportData[] = [

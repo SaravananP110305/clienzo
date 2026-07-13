@@ -6,8 +6,8 @@ export default function SignIn() {
   return (
     <>
       <PageMeta
-        title="Sign In | ClienZo"
-        description="Sign in to your ClienZo account to manage leads and schedule meetings."
+        title="Sign In | SaiFlow"
+        description="Sign in to your SaiFlow account to manage leads and schedule meetings."
       />
       <AuthLayout>
         <SignInForm />

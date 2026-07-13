@@ -140,7 +140,7 @@ interface RoleFormValues {
 
 export default function UserRoleManagement() {
   const { showToast } = useToast();
-  const [roles, setRoles] = useState<Role[]>(() => getStorage("clienzo_roles", initialRoles));
+  const [roles, setRoles] = useState<Role[]>(() => getStorage("saiflow_roles", initialRoles));
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -238,7 +238,7 @@ export default function UserRoleManagement() {
       };
       const updated = [...roles, newRole];
       setRoles(updated);
-      setStorage("clienzo_roles", updated);
+      setStorage("saiflow_roles", updated);
       showToast("Role created successfully.", "success");
     } else if (modalMode === "edit" && selectedRole) {
       const updated = roles.map((r) =>
@@ -252,7 +252,7 @@ export default function UserRoleManagement() {
           : r
       );
       setRoles(updated);
-      setStorage("clienzo_roles", updated);
+      setStorage("saiflow_roles", updated);
       showToast("Role updated successfully.", "success");
     }
     formModal.closeModal();
@@ -266,7 +266,7 @@ export default function UserRoleManagement() {
     if (selectedRole) {
       const updated = roles.filter((r) => r.id !== selectedRole.id);
       setRoles(updated);
-      setStorage("clienzo_roles", updated);
+      setStorage("saiflow_roles", updated);
       showToast("Role deleted successfully.", "success");
     }
     deleteModal.closeModal();
@@ -358,8 +358,8 @@ export default function UserRoleManagement() {
   return (
     <>
       <PageMeta
-        title="User Role Management | ClienZo"
-        description="Manage user roles and permissions in ClienZo CRM."
+        title="User Role Management | SaiFlow"
+        description="Manage user roles and permissions in SaiFlow CRM."
       />
       {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle="User Role Management" />

@@ -158,8 +158,8 @@ export default function FollowUpReport() {
   return (
     <>
       <PageMeta
-        title="Follow-up Report | ClienZo"
-        description="View follow-up activity reports in ClienZo CRM."
+        title="Follow-up Report | SaiFlow"
+        description="View follow-up activity reports in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Follow-up report" />
 

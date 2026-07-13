@@ -1,4 +1,4 @@
-// LocalStorage helper utilities for ClienZo CRM Demo
+// LocalStorage helper utilities for SaiFlow CRM Demo
 
 export function getStorage<T>(key: string, defaultValue: T): T {
   try {

@@ -4,7 +4,7 @@ import svgr from "vite-plugin-svgr";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/clienzo/",
+  base: "/saiflow/",
   plugins: [
     react(),
     svgr({

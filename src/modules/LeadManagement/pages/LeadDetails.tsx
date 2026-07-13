@@ -51,7 +51,7 @@ export default function LeadDetails() {
 
 
 
-  const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+  const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
   const lead = leads.find((l) => l.id === Number(id));
 
   if (!lead) {
@@ -104,7 +104,7 @@ export default function LeadDetails() {
     }
 
     // 3. Meetings Events
-    const allMeetings = getStorage<any[]>("clienzo_meetings", []);
+    const allMeetings = getStorage<any[]>("saiflow_meetings", []);
     const relatedMeetings = allMeetings.filter(
       (m) => m.leadId === lead.id || m.company.toLowerCase() === lead.company.toLowerCase()
     );
@@ -128,8 +128,8 @@ export default function LeadDetails() {
   return (
     <>
       <PageMeta
-        title="Lead Details | ClienZo"
-        description="View detailed information about a lead in ClienZo CRM."
+        title="Lead Details | SaiFlow"
+        description="View detailed information about a lead in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Lead details" />
 

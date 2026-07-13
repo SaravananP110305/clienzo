@@ -6,8 +6,8 @@ export default function SignUp() {
   return (
     <>
       <PageMeta
-        title="Sign Up | ClienZo"
-        description="Create your ClienZo account to get started with lead and appointment management."
+        title="Sign Up | SaiFlow"
+        description="Create your SaiFlow account to get started with lead and appointment management."
       />
       <AuthLayout>
         <SignUpForm />

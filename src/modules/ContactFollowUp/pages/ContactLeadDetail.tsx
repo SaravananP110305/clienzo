@@ -89,8 +89,8 @@ function getActivitiesForLead(leadId: number, lead: Lead): Activity[] {
     }
   }
 
-  // 3. Follow-ups from clienzo_followups
-  const followups = getStorage<any[]>("clienzo_followups", []);
+  // 3. Follow-ups from saiflow_followups
+  const followups = getStorage<any[]>("saiflow_followups", []);
   for (const f of followups.filter((f: any) => f.leadId === leadId)) {
     const statusColor =
       f.status === "Completed" ? "bg-success-500" : f.status === "Missed" ? "bg-error-500" : "bg-warning-500";
@@ -105,8 +105,8 @@ function getActivitiesForLead(leadId: number, lead: Lead): Activity[] {
     });
   }
 
-  // 4. Meetings from clienzo_meetings
-  const meetings = getStorage<any[]>("clienzo_meetings", []);
+  // 4. Meetings from saiflow_meetings
+  const meetings = getStorage<any[]>("saiflow_meetings", []);
   for (const m of meetings.filter((m: any) => m.leadId === leadId)) {
     const statusColor =
       m.status === "Completed" ? "bg-success-500" : m.status === "Cancelled" ? "bg-error-500" : "bg-warning-500";
@@ -218,7 +218,7 @@ export default function ContactLeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+  const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
   const lead = leads.find((l) => l.id === Number(id));
 
   const activities = useMemo(() => {
@@ -251,8 +251,8 @@ export default function ContactLeadDetail() {
   return (
     <>
       <PageMeta
-        title="Lead Details | ClienZo"
-        description="View lead details and activity log in ClienZo CRM."
+        title="Lead Details | SaiFlow"
+        description="View lead details and activity log in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Lead details" />
 

@@ -66,7 +66,7 @@ export default function ForgotPasswordForm() {
                 <Input
                   {...field}
                   type="email"
-                  placeholder="info@clienzo.com"
+                  placeholder="info@saiflow.com"
                   className={errors.email ? "border-error-500" : ""}
                 />
               )}

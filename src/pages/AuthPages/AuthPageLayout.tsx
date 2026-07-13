@@ -2,7 +2,7 @@ import React from "react";
 import GridShape from "../../components/common/GridShape";
 import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 import { MdOutlineLeaderboard, MdOutlineCalendarMonth, MdOutlinePeople } from "react-icons/md";
-import logo from "/images/logo/logo.png";
+import logo from "/images/logo/Saiflow.png";
 
 export default function AuthLayout({
   children,
@@ -14,11 +14,10 @@ export default function AuthLayout({
       <div className="relative flex flex-col w-full min-h-screen lg:flex-row">
         {/* Left — Form area */}
         <div className="flex flex-col justify-center flex-1 w-full lg:w-1/2 px-6 py-12 sm:px-10">
-          {/* Clienzo logo */}
+          {/* SaiFlow logo */}
           <div className="w-full max-w-md mx-auto mb-10">
             <div className="flex items-center">
-              <img src={logo} alt="Logo" className="w-20 h-auto" />
-              <span className="text-2xl font-bold tracking-tight text-gray-600 dark:text-gray-400">ClienZo</span>
+              <img src={logo} alt="Logo" className="w-32 h-auto dark:invert dark:hue-rotate-180" />
             </div>
           </div>
           {children}
@@ -30,7 +29,7 @@ export default function AuthLayout({
           <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-lg">
             {/* Product name */}
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white tracking-tight">ClienZo</span>
+              <span className="text-4xl font-bold text-white tracking-tight">SaiFlow</span>
               <div className="mt-2 h-1 w-16 bg-brand-400 rounded-full mx-auto" />
             </div>
 

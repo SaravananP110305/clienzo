@@ -40,7 +40,7 @@ export default function Dashboard() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // Dynamic leads list from storage
-  const rawLeads = getStorage<SourceLead[]>("clienzo_leads", sourceLeads);
+  const rawLeads = getStorage<SourceLead[]>("saiflow_leads", sourceLeads);
   const localLeads = useMemo<Lead[]>(() => {
     return rawLeads.map((l, index) => ({
       sNo: index + 1,
@@ -204,7 +204,7 @@ export default function Dashboard() {
 
   // Card summary statistics
   const summaryStats = useMemo(() => {
-    const activeMeetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const activeMeetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const todayMeetingsCount = activeMeetings.filter((m) => m.date === "2026-07-09").length;
     return {
       total: localLeads.length,
@@ -304,8 +304,8 @@ export default function Dashboard() {
   return (
     <>
       <PageMeta
-        title="Dashboard | ClienZo"
-        description="ClienZo CRM dashboard - overview of leads, meetings, and performance."
+        title="Dashboard | SaiFlow"
+        description="SaiFlow CRM dashboard - overview of leads, meetings, and performance."
       />
       {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle="Dashboard" />

@@ -30,7 +30,7 @@ const LayoutContent: React.FC = () => {
 };
 
 const AppLayout: React.FC = () => {
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", null);
   if (!loggedInUser) {
     return <Navigate to="/signin" replace />;
   }

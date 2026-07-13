@@ -46,7 +46,7 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", null);
   if (!loggedInUser) {
     return <Navigate to="/signin" replace />;
   }
@@ -57,18 +57,18 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
 }
 
 export default function App() {
-  const [meetings, setMeetings] = useState<Meeting[]>(() => getStorage("clienzo_meetings", initialMeetings));
+  const [meetings, setMeetings] = useState<Meeting[]>(() => getStorage("saiflow_meetings", initialMeetings));
 
   const handleDeleteMeeting = (id: number) => {
     const updated = meetings.filter((m) => m.id !== id);
     setMeetings(updated);
-    setStorage("clienzo_meetings", updated);
+    setStorage("saiflow_meetings", updated);
   };
 
   const handleUpdateMeetingStatus = (id: number, status: Meeting["status"]) => {
     const updated = meetings.map((m) => m.id === id ? { ...m, status } : m);
     setMeetings(updated);
-    setStorage("clienzo_meetings", updated);
+    setStorage("saiflow_meetings", updated);
   };
 
   const handleSaveMeeting = (meeting: Meeting, isEdit: boolean) => {
@@ -79,7 +79,7 @@ export default function App() {
       updated = [...meetings, meeting];
     }
     setMeetings(updated);
-    setStorage("clienzo_meetings", updated);
+    setStorage("saiflow_meetings", updated);
   };
 
   const bdeRoles = ["Business Development Manager", "Business Development Executive", "Presales Consultant"];
@@ -87,7 +87,7 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <Router basename="/clienzo">
+      <Router basename="/saiflow">
         <ScrollToTop />
         <Routes>
           {/* Dashboard Layout */}
@@ -98,7 +98,7 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/change-password" element={<ChangePassword />} />
 
-            {/* Clienzo Feature Module Route Placeholders */}
+            {/* SaiFlow Feature Module Route Placeholders */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route
               path="/leads"
@@ -265,7 +265,7 @@ export default function App() {
                     itemNameSingular="lead source"
                     itemNamePlural="lead sources"
                     initialData={LEAD_SOURCES}
-                    storageKey="clienzo_master_lead_sources"
+                    storageKey="saiflow_master_lead_sources"
                   />
                 </ProtectedRoute>
               }
@@ -279,7 +279,7 @@ export default function App() {
                     itemNameSingular="industry"
                     itemNamePlural="industries"
                     initialData={INDUSTRIES}
-                    storageKey="clienzo_master_industries"
+                    storageKey="saiflow_master_industries"
                   />
                 </ProtectedRoute>
               }
@@ -293,7 +293,7 @@ export default function App() {
                     itemNameSingular="meeting type"
                     itemNamePlural="meeting types"
                     initialData={MEETING_TYPES}
-                    storageKey="clienzo_master_meeting_types"
+                    storageKey="saiflow_master_meeting_types"
                   />
                 </ProtectedRoute>
               }
@@ -307,7 +307,7 @@ export default function App() {
                     itemNameSingular="follow-up reason"
                     itemNamePlural="follow-up reasons"
                     initialData={FOLLOWUP_REASONS}
-                    storageKey="clienzo_master_followup_reasons"
+                    storageKey="saiflow_master_followup_reasons"
                   />
                 </ProtectedRoute>
               }
@@ -321,7 +321,7 @@ export default function App() {
                     itemNameSingular="lost reason"
                     itemNamePlural="lost reasons"
                     initialData={LOST_REASONS}
-                    storageKey="clienzo_master_lost_reasons"
+                    storageKey="saiflow_master_lost_reasons"
                   />
                 </ProtectedRoute>
               }

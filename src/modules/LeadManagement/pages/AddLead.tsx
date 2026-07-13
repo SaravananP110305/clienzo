@@ -60,7 +60,7 @@ export default function AddLead() {
 
   useEffect(() => {
     if (isEditMode) {
-      const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const currentLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
       const lead = currentLeads.find((l) => l.id === Number(id));
       if (lead) {
         reset({
@@ -83,7 +83,7 @@ export default function AddLead() {
   }, [id, isEditMode, reset]);
 
   const handleSave = (data: LeadFormValues) => {
-    const currentLeads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    const currentLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
     if (isEditMode) {
       const updated = currentLeads.map((l) =>
         l.id === Number(id)
@@ -104,7 +104,7 @@ export default function AddLead() {
             }
           : l
       );
-      setStorage("clienzo_leads", updated);
+      setStorage("saiflow_leads", updated);
       showToast("Lead updated successfully.", "success");
     } else {
       const nextId = currentLeads.length > 0 ? Math.max(...currentLeads.map((l) => l.id)) + 1 : 1;
@@ -124,7 +124,7 @@ export default function AddLead() {
         notes: data.notes,
         createdAt: new Date().toISOString().split("T")[0],
       };
-      setStorage("clienzo_leads", [...currentLeads, newLead]);
+      setStorage("saiflow_leads", [...currentLeads, newLead]);
       showToast("Lead created successfully.", "success");
     }
     navigate("/leads");
@@ -145,8 +145,8 @@ export default function AddLead() {
   return (
     <>
       <PageMeta
-        title={isEditMode ? "Edit Lead | ClienZo" : "Add Lead | ClienZo"}
-        description={isEditMode ? "Edit an existing lead in ClienZo CRM." : "Add a new lead to ClienZo CRM."}
+        title={isEditMode ? "Edit Lead | SaiFlow" : "Add Lead | SaiFlow"}
+        description={isEditMode ? "Edit an existing lead in SaiFlow CRM." : "Add a new lead to SaiFlow CRM."}
       />
       <PageBreadcrumb pageTitle={isEditMode ? "Edit lead" : "Add lead"} />
 
@@ -200,7 +200,7 @@ export default function AddLead() {
               rules={{ required: "Industry is required" }}
               render={({ field: { value, onChange } }) => (
                 <Select
-                  options={getStorage("clienzo_master_industries", INDUSTRIES).filter(i => i.status === "Active").map(i => ({ value: i.name, label: i.name }))}
+                  options={getStorage("saiflow_master_industries", INDUSTRIES).filter(i => i.status === "Active").map(i => ({ value: i.name, label: i.name }))}
                   placeholder="Select industry"
                   onChange={onChange}
                   defaultValue={value}
@@ -253,7 +253,7 @@ export default function AddLead() {
               rules={{ required: "Lead source is required" }}
               render={({ field: { value, onChange } }) => (
                 <Select
-                  options={getStorage("clienzo_master_lead_sources", LEAD_SOURCES).filter(s => s.status === "Active").map(s => ({ value: s.name, label: s.name }))}
+                  options={getStorage("saiflow_master_lead_sources", LEAD_SOURCES).filter(s => s.status === "Active").map(s => ({ value: s.name, label: s.name }))}
                   placeholder="Select source"
                   onChange={onChange}
                   defaultValue={value}

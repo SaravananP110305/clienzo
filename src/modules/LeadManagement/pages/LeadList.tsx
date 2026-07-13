@@ -43,7 +43,7 @@ export default function LeadList() {
 
 
   const [leads, setLeads] = useState<Lead[]>(() => {
-    const list = getStorage<Lead[]>("clienzo_leads", initialLeads);
+    const list = getStorage<Lead[]>("saiflow_leads", initialLeads);
     // Auto-clean any corrupt binary rows loaded previously from excel upload attempt
     const cleaned = list.filter(
       (l) =>
@@ -54,7 +54,7 @@ export default function LeadList() {
         !l.email.includes("xml")
     );
     if (cleaned.length !== list.length) {
-      setStorage("clienzo_leads", cleaned);
+      setStorage("saiflow_leads", cleaned);
     }
     return cleaned;
   });
@@ -79,7 +79,7 @@ export default function LeadList() {
       selectedLeadIds.includes(l.id) ? { ...l, assignedTo: assignee } : l
     );
     setLeads(updated);
-    setStorage("clienzo_leads", updated);
+    setStorage("saiflow_leads", updated);
     setSelectedLeadIds([]);
     showToast(`Successfully assigned selected leads to ${assignee}.`, "success");
   };
@@ -87,7 +87,7 @@ export default function LeadList() {
   const handleBulkDelete = () => {
     const updated = leads.filter((l) => !selectedLeadIds.includes(l.id));
     setLeads(updated);
-    setStorage("clienzo_leads", updated);
+    setStorage("saiflow_leads", updated);
     setSelectedLeadIds([]);
     showToast("Successfully deleted selected leads.", "success");
   };
@@ -110,7 +110,7 @@ export default function LeadList() {
     if (selectedLead) {
       const updated = leads.filter((l) => l.id !== selectedLead.id);
       setLeads(updated);
-      setStorage("clienzo_leads", updated);
+      setStorage("saiflow_leads", updated);
       showToast(`Lead "${selectedLead.company}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
@@ -121,7 +121,7 @@ export default function LeadList() {
       l.id === leadId ? { ...l, assignedTo: newAssignee } : l
     );
     setLeads(updated);
-    setStorage("clienzo_leads", updated);
+    setStorage("saiflow_leads", updated);
     showToast(`Lead assigned to ${newAssignee} successfully.`, "success");
   };
 
@@ -150,7 +150,7 @@ export default function LeadList() {
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Leads Template");
-    XLSX.writeFile(workbook, "clienzo_leads_sample_template.xlsx");
+    XLSX.writeFile(workbook, "saiflow_leads_sample_template.xlsx");
     showToast("Sample Excel template downloaded successfully.", "success");
   };
 
@@ -181,12 +181,12 @@ export default function LeadList() {
 
   const industryOptions = [
     { value: "all", label: "All industries" },
-    ...getStorage("clienzo_master_industries", INDUSTRIES).filter((i: any) => i.status === "Active").map((i: any) => ({ value: i.name, label: i.name }))
+    ...getStorage("saiflow_master_industries", INDUSTRIES).filter((i: any) => i.status === "Active").map((i: any) => ({ value: i.name, label: i.name }))
   ];
 
   const sourceOptions = [
     { value: "all", label: "All sources" },
-    ...getStorage("clienzo_master_lead_sources", LEAD_SOURCES).filter((s: any) => s.status === "Active").map((s: any) => ({ value: s.name, label: s.name }))
+    ...getStorage("saiflow_master_lead_sources", LEAD_SOURCES).filter((s: any) => s.status === "Active").map((s: any) => ({ value: s.name, label: s.name }))
   ];
 
   const processedLeads = useMemo(() => {
@@ -278,8 +278,8 @@ export default function LeadList() {
   return (
     <>
       <PageMeta
-        title="Leads | ClienZo"
-        description="View and manage all leads in ClienZo CRM."
+        title="Leads | SaiFlow"
+        description="View and manage all leads in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Leads" />
 
@@ -936,7 +936,7 @@ export default function LeadList() {
 
                     if (addedCount > 0) {
                       setLeads(newLeadsList);
-                      setStorage("clienzo_leads", newLeadsList);
+                      setStorage("saiflow_leads", newLeadsList);
                       if (duplicateCount > 0) {
                         showToast(`Successfully imported ${addedCount} leads. Skipped ${duplicateCount} duplicates.`, "warning");
                       } else {

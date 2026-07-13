@@ -6,8 +6,8 @@ export default function ResetPassword() {
   return (
     <>
       <PageMeta
-        title="Reset Password | ClienZo"
-        description="Set a new password for your ClienZo account."
+        title="Reset Password | SaiFlow"
+        description="Set a new password for your SaiFlow account."
       />
       <AuthLayout>
         <ResetPasswordForm />

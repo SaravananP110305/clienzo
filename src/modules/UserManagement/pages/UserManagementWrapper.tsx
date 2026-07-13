@@ -10,8 +10,8 @@ export default function UserManagementWrapper() {
   return (
     <>
       <PageMeta
-        title={`${activeTab === "users" ? "Manage Users" : "User Role Management"} | ClienZo`}
-        description="Manage users and roles in ClienZo CRM."
+        title={`${activeTab === "users" ? "Manage Users" : "User Role Management"} | SaiFlow`}
+        description="Manage users and roles in SaiFlow CRM."
       />
       {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle={activeTab === "users" ? "Manage Users" : "User Role Management"} />

@@ -53,8 +53,8 @@ export default function ChangePassword() {
   return (
     <>
       <PageMeta
-        title="Change Password | ClienZo"
-        description="Change your account password in ClienZo CRM."
+        title="Change Password | SaiFlow"
+        description="Change your account password in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Change password" />
 

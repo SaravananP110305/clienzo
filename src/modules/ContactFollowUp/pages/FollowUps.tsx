@@ -30,7 +30,7 @@ const FOLLOW_UP_STATUS_OPTIONS = [
 ];
 
 export default function FollowUps() {
-  const followupsList = getStorage<FollowUp[]>("clienzo_followups", initialFollowUps);
+  const followupsList = getStorage<FollowUp[]>("saiflow_followups", initialFollowUps);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -131,8 +131,8 @@ export default function FollowUps() {
   return (
     <>
       <PageMeta
-        title="Follow-ups | ClienZo"
-        description="Track and manage follow-up activities in ClienZo CRM."
+        title="Follow-ups | SaiFlow"
+        description="Track and manage follow-up activities in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Follow-ups" />
 

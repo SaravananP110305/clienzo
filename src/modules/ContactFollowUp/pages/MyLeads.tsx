@@ -34,7 +34,7 @@ export default function MyLeads() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const [leads, setLeads] = useState<Lead[]>(() => getStorage<Lead[]>("clienzo_leads", initialLeads));
+  const [leads, setLeads] = useState<Lead[]>(() => getStorage<Lead[]>("saiflow_leads", initialLeads));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -105,11 +105,11 @@ export default function MyLeads() {
       return l;
     });
     setLeads(updatedLeads);
-    setStorage("clienzo_leads", updatedLeads);
+    setStorage("saiflow_leads", updatedLeads);
 
     // If Call Later, create a follow-up meeting
     if (contactResult === "Call Later" && callLaterDate) {
-      const meetingsList = getStorage<any[]>("clienzo_meetings", []);
+      const meetingsList = getStorage<any[]>("saiflow_meetings", []);
       const newMeetingId = meetingsList.length > 0 ? Math.max(...meetingsList.map(m => m.id)) + 1 : 1;
       const newMeeting = {
         id: newMeetingId,
@@ -125,7 +125,7 @@ export default function MyLeads() {
         linkOrLocation: selectedLeadForContact.phone
       };
       const updatedMeetings = [...meetingsList, newMeeting];
-      setStorage("clienzo_meetings", updatedMeetings);
+      setStorage("saiflow_meetings", updatedMeetings);
     }
 
     setSavedOutcome(outcomeMessage);
@@ -223,8 +223,8 @@ export default function MyLeads() {
   return (
     <>
       <PageMeta
-        title="All Leads | ClienZo"
-        description="View and contact all leads in ClienZo CRM."
+        title="All Leads | SaiFlow"
+        description="View and contact all leads in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="All Leads" />
 

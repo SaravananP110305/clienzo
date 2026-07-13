@@ -58,11 +58,11 @@ export default function MeetingDetails() {
   const [selectedLostReason, setSelectedLostReason] = useState("");
 
   const loadData = () => {
-    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const foundMeeting = meetings.find((m) => m.id === Number(id));
     if (foundMeeting) {
       setMeeting(foundMeeting);
-      const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
       const lead = leads.find((l) => l.company.toLowerCase() === foundMeeting.company.toLowerCase());
       setMatchingLead(lead || null);
     }
@@ -86,18 +86,18 @@ export default function MeetingDetails() {
 
   const handleMarkWon = () => {
     if (!meeting) return;
-    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
       m.id === meeting.id ? { ...m, status: "Completed" as const } : m
     );
-    setStorage("clienzo_meetings", updatedMeetings);
+    setStorage("saiflow_meetings", updatedMeetings);
 
     if (matchingLead) {
-      const leadsList = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
       const updatedLeads = leadsList.map((l) =>
         l.id === matchingLead.id ? { ...l, status: "Won" as const } : l
       );
-      setStorage("clienzo_leads", updatedLeads);
+      setStorage("saiflow_leads", updatedLeads);
     }
 
     showToast("Meeting marked as Completed and Lead marked as Won!", "success");
@@ -106,14 +106,14 @@ export default function MeetingDetails() {
 
   const handleMarkLost = (reason: string) => {
     if (!meeting) return;
-    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
       m.id === meeting.id ? { ...m, status: "Completed" as const } : m
     );
-    setStorage("clienzo_meetings", updatedMeetings);
+    setStorage("saiflow_meetings", updatedMeetings);
 
     if (matchingLead) {
-      const leadsList = getStorage<Lead[]>("clienzo_leads", initialLeads);
+      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
       const updatedLeads = leadsList.map((l) =>
         l.id === matchingLead.id
           ? {
@@ -123,7 +123,7 @@ export default function MeetingDetails() {
             }
           : l
       );
-      setStorage("clienzo_leads", updatedLeads);
+      setStorage("saiflow_leads", updatedLeads);
     }
 
     showToast("Meeting marked as Completed and Lead marked as Lost.", "error");
@@ -133,16 +133,16 @@ export default function MeetingDetails() {
 
   const handleCancelMeeting = () => {
     if (!meeting) return;
-    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
       m.id === meeting.id ? { ...m, status: "Cancelled" as const } : m
     );
-    setStorage("clienzo_meetings", updatedMeetings);
+    setStorage("saiflow_meetings", updatedMeetings);
     showToast("Meeting cancelled successfully.", "success");
     loadData();
   };
 
-  const lostReasons = getStorage<any[]>("clienzo_master_lost_reasons", LOST_REASONS)
+  const lostReasons = getStorage<any[]>("saiflow_master_lost_reasons", LOST_REASONS)
     .filter((r) => r.status === "Active");
 
   if (!meeting) {
@@ -167,7 +167,7 @@ export default function MeetingDetails() {
   return (
     <>
       <PageMeta
-        title="Meeting Details | ClienZo"
+        title="Meeting Details | SaiFlow"
         description="View details and manage scheduled meeting outcome."
       />
       <PageBreadcrumb pageTitle="Meeting details" />

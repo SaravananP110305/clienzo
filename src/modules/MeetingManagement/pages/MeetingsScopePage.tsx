@@ -299,8 +299,8 @@ export default function MeetingsScopePage({
   return (
     <>
       <PageMeta
-        title="Meetings | ClienZo"
-        description="View and manage meetings in ClienZo CRM."
+        title="Meetings | SaiFlow"
+        description="View and manage meetings in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Meetings" />
 

@@ -8,8 +8,8 @@ export default function UserProfiles() {
   return (
     <>
       <PageMeta
-        title="Profile | ClienZo"
-        description="View and manage your ClienZo profile settings."
+        title="Profile | SaiFlow"
+        description="View and manage your SaiFlow profile settings."
       />
       <PageBreadcrumb pageTitle="Profile" />
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">

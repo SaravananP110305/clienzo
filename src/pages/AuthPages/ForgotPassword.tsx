@@ -6,8 +6,8 @@ export default function ForgotPassword() {
   return (
     <>
       <PageMeta
-        title="Forgot Password | ClienZo"
-        description="Reset your ClienZo account password."
+        title="Forgot Password | SaiFlow"
+        description="Reset your SaiFlow account password."
       />
       <AuthLayout>
         <ForgotPasswordForm />

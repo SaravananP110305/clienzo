@@ -38,7 +38,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
 
   // Load qualified leads from localStorage
   const qualifiedLeads = useMemo<Lead[]>(() => {
-    const leads = getStorage<Lead[]>("clienzo_leads", []);
+    const leads = getStorage<Lead[]>("saiflow_leads", []);
     return leads.filter((l) => l.status === "Qualified");
   }, []);
 
@@ -67,7 +67,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
 
   useEffect(() => {
     if (isEditMode) {
-      const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+      const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
       const meeting = meetings.find((m) => m.id === Number(id));
       if (meeting) {
         reset({
@@ -87,7 +87,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       const queryParams = new URLSearchParams(window.location.search);
       const leadIdParam = queryParams.get("leadId");
       if (leadIdParam) {
-        const leads = getStorage<any[]>("clienzo_leads", []);
+        const leads = getStorage<any[]>("saiflow_leads", []);
         const lead = leads.find((l) => l.id === Number(leadIdParam));
         if (lead) {
           reset({
@@ -108,7 +108,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
   }, [id, isEditMode, reset]);
 
   const handleSave = (data: MeetingFormValues) => {
-    const meetings = getStorage<Meeting[]>("clienzo_meetings", initialMeetings);
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     let updatedMeeting: Meeting;
     if (isEditMode) {
       updatedMeeting = {
@@ -133,7 +133,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       } else {
         updatedList = [...meetings, updatedMeeting];
       }
-      setStorage("clienzo_meetings", updatedList);
+      setStorage("saiflow_meetings", updatedList);
     }
 
     showToast(
@@ -158,8 +158,8 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
   return (
     <>
       <PageMeta
-        title={`${isEditMode ? "Edit Meeting" : "Add Meeting"} | ClienZo`}
-        description="Schedule or edit a meeting in ClienZo CRM."
+        title={`${isEditMode ? "Edit Meeting" : "Add Meeting"} | SaiFlow`}
+        description="Schedule or edit a meeting in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle={isEditMode ? "Edit meeting" : "Add meeting"} />
 

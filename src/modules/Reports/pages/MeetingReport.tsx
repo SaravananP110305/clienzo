@@ -159,8 +159,8 @@ export default function MeetingReport() {
   return (
     <>
       <PageMeta
-        title="Meeting Report | ClienZo"
-        description="View meeting performance reports in ClienZo CRM."
+        title="Meeting Report | SaiFlow"
+        description="View meeting performance reports in SaiFlow CRM."
       />
       <PageBreadcrumb pageTitle="Meeting report" />
 

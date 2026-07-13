@@ -37,11 +37,11 @@ interface User {
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "John Doe", email: "john.doe@clienzo.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@clienzo.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123" },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@clienzo.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123" },
-  { id: 4, name: "Robert Lee", email: "robert.lee@clienzo.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123" },
-  { id: 5, name: "Emma Watson", email: "emma.watson@clienzo.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123" }
+  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123" },
+  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123" },
+  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123" },
+  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123" },
+  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123" }
 ];
 
 const availableRoles = [
@@ -63,7 +63,7 @@ interface UserFormValues {
 
 export default function UserManagement() {
   const { showToast } = useToast();
-  const [users, setUsers] = useState<User[]>(() => getStorage("clienzo_users", initialUsers));
+  const [users, setUsers] = useState<User[]>(() => getStorage("saiflow_users", initialUsers));
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -159,7 +159,7 @@ export default function UserManagement() {
       };
       const updated = [...users, newUser];
       setUsers(updated);
-      setStorage("clienzo_users", updated);
+      setStorage("saiflow_users", updated);
       showToast("User created successfully.", "success");
     } else if (modalMode === "edit" && selectedUser) {
       const updated = users.map((u) =>
@@ -176,7 +176,7 @@ export default function UserManagement() {
           : u
       );
       setUsers(updated);
-      setStorage("clienzo_users", updated);
+      setStorage("saiflow_users", updated);
       showToast("User updated successfully.", "success");
     }
     formModal.closeModal();
@@ -190,7 +190,7 @@ export default function UserManagement() {
     if (selectedUser) {
       const updated = users.filter((u) => u.id !== selectedUser.id);
       setUsers(updated);
-      setStorage("clienzo_users", updated);
+      setStorage("saiflow_users", updated);
       showToast("User deleted successfully.", "success");
     }
     deleteModal.closeModal();
@@ -289,8 +289,8 @@ export default function UserManagement() {
   return (
     <>
       <PageMeta
-        title="Manage Users | ClienZo"
-        description="Manage employee accounts and roles in ClienZo CRM."
+        title="Manage Users | SaiFlow"
+        description="Manage employee accounts and roles in SaiFlow CRM."
       />
       {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle="Manage Users" />

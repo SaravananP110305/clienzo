@@ -11,7 +11,7 @@ export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const { showToast } = useToast();
 
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", {
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
     name: "Admin User",
     email: "admin@gmail.com",
     role: "Administrator",
@@ -28,7 +28,7 @@ export default function UserDropdown() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("clienzo_logged_in_user");
+    localStorage.removeItem("saiflow_logged_in_user");
     showToast("You have been logged out successfully.", "success");
     closeDropdown();
   };
