@@ -59,7 +59,7 @@ const navItems: NavItem[] = [
     name: "Connect",
     icon: <MdCall className="size-5" />,
     subItems: [
-      { name: "My Leads", path: "/contacts/my-leads" },
+      { name: "All Leads", path: "/contacts/my-leads" },
       { name: "Follow-ups", path: "/contacts/follow-ups" },
     ],
   },

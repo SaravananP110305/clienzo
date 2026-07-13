@@ -20,6 +20,7 @@ import {
   getFollowUpStatusColor,
   type FollowUp,
 } from "../data/contactData";
+import { ASSIGNEES } from "../../LeadManagement/data/leadsData";
 
 const FOLLOW_UP_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -37,6 +38,8 @@ export default function FollowUps() {
   const [sortField, setSortField] = useState<keyof FollowUp>("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
 
   const handleSort = (field: keyof FollowUp) => {
     if (sortField === field) {
@@ -57,12 +60,17 @@ export default function FollowUps() {
         (f) =>
           f.company.toLowerCase().includes(q) ||
           f.contactPerson.toLowerCase().includes(q) ||
-          f.reason.toLowerCase().includes(q)
+          f.reason.toLowerCase().includes(q) ||
+          f.assignedTo.toLowerCase().includes(q)
       );
     }
 
     if (statusFilter !== "all") {
       result = result.filter((f) => f.status === statusFilter);
+    }
+
+    if (assigneeFilter !== "all") {
+      result = result.filter((f) => f.assignedTo === assigneeFilter);
     }
 
     result.sort((a, b) => {
@@ -79,7 +87,7 @@ export default function FollowUps() {
     });
 
     return result;
-  }, [searchQuery, statusFilter, sortField, sortOrder]);
+  }, [searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
 
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -142,7 +150,10 @@ export default function FollowUps() {
 
           <div className="relative">
             <button
-              onClick={() => setIsStatusOpen(!isStatusOpen)}
+              onClick={() => {
+                setIsStatusOpen(!isStatusOpen);
+                setIsAssigneeOpen(false);
+              }}
               className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
             >
               <span className="truncate">
@@ -166,6 +177,47 @@ export default function FollowUps() {
                       }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
                         statusFilter === opt.value
+                          ? "bg-brand-500 text-white font-medium"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {opt.label}
+                    </DropdownItem>
+                  </li>
+                ))}
+              </ul>
+            </Dropdown>
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => {
+                setIsAssigneeOpen(!isAssigneeOpen);
+                setIsStatusOpen(false);
+              }}
+              className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <span className="truncate">
+                {assigneeFilter === "all" ? "All assignees" : assigneeFilter}
+              </span>
+              <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+            </button>
+            <Dropdown
+              isOpen={isAssigneeOpen}
+              onClose={() => setIsAssigneeOpen(false)}
+              className="left-0 right-auto w-44 p-1 mt-2"
+            >
+              <ul className="flex flex-col gap-0.5">
+                {[{ value: "all", label: "All assignees" }, ...ASSIGNEES.map((a) => ({ value: a, label: a }))].map((opt) => (
+                  <li key={opt.value}>
+                    <DropdownItem
+                      onItemClick={() => {
+                        setAssigneeFilter(opt.value);
+                        setCurrentPage(1);
+                        setIsAssigneeOpen(false);
+                      }}
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
+                        assigneeFilter === opt.value
                           ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                       }`}
@@ -205,6 +257,9 @@ export default function FollowUps() {
                   {renderSortHeader("Reason", "reason")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  {renderSortHeader("Assigned to", "assignedTo")}
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Status", "status")}
                 </TableCell>
               </TableRow>
@@ -234,6 +289,9 @@ export default function FollowUps() {
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {item.reason}
                     </TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                      {item.assignedTo}
+                    </TableCell>
                     <TableCell className="px-5 py-4 whitespace-nowrap">
                       <Badge size="sm" color={getFollowUpStatusColor(item.status)}>
                         {item.status}
@@ -243,7 +301,7 @@ export default function FollowUps() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell colSpan={8} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No follow-ups found.
                   </TableCell>
                 </TableRow>
