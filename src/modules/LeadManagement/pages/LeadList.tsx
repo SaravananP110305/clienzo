@@ -84,6 +84,42 @@ export default function LeadList() {
     deleteModal.closeModal();
   };
 
+  const handleDirectAssign = (leadId: number, newAssignee: string) => {
+    const updated = leads.map((l) =>
+      l.id === leadId ? { ...l, assignedTo: newAssignee } : l
+    );
+    setLeads(updated);
+    setStorage("clienzo_leads", updated);
+    showToast(`Lead assigned to ${newAssignee} successfully.`, "success");
+  };
+
+  const downloadSampleTemplate = () => {
+    const sampleData = [
+      {
+        "Company": "Google LLC",
+        "Contact Person": "Larry Page",
+        "Email": "larry@google.com",
+        "Phone": "9876543210",
+        "Status": "New",
+        "Assigned To": ASSIGNEES[0] || "John Doe",
+      },
+      {
+        "Company": "Microsoft Corp",
+        "Contact Person": "Bill Gates",
+        "Email": "bill@microsoft.com",
+        "Phone": "9876543211",
+        "Status": "Contacted",
+        "Assigned To": ASSIGNEES[1] || "Jane Smith",
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads Template");
+    XLSX.writeFile(workbook, "clienzo_leads_sample_template.xlsx");
+    showToast("Sample Excel template downloaded successfully.", "success");
+  };
+
   const handleSort = (field: keyof Lead) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -181,10 +217,10 @@ export default function LeadList() {
   return (
     <>
       <PageMeta
-        title="Lead List | ClienZo"
+        title="Leads | ClienZo"
         description="View and manage all leads in ClienZo CRM."
       />
-      <PageBreadcrumb pageTitle="Lead list" />
+      <PageBreadcrumb pageTitle="Leads" />
 
       {/* Control Panel */}
       <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
@@ -368,8 +404,28 @@ export default function LeadList() {
                         {lead.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {lead.assignedTo}
+                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                      <select
+                        value={lead.assignedTo}
+                        onChange={(e) => handleDirectAssign(lead.id, e.target.value)}
+                        className="h-9 w-44 appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                          backgroundPosition: 'right 0.5rem center',
+                          backgroundSize: '1.25rem',
+                          backgroundRepeat: 'no-repeat'
+                        }}
+                      >
+                        {ASSIGNEES.map((assignee) => (
+                          <option
+                            key={assignee}
+                            value={assignee}
+                            className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+                          >
+                            {assignee}
+                          </option>
+                        ))}
+                      </select>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm">
                       <div className="flex items-center gap-2">
@@ -435,13 +491,28 @@ export default function LeadList() {
         className="max-w-[520px] m-4"
       >
         <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-6 dark:border-gray-800">
+          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
             <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
               Upload Excel
             </h4>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Upload a .xlsx or .csv file to import leads in bulk.
             </p>
+          </div>
+
+          {/* Template Download Banner */}
+          <div className="mb-6 p-4 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Need a template?</span>
+              <span className="text-[11px] text-gray-400 mt-0.5">Use our format for a smooth import.</span>
+            </div>
+            <button
+              type="button"
+              onClick={downloadSampleTemplate}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 text-xs font-semibold text-brand-500 hover:text-brand-600 cursor-pointer shadow-theme-xs transition-colors shrink-0"
+            >
+              Download template
+            </button>
           </div>
 
           {/* Drop Zone */}

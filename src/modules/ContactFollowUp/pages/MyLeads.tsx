@@ -15,7 +15,7 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
-import { FiEye, FiPhone } from "react-icons/fi";
+import { FiPhone } from "react-icons/fi";
 import { CURRENT_USER } from "../data/contactData";
 import { getStatusColor, LEAD_STATUSES, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
 import { getStorage } from "../../../utils/storage";
@@ -239,13 +239,6 @@ export default function MyLeads() {
                     </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => navigate(`/contacts/${lead.id}`)}
-                          className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
-                          title="View & Contact"
-                        >
-                          <FiEye className="size-4" />
-                        </button>
                         <button
                           onClick={() => navigate(`/contacts/${lead.id}`)}
                           className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"

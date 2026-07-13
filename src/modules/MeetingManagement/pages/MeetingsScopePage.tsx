@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
-import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
@@ -23,11 +22,12 @@ import {
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus, FiVideo, FiMapPin } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
-import { Meeting, getMeetingStatusColor } from "../data/meetingsData";
+import { Meeting } from "../data/meetingsData";
 
 interface MeetingsScopePageProps {
   meetings: Meeting[];
   onDeleteMeeting: (id: number) => void;
+  onUpdateMeetingStatus?: (id: number, status: Meeting["status"]) => void;
 }
 
 type TabType = "upcoming" | "today" | "completed";
@@ -35,6 +35,7 @@ type TabType = "upcoming" | "today" | "completed";
 export default function MeetingsScopePage({
   meetings,
   onDeleteMeeting,
+  onUpdateMeetingStatus,
 }: MeetingsScopePageProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -65,6 +66,13 @@ export default function MeetingsScopePage({
       showToast(`Meeting "${selectedMeeting.subject}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
+  };
+
+  const handleStatusChange = (meetingId: number, newStatus: Meeting["status"]) => {
+    if (onUpdateMeetingStatus) {
+      onUpdateMeetingStatus(meetingId, newStatus);
+      showToast(`Meeting status updated to "${newStatus}" successfully.`, "success");
+    }
   };
 
   const handleSort = (field: keyof Meeting) => {
@@ -161,18 +169,16 @@ export default function MeetingsScopePage({
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc"
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc"
                 ? "text-brand-500"
                 : "text-gray-300 dark:text-gray-600"
-            }`}
+              }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc"
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc"
                 ? "text-brand-500"
                 : "text-gray-300 dark:text-gray-600"
-            }`}
+              }`}
           />
         </span>
       </button>
@@ -206,31 +212,28 @@ export default function MeetingsScopePage({
       <div className="flex border-b border-gray-200 dark:border-white/[0.05] mb-6">
         <button
           onClick={() => handleTabChange("upcoming")}
-          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${
-            activeTab === "upcoming"
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${activeTab === "upcoming"
               ? "border-brand-500 text-brand-500 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-          }`}
+            }`}
         >
           Upcoming Meetings
         </button>
         <button
           onClick={() => handleTabChange("today")}
-          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${
-            activeTab === "today"
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${activeTab === "today"
               ? "border-brand-500 text-brand-500 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-          }`}
+            }`}
         >
           Today's Meetings
         </button>
         <button
           onClick={() => handleTabChange("completed")}
-          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${
-            activeTab === "completed"
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${activeTab === "completed"
               ? "border-brand-500 text-brand-500 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-          }`}
+            }`}
         >
           Completed Meetings
         </button>
@@ -276,11 +279,10 @@ export default function MeetingsScopePage({
                         setCurrentPage(1);
                         setIsStatusOpen(false);
                       }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        statusFilter === opt.value
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
                           ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </DropdownItem>
@@ -390,12 +392,27 @@ export default function MeetingsScopePage({
                       </div>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                      <Badge
-                        size="sm"
-                        color={getMeetingStatusColor(meeting.status)}
+                      <select
+                        value={meeting.status}
+                        onChange={(e) => handleStatusChange(meeting.id, e.target.value as Meeting["status"])}
+                        className="h-9 w-36 appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs font-semibold shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                          backgroundPosition: 'right 0.5rem center',
+                          backgroundSize: '1.25rem',
+                          backgroundRepeat: 'no-repeat'
+                        }}
                       >
-                        {meeting.status}
-                      </Badge>
+                        {["Scheduled", "Completed", "Cancelled", "Rescheduled"].map((status) => (
+                          <option
+                            key={status}
+                            value={status}
+                            className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-normal"
+                          >
+                            {status}
+                          </option>
+                        ))}
+                      </select>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm">
                       <div className="flex items-center gap-2">

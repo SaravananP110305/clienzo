@@ -12,6 +12,7 @@ import {
 } from "react-icons/md";
 import { ChevronDownIcon } from "../icons";
 import logo from "/images/logo/logo.png"
+import { getStorage } from "../utils/storage";
 
 
 type NavItem = {
@@ -52,10 +53,7 @@ const navItems: NavItem[] = [
   {
     name: "Leads",
     icon: <MdBusinessCenter className="size-5" />,
-    subItems: [
-      { name: "Add Lead", path: "/leads/add" },
-      { name: "Lead List", path: "/leads" },
-    ],
+    path: "/leads",
   },
   {
     name: "Connect",
@@ -85,6 +83,13 @@ const navItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+
+  const loggedInUser = getStorage<any>("clienzo_logged_in_user", {
+    name: "Admin User",
+    email: "admin@gmail.com",
+    role: "Administrator",
+  });
+  const isAdmin = loggedInUser?.role === "Administrator";
 
   const isMasterPath = location.pathname.startsWith("/master/");
   const isUserMgmtPath = location.pathname === "/users" || location.pathname === "/roles";
@@ -169,9 +174,12 @@ const AppSidebar: React.FC = () => {
         <nav className="mb-6">
           <ul className="flex flex-col gap-2">
             {navItems.map((nav) => {
-              const hasSubItems = !!nav.subItems;
-              const isSubOpen = openSubMenus[nav.name] || isSubActive(nav.subItems);
-              const parentActive = hasSubItems ? isSubActive(nav.subItems) : isActive(nav.path!);
+              const subItems = (nav.subItems || []).filter(
+                (sub) => !(isAdmin && sub.name === "My Leads")
+              );
+              const hasSubItems = subItems.length > 0;
+              const isSubOpen = openSubMenus[nav.name] || isSubActive(subItems);
+              const parentActive = hasSubItems ? isSubActive(subItems) : (nav.path ? isActive(nav.path) : false);
 
               return (
                 <li key={nav.name} className="flex flex-col">
@@ -218,7 +226,7 @@ const AppSidebar: React.FC = () => {
                           }`}
                       >
                         <ul className="pl-9 flex flex-col gap-1 pb-1">
-                          {nav.subItems!.map((sub) => {
+                          {subItems.map((sub) => {
                             const subActive = location.pathname === sub.path;
                             return (
                               <li key={sub.name}>

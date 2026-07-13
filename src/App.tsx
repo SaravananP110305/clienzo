@@ -49,6 +49,12 @@ export default function App() {
     setStorage("clienzo_meetings", updated);
   };
 
+  const handleUpdateMeetingStatus = (id: number, status: Meeting["status"]) => {
+    const updated = meetings.map((m) => m.id === id ? { ...m, status } : m);
+    setMeetings(updated);
+    setStorage("clienzo_meetings", updated);
+  };
+
   const handleSaveMeeting = (meeting: Meeting, isEdit: boolean) => {
     let updated: Meeting[];
     if (isEdit) {
@@ -90,6 +96,7 @@ export default function App() {
                 <MeetingsScopePage
                   meetings={meetings}
                   onDeleteMeeting={handleDeleteMeeting}
+                  onUpdateMeetingStatus={handleUpdateMeetingStatus}
                 />
               }
             />
