@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -40,14 +40,7 @@ export default function LeadList() {
   const uploadModal = useModal();
   const deleteModal = useModal();
 
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
-  const isAdmin = loggedInUser?.role === "Administrator";
 
-  useEffect(() => {
-    if (isAdmin) {
-      navigate("/dashboard");
-    }
-  }, [isAdmin, navigate]);
 
   const [leads, setLeads] = useState<Lead[]>(() => {
     const list = getStorage<Lead[]>("clienzo_leads", initialLeads);

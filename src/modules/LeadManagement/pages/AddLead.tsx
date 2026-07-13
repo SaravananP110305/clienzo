@@ -33,14 +33,7 @@ export default function AddLead() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
 
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
-  const isAdmin = loggedInUser?.role === "Administrator";
 
-  useEffect(() => {
-    if (isAdmin) {
-      navigate("/dashboard");
-    }
-  }, [isAdmin, navigate]);
 
   const {
     control,

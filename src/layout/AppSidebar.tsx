@@ -93,8 +93,8 @@ const AppSidebar: React.FC = () => {
 
   const visibleNavItems = navItems.filter((nav) => {
     if (isAdmin) {
-      // Administrator: hide "Connect", "Meetings", and "Leads"
-      return nav.name !== "Connect" && nav.name !== "Meetings" && nav.name !== "Leads";
+      // Administrator: show ALL navigation items (full access)
+      return true;
     } else {
       // Non-admin (specific users): hide "Master", "Manage Users", and "Reports"
       return nav.name !== "Master" && nav.name !== "Manage Users" && nav.name !== "Reports";

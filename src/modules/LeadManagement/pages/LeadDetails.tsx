@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -49,14 +49,7 @@ export default function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
-  const isAdmin = loggedInUser?.role === "Administrator";
 
-  useEffect(() => {
-    if (isAdmin) {
-      navigate("/dashboard");
-    }
-  }, [isAdmin, navigate]);
 
   const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
   const lead = leads.find((l) => l.id === Number(id));

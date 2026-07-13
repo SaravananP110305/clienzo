@@ -83,6 +83,7 @@ export default function App() {
   };
 
   const bdeRoles = ["Business Development Manager", "Business Development Executive", "Presales Consultant"];
+  const allowedRoles = ["Administrator", ...bdeRoles];
 
   return (
     <ToastProvider>
@@ -102,7 +103,7 @@ export default function App() {
             <Route
               path="/leads"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <LeadList />
                 </ProtectedRoute>
               }
@@ -110,7 +111,7 @@ export default function App() {
             <Route
               path="/leads/add"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <AddLead />
                 </ProtectedRoute>
               }
@@ -118,7 +119,7 @@ export default function App() {
             <Route
               path="/leads/:id/edit"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <AddLead />
                 </ProtectedRoute>
               }
@@ -126,7 +127,7 @@ export default function App() {
             <Route
               path="/leads/:id"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <LeadDetails />
                 </ProtectedRoute>
               }
@@ -134,7 +135,7 @@ export default function App() {
             <Route
               path="/contacts"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <MyLeads />
                 </ProtectedRoute>
               }
@@ -142,7 +143,7 @@ export default function App() {
             <Route
               path="/contacts/my-leads"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <MyLeads />
                 </ProtectedRoute>
               }
@@ -150,7 +151,7 @@ export default function App() {
             <Route
               path="/contacts/follow-ups"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <FollowUps />
                 </ProtectedRoute>
               }
@@ -158,7 +159,7 @@ export default function App() {
             <Route
               path="/contacts/:id"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <ContactLeadDetail />
                 </ProtectedRoute>
               }
@@ -167,7 +168,7 @@ export default function App() {
             <Route
               path="/meetings"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <MeetingsScopePage
                     meetings={meetings}
                     onDeleteMeeting={handleDeleteMeeting}
@@ -179,7 +180,7 @@ export default function App() {
             <Route
               path="/meetings/add"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <MeetingForm onSave={handleSaveMeeting} />
                 </ProtectedRoute>
               }
@@ -187,7 +188,7 @@ export default function App() {
             <Route
               path="/meetings/:id/edit"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <MeetingForm onSave={handleSaveMeeting} />
                 </ProtectedRoute>
               }
@@ -195,7 +196,7 @@ export default function App() {
             <Route
               path="/meetings/:id"
               element={
-                <ProtectedRoute allowedRoles={bdeRoles}>
+                <ProtectedRoute allowedRoles={allowedRoles}>
                   <MeetingDetails />
                 </ProtectedRoute>
               }
