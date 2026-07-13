@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -48,6 +49,15 @@ export default function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
+  const isAdmin = loggedInUser?.role === "Administrator";
+
+  useEffect(() => {
+    if (isAdmin) {
+      navigate("/dashboard");
+    }
+  }, [isAdmin, navigate]);
+
   const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
   const lead = leads.find((l) => l.id === Number(id));
 
@@ -69,6 +79,58 @@ export default function LeadDetails() {
       </>
     );
   }
+
+  const timelineEvents = useMemo(() => {
+    if (!lead) return [];
+    const events = [];
+    
+    // 1. Created Event
+    events.push({
+      date: new Date(lead.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      title: "Lead Created",
+      description: `Lead for ${lead.company} was added to the system.`,
+      timestamp: new Date(lead.createdAt).getTime()
+    });
+
+    // 2. Assigned Event
+    if (lead.assignedTo) {
+      events.push({
+        date: new Date(lead.createdAt).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        title: "Assigned Owner",
+        description: `Lead assigned to ${lead.assignedTo}.`,
+        timestamp: new Date(lead.createdAt).getTime() + 1000
+      });
+    }
+
+    // 3. Meetings Events
+    const allMeetings = getStorage<any[]>("clienzo_meetings", []);
+    const relatedMeetings = allMeetings.filter(
+      (m) => m.leadId === lead.id || m.company.toLowerCase() === lead.company.toLowerCase()
+    );
+
+    relatedMeetings.forEach((m) => {
+      events.push({
+        date: new Date(m.date + (m.time ? "T" + m.time : "")).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        title: `Meeting Scheduled (${m.type})`,
+        description: `Status: ${m.status}. Agenda: ${m.title}`,
+        timestamp: new Date(m.date + (m.time ? "T" + m.time : "")).getTime()
+      });
+    });
+
+    return events.sort((a, b) => b.timestamp - a.timestamp);
+  }, [lead]);
 
   return (
     <>
@@ -263,6 +325,41 @@ export default function LeadDetails() {
               {lead.notes || <span className="text-gray-400">No notes added.</span>}
             </p>
           </div>
+        </div>
+
+        {/* Activity Timeline */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 lg:col-span-2">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Activity Timeline
+          </h3>
+          {timelineEvents.length > 0 ? (
+            <div className="relative border-l-2 border-gray-100 dark:border-gray-800 ml-4 pl-6 space-y-6">
+              {timelineEvents.map((event, idx) => (
+                <div key={idx} className="relative">
+                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
+                  </span>
+                  <div>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 block mb-0.5">
+                      {event.date}
+                    </span>
+                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
+                      {event.title}
+                    </p>
+                    {event.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {event.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-400">No activities logged yet.</p>
+            </div>
+          )}
         </div>
       </div>
     </>

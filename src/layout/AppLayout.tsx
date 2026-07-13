@@ -1,8 +1,9 @@
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, Navigate } from "react-router";
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
+import { getStorage } from "../utils/storage";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -29,6 +30,10 @@ const LayoutContent: React.FC = () => {
 };
 
 const AppLayout: React.FC = () => {
+  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
+  if (!loggedInUser) {
+    return <Navigate to="/signin" replace />;
+  }
   return (
     <SidebarProvider>
       <LayoutContent />

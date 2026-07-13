@@ -18,12 +18,18 @@ import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import { FiPhone } from "react-icons/fi";
 import { CURRENT_USER } from "../data/contactData";
 import { getStatusColor, LEAD_STATUSES, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
-import { getStorage } from "../../../utils/storage";
+import { getStorage, setStorage } from "../../../utils/storage";
+import { useToast } from "../../../hooks/useToast";
+import { Modal } from "../../../components/ui/modal";
+import { useModal } from "../../../hooks/useModal";
+import Button from "../../../components/ui/button/Button";
+import Select from "../../../components/form/Select";
 
 export default function MyLeads() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
-  const leads = getStorage<Lead[]>("clienzo_leads", initialLeads);
+  const [leads, setLeads] = useState<Lead[]>(() => getStorage<Lead[]>("clienzo_leads", initialLeads));
   const activeMyLeads = useMemo(() => {
     return leads.filter((l) => l.assignedTo === CURRENT_USER);
   }, [leads]);
@@ -35,6 +41,66 @@ export default function MyLeads() {
   const [sortField, setSortField] = useState<keyof Lead>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+
+  const followUpModal = useModal();
+  const [selectedLeadForFollowUp, setSelectedLeadForFollowUp] = useState<Lead | null>(null);
+  const [commType, setCommType] = useState("Call");
+  const [newStatus, setNewStatus] = useState("");
+  const [followUpNotes, setFollowUpNotes] = useState("");
+  const [nextDate, setNextDate] = useState("");
+  const [nextTime, setNextTime] = useState("");
+
+  const handleOpenFollowUpModal = (lead: Lead) => {
+    setSelectedLeadForFollowUp(lead);
+    setCommType("Call");
+    setNewStatus(lead.status);
+    setFollowUpNotes("");
+    setNextDate("");
+    setNextTime("");
+    followUpModal.openModal();
+  };
+
+  const handleSaveFollowUp = () => {
+    if (!selectedLeadForFollowUp) return;
+
+    // 1. Update the lead in storage
+    const updatedLeads = leads.map((l) => {
+      if (l.id === selectedLeadForFollowUp.id) {
+        return {
+          ...l,
+          status: newStatus as any,
+          notes: followUpNotes ? `${l.notes ? l.notes + "\n" : ""}[${commType}] ${followUpNotes}` : l.notes
+        };
+      }
+      return l;
+    });
+    setLeads(updatedLeads);
+    setStorage("clienzo_leads", updatedLeads);
+
+    // 2. Create a meeting / activity event in clienzo_meetings if nextDate is provided
+    if (nextDate) {
+      const meetingsList = getStorage<any[]>("clienzo_meetings", []);
+      const newMeetingId = meetingsList.length > 0 ? Math.max(...meetingsList.map(m => m.id)) + 1 : 1;
+      const newMeeting = {
+        id: newMeetingId,
+        leadId: selectedLeadForFollowUp.id,
+        company: selectedLeadForFollowUp.company,
+        contactPerson: selectedLeadForFollowUp.contactPerson,
+        subject: `Follow-up ${commType}`,
+        date: nextDate,
+        time: nextTime || "12:00",
+        type: commType === "Call" ? "Phone Call" : commType === "Email" ? "Email" : "Online Meeting",
+        status: "Scheduled",
+        notes: followUpNotes,
+        linkOrLocation: commType === "Call" ? selectedLeadForFollowUp.phone : selectedLeadForFollowUp.email
+      };
+      const updatedMeetings = [...meetingsList, newMeeting];
+      setStorage("clienzo_meetings", updatedMeetings);
+    }
+
+    showToast("Follow-up logged successfully.", "success");
+    followUpModal.closeModal();
+  };
 
   const statusOptions = [
     { value: "all", label: "All statuses" },
@@ -241,10 +307,16 @@ export default function MyLeads() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => navigate(`/contacts/${lead.id}`)}
-                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"
+                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer whitespace-nowrap"
                         >
                           <FiPhone className="size-3.5" />
                           Contact
+                        </button>
+                        <button
+                          onClick={() => handleOpenFollowUpModal(lead)}
+                          className="flex items-center h-8 px-3 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 transition cursor-pointer whitespace-nowrap"
+                        >
+                          Log follow-up
                         </button>
                       </div>
                     </TableCell>
@@ -273,6 +345,82 @@ export default function MyLeads() {
           />
         )}
       </div>
+
+      {/* Log Follow-Up Modal */}
+      <Modal isOpen={followUpModal.isOpen} onClose={followUpModal.closeModal} className="max-w-[500px] m-4">
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Log follow-up for {selectedLeadForFollowUp?.company}
+          </h4>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Communication channel
+              </label>
+              <Select
+                options={[
+                  { value: "Call", label: "Phone Call" },
+                  { value: "Email", label: "Email" },
+                  { value: "WhatsApp", label: "WhatsApp" }
+                ]}
+                onChange={(val) => setCommType(val)}
+                defaultValue={commType}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Status update
+              </label>
+              <Select
+                options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))}
+                onChange={(val) => setNewStatus(val)}
+                defaultValue={newStatus}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Follow-up notes
+              </label>
+              <textarea
+                value={followUpNotes}
+                onChange={(e) => setFollowUpNotes(e.target.value)}
+                placeholder="Enter what was discussed..."
+                className="w-full min-h-[100px] rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Next action date
+                </label>
+                <Input
+                  type="date"
+                  value={nextDate}
+                  onChange={(e) => setNextDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Next action time
+                </label>
+                <Input
+                  type="time"
+                  value={nextTime}
+                  onChange={(e) => setNextTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+            <Button size="sm" variant="outline" onClick={followUpModal.closeModal}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSaveFollowUp}>
+              Save follow-up
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -31,12 +31,22 @@ import {
   type Lead,
   type LeadPriority,
 } from "../data/leadsData";
+import { LEAD_SOURCES, INDUSTRIES } from "../../Master/data/masterData";
 
 export default function LeadList() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const uploadModal = useModal();
   const deleteModal = useModal();
+
+  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
+  const isAdmin = loggedInUser?.role === "Administrator";
+
+  useEffect(() => {
+    if (isAdmin) {
+      navigate("/dashboard");
+    }
+  }, [isAdmin, navigate]);
 
   const [leads, setLeads] = useState<Lead[]>(() => {
     const list = getStorage<Lead[]>("clienzo_leads", initialLeads);
@@ -63,6 +73,30 @@ export default function LeadList() {
   const [sortField, setSortField] = useState<keyof Lead>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  
+  const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+  const [industryFilter, setIndustryFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [isIndustryOpen, setIsIndustryOpen] = useState(false);
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
+
+  const handleBulkAssign = (assignee: string) => {
+    const updated = leads.map((l) =>
+      selectedLeadIds.includes(l.id) ? { ...l, assignedTo: assignee } : l
+    );
+    setLeads(updated);
+    setStorage("clienzo_leads", updated);
+    setSelectedLeadIds([]);
+    showToast(`Successfully assigned selected leads to ${assignee}.`, "success");
+  };
+
+  const handleBulkDelete = () => {
+    const updated = leads.filter((l) => !selectedLeadIds.includes(l.id));
+    setLeads(updated);
+    setStorage("clienzo_leads", updated);
+    setSelectedLeadIds([]);
+    showToast("Successfully deleted selected leads.", "success");
+  };
 
   // Filter dropdown open states
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -151,6 +185,16 @@ export default function LeadList() {
     ...LEAD_PRIORITIES.map((p) => ({ value: p, label: p })),
   ];
 
+  const industryOptions = [
+    { value: "all", label: "All industries" },
+    ...getStorage("clienzo_master_industries", INDUSTRIES).filter((i: any) => i.status === "Active").map((i: any) => ({ value: i.name, label: i.name }))
+  ];
+
+  const sourceOptions = [
+    { value: "all", label: "All sources" },
+    ...getStorage("clienzo_master_lead_sources", LEAD_SOURCES).filter((s: any) => s.status === "Active").map((s: any) => ({ value: s.name, label: s.name }))
+  ];
+
   const processedLeads = useMemo(() => {
     let result = [...leads];
 
@@ -179,6 +223,14 @@ export default function LeadList() {
       result = result.filter((l) => l.priority === priorityFilter);
     }
 
+    if (industryFilter !== "all") {
+      result = result.filter((l) => l.industry === industryFilter);
+    }
+
+    if (sourceFilter !== "all") {
+      result = result.filter((l) => l.source === sourceFilter);
+    }
+
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -193,7 +245,7 @@ export default function LeadList() {
     });
 
     return result;
-  }, [leads, searchQuery, statusFilter, assigneeFilter, priorityFilter, sortField, sortOrder]);
+  }, [leads, searchQuery, statusFilter, assigneeFilter, priorityFilter, industryFilter, sourceFilter, sortField, sortOrder]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -379,6 +431,94 @@ export default function LeadList() {
                 </ul>
               </Dropdown>
             </div>
+
+            {/* Industry Filter */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsIndustryOpen(!isIndustryOpen);
+                  setIsStatusOpen(false);
+                  setIsAssigneeOpen(false);
+                  setIsPriorityOpen(false);
+                  setIsSourceOpen(false);
+                }}
+                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <span className="truncate">
+                  {industryOptions.find((o) => o.value === industryFilter)?.label}
+                </span>
+                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+              </button>
+              <Dropdown
+                isOpen={isIndustryOpen}
+                onClose={() => setIsIndustryOpen(false)}
+                className="left-0 right-auto w-44 p-1 mt-2"
+              >
+                <ul className="flex flex-col gap-0.5 max-h-60 overflow-y-auto custom-scrollbar">
+                  {industryOptions.map((opt) => (
+                    <li key={opt.value}>
+                      <DropdownItem
+                        onItemClick={() => {
+                          setIndustryFilter(opt.value);
+                          setCurrentPage(1);
+                          setIsIndustryOpen(false);
+                        }}
+                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${industryFilter === opt.value
+                            ? "bg-brand-500 text-white font-medium"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                          }`}
+                      >
+                        {opt.label}
+                      </DropdownItem>
+                    </li>
+                  ))}
+                </ul>
+              </Dropdown>
+            </div>
+
+            {/* Source Filter */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsSourceOpen(!isSourceOpen);
+                  setIsStatusOpen(false);
+                  setIsAssigneeOpen(false);
+                  setIsPriorityOpen(false);
+                  setIsIndustryOpen(false);
+                }}
+                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <span className="truncate">
+                  {sourceOptions.find((o) => o.value === sourceFilter)?.label}
+                </span>
+                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+              </button>
+              <Dropdown
+                isOpen={isSourceOpen}
+                onClose={() => setIsSourceOpen(false)}
+                className="left-0 right-auto w-44 p-1 mt-2"
+              >
+                <ul className="flex flex-col gap-0.5 max-h-60 overflow-y-auto custom-scrollbar">
+                  {sourceOptions.map((opt) => (
+                    <li key={opt.value}>
+                      <DropdownItem
+                        onItemClick={() => {
+                          setSourceFilter(opt.value);
+                          setCurrentPage(1);
+                          setIsSourceOpen(false);
+                        }}
+                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${sourceFilter === opt.value
+                            ? "bg-brand-500 text-white font-medium"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                          }`}
+                      >
+                        {opt.label}
+                      </DropdownItem>
+                    </li>
+                  ))}
+                </ul>
+              </Dropdown>
+            </div>
           </div>
         </div>
 
@@ -404,12 +544,69 @@ export default function LeadList() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedLeadIds.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 mb-4 rounded-xl border border-brand-200 bg-brand-50/50 dark:border-brand-500/30 dark:bg-brand-500/5">
+          <span className="text-sm font-medium text-brand-700 dark:text-brand-400">
+            {selectedLeadIds.length} lead{selectedLeadIds.length > 1 ? "s" : ""} selected
+          </span>
+          <div className="flex items-center gap-3">
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkAssign(e.target.value);
+                  e.target.value = "";
+                }
+              }}
+              className="h-9 w-44 appearance-none rounded-lg border border-gray-300 bg-white px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                backgroundPosition: 'right 0.5rem center',
+                backgroundSize: '1.25rem',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
+              <option value="">Assign to...</option>
+              {ASSIGNEES.map((assignee) => (
+                <option key={assignee} value={assignee}>
+                  {assignee}
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBulkDelete}
+              className="h-9 px-4 py-1.5 border-error-500 text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10 dark:text-error-400 font-medium"
+            >
+              Delete selected
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table Container */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto custom-scrollbar">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
+                <TableCell isHeader className="px-5 py-3 text-start whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeadIds.includes(l.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const newIds = [...new Set([...selectedLeadIds, ...paginatedLeads.map(l => l.id)])];
+                        setSelectedLeadIds(newIds);
+                      } else {
+                        const filteredIds = selectedLeadIds.filter(id => !paginatedLeads.some(l => l.id === id));
+                        setSelectedLeadIds(filteredIds);
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("S.No", "id")}
                 </TableCell>
@@ -446,6 +643,20 @@ export default function LeadList() {
                     key={lead.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
+                    <TableCell className="px-5 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.includes(lead.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedLeadIds([...selectedLeadIds, lead.id]);
+                          } else {
+                            setSelectedLeadIds(selectedLeadIds.filter(id => id !== lead.id));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                    </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
                       {lead.id}
                     </TableCell>

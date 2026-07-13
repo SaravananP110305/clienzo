@@ -600,12 +600,6 @@ export default function UserManagement() {
                     {selectedUser.phone}
                   </span>
                 </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Password</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.password || "••••••••"}
-                  </span>
-                </div>
               </div>
             </div>
           )}
@@ -705,42 +699,44 @@ export default function UserManagement() {
                 )}
               </div>
 
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Password <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="password"
-                  control={control}
-                  rules={{
-                    required: "Password is required",
-                    minLength: {
-                      value: 6,
-                      message: "Password must be at least 6 characters long",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter password"
-                        className={errors.password ? "border-error-500 pr-10" : "pr-10"}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none cursor-pointer"
-                      >
-                        {showPassword ? <FiEye className="size-5" /> : <FiEye className="size-5 opacity-60" />}
-                      </button>
-                    </div>
+              {modalMode === "create" && (
+                <div>
+                  <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Password <span className="text-error-500">*</span>
+                  </label>
+                  <Controller
+                    name="password"
+                    control={control}
+                    rules={{
+                      required: "Password is required",
+                      minLength: {
+                        value: 6,
+                        message: "Password must be at least 6 characters long",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter password"
+                          className={errors.password ? "border-error-500 pr-10" : "pr-10"}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none cursor-pointer"
+                        >
+                          {showPassword ? <FiEye className="size-5" /> : <FiEye className="size-5 opacity-60" />}
+                        </button>
+                      </div>
+                    )}
+                  />
+                  {errors.password && (
+                    <span className="mt-1.5 text-xs text-error-600 block">{errors.password.message}</span>
                   )}
-                />
-                {errors.password && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.password.message}</span>
-                )}
-              </div>
+                </div>
+              )}
 
               <div>
                 <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">

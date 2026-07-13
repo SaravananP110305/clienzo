@@ -40,6 +40,22 @@ import {
 
 // ────────────────────────────────────────────────────────────────────────────
 
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}
+
+function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+  const loggedInUser = getStorage<any>("clienzo_logged_in_user", null);
+  if (!loggedInUser) {
+    return <Navigate to="/signin" replace />;
+  }
+  if (allowedRoles && !allowedRoles.includes(loggedInUser.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   const [meetings, setMeetings] = useState<Meeting[]>(() => getStorage("clienzo_meetings", initialMeetings));
 
@@ -66,6 +82,8 @@ export default function App() {
     setStorage("clienzo_meetings", updated);
   };
 
+  const bdeRoles = ["Business Development Manager", "Business Development Executive", "Presales Consultant"];
+
   return (
     <ToastProvider>
       <Router basename="/clienzo">
@@ -81,99 +99,230 @@ export default function App() {
 
             {/* Clienzo Feature Module Route Placeholders */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/leads" element={<LeadList />} />
-            <Route path="/leads/add" element={<AddLead />} />
-            <Route path="/leads/:id/edit" element={<AddLead />} />
-            <Route path="/leads/:id" element={<LeadDetails />} />
-            <Route path="/contacts" element={<MyLeads />} />
-            <Route path="/contacts/my-leads" element={<MyLeads />} />
-            <Route path="/contacts/follow-ups" element={<FollowUps />} />
-            <Route path="/contacts/:id" element={<ContactLeadDetail />} />
+            <Route
+              path="/leads"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <LeadList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads/add"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <AddLead />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <AddLead />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads/:id"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <LeadDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contacts"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <MyLeads />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contacts/my-leads"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <MyLeads />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contacts/follow-ups"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <FollowUps />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contacts/:id"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <ContactLeadDetail />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/meetings"
               element={
-                <MeetingsScopePage
-                  meetings={meetings}
-                  onDeleteMeeting={handleDeleteMeeting}
-                  onUpdateMeetingStatus={handleUpdateMeetingStatus}
-                />
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <MeetingsScopePage
+                    meetings={meetings}
+                    onDeleteMeeting={handleDeleteMeeting}
+                    onUpdateMeetingStatus={handleUpdateMeetingStatus}
+                  />
+                </ProtectedRoute>
               }
             />
-            <Route path="/meetings/add" element={<MeetingForm onSave={handleSaveMeeting} />} />
-            <Route path="/meetings/:id/edit" element={<MeetingForm onSave={handleSaveMeeting} />} />
-            <Route path="/meetings/:id" element={<MeetingDetails />} />
+            <Route
+              path="/meetings/add"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <MeetingForm onSave={handleSaveMeeting} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meetings/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <MeetingForm onSave={handleSaveMeeting} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meetings/:id"
+              element={
+                <ProtectedRoute allowedRoles={bdeRoles}>
+                  <MeetingDetails />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Reports Routes */}
             <Route path="/reports" element={<Navigate to="/reports/leads" replace />} />
-            <Route path="/reports/leads" element={<LeadReport />} />
-            <Route path="/reports/meetings" element={<MeetingReport />} />
-            <Route path="/reports/employees" element={<EmployeeReport />} />
-            <Route path="/reports/follow-ups" element={<FollowUpReport />} />
+            <Route
+              path="/reports/leads"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <LeadReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports/meetings"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MeetingReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports/employees"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <EmployeeReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports/follow-ups"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <FollowUpReport />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Manage Users Routes */}
-            <Route path="/users" element={<UserManagement />} />
-            <Route path="/roles" element={<UserRoleManagement />} />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/roles"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <UserRoleManagement />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Master Routes */}
             <Route
               path="/master/lead-sources"
               element={
-                <MasterConfigPage
-                  pageTitle="Lead sources"
-                  itemNameSingular="lead source"
-                  itemNamePlural="lead sources"
-                  initialData={LEAD_SOURCES}
-                  storageKey="clienzo_master_lead_sources"
-                />
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Lead sources"
+                    itemNameSingular="lead source"
+                    itemNamePlural="lead sources"
+                    initialData={LEAD_SOURCES}
+                    storageKey="clienzo_master_lead_sources"
+                  />
+                </ProtectedRoute>
               }
             />
             <Route
               path="/master/industries"
               element={
-                <MasterConfigPage
-                  pageTitle="Industries"
-                  itemNameSingular="industry"
-                  itemNamePlural="industries"
-                  initialData={INDUSTRIES}
-                  storageKey="clienzo_master_industries"
-                />
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Industries"
+                    itemNameSingular="industry"
+                    itemNamePlural="industries"
+                    initialData={INDUSTRIES}
+                    storageKey="clienzo_master_industries"
+                  />
+                </ProtectedRoute>
               }
             />
             <Route
               path="/master/meeting-types"
               element={
-                <MasterConfigPage
-                  pageTitle="Meeting types"
-                  itemNameSingular="meeting type"
-                  itemNamePlural="meeting types"
-                  initialData={MEETING_TYPES}
-                  storageKey="clienzo_master_meeting_types"
-                />
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Meeting types"
+                    itemNameSingular="meeting type"
+                    itemNamePlural="meeting types"
+                    initialData={MEETING_TYPES}
+                    storageKey="clienzo_master_meeting_types"
+                  />
+                </ProtectedRoute>
               }
             />
             <Route
               path="/master/follow-up-reasons"
               element={
-                <MasterConfigPage
-                  pageTitle="Follow-up reasons"
-                  itemNameSingular="follow-up reason"
-                  itemNamePlural="follow-up reasons"
-                  initialData={FOLLOWUP_REASONS}
-                  storageKey="clienzo_master_followup_reasons"
-                />
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Follow-up reasons"
+                    itemNameSingular="follow-up reason"
+                    itemNamePlural="follow-up reasons"
+                    initialData={FOLLOWUP_REASONS}
+                    storageKey="clienzo_master_followup_reasons"
+                  />
+                </ProtectedRoute>
               }
             />
             <Route
               path="/master/lost-reasons"
               element={
-                <MasterConfigPage
-                  pageTitle="Lost reasons"
-                  itemNameSingular="lost reason"
-                  itemNamePlural="lost reasons"
-                  initialData={LOST_REASONS}
-                  storageKey="clienzo_master_lost_reasons"
-                />
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Lost reasons"
+                    itemNameSingular="lost reason"
+                    itemNamePlural="lost reasons"
+                    initialData={LOST_REASONS}
+                    storageKey="clienzo_master_lost_reasons"
+                  />
+                </ProtectedRoute>
               }
             />
           </Route>

@@ -156,6 +156,25 @@ export default function MasterConfigPage({
 
   const handleDeleteConfirm = () => {
     if (selectedItem) {
+      const currentLeads = getStorage<any[]>("clienzo_leads", []);
+      let isUsed = false;
+      if (storageKey === "clienzo_master_lead_sources") {
+        isUsed = currentLeads.some((l) => l.source === selectedItem.name);
+      } else if (storageKey === "clienzo_master_industries") {
+        isUsed = currentLeads.some((l) => l.industry === selectedItem.name);
+      } else if (storageKey === "clienzo_master_meeting_types") {
+        const meetings = getStorage<any[]>("clienzo_meetings", []);
+        isUsed = meetings.some((m) => m.type === selectedItem.name);
+      } else if (storageKey === "clienzo_master_followup_reasons") {
+        isUsed = currentLeads.some((l) => l.followUpReason === selectedItem.name);
+      }
+
+      if (isUsed) {
+        showToast(`Cannot delete "${selectedItem.name}" because it is currently in use.`, "error");
+        deleteModal.closeModal();
+        return;
+      }
+
       const updated = items.filter((i) => i.id !== selectedItem.id);
       setItems(updated);
       setStorage(storageKey, updated);
