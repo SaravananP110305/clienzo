@@ -49,9 +49,9 @@ interface Role {
 const sidebarStructure = [
   { name: "Dashboard", key: "dashboard" },
   { name: "Master Config", key: "master", subItems: [
-    "Countries", "States", "Cities", "Departments", "Designations", "Technologies",
+    "Countries", "States", "Cities", "Departments", "Designations",
     "Lead sources", "Industries", "Meeting types", "Follow-up reasons", "Lost reasons",
-    "Lead statuses", "Priorities", "Follow-up types", "Project categories", "Project statuses"
+    "Priorities", "Follow-up types"
   ] },
   { name: "Manage Users", key: "users", subItems: ["User Roles", "Users"] },
   { name: "Leads", key: "leads" },

@@ -684,15 +684,19 @@ export default function AddLead() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Address Line 1
+                  Address Line 1 <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="addressLine1"
                   control={control}
+                  rules={{ required: "Address line 1 is required" }}
                   render={({ field }) => (
-                    <Input {...field} type="text" placeholder="Floor, block, street address" />
+                    <Input {...field} type="text" placeholder="Floor, block, street address" error={!!errors.addressLine1} />
                   )}
                 />
+                {errors.addressLine1 && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.addressLine1.message}</span>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -708,11 +712,12 @@ export default function AddLead() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Country
+                  Country <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="country"
                   control={control}
+                  rules={{ required: "Country is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={countryOptions}
@@ -722,14 +727,18 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.country && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.country.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  State
+                  State <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="state"
                   control={control}
+                  rules={{ required: "State is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={stateOptions}
@@ -739,14 +748,18 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.state && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.state.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  City
+                  City <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="city"
                   control={control}
+                  rules={{ required: "City is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={cityOptions}
@@ -756,6 +769,9 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.city && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.city.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -780,11 +796,12 @@ export default function AddLead() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Lead Source
+                  Lead Source <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="source"
                   control={control}
+                  rules={{ required: "Lead source is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={sourceOptions}
@@ -794,14 +811,18 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.source && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.source.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Lead Status
+                  Lead Status <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="status"
                   control={control}
+                  rules={{ required: "Lead status is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={statusOptions}
@@ -811,14 +832,18 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.status && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.status.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Priority
+                  Priority <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="priority"
                   control={control}
+                  rules={{ required: "Priority is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={priorityOptions}
@@ -828,6 +853,9 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.priority && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.priority.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -864,11 +892,12 @@ export default function AddLead() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Lead Owner
+                  Lead Owner <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="assignedTo"
                   control={control}
+                  rules={{ required: "Lead owner is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={employeeOptions}
@@ -878,6 +907,9 @@ export default function AddLead() {
                     />
                   )}
                 />
+                {errors.assignedTo && (
+                  <span className="mt-1 text-xs text-error-600 block">{errors.assignedTo.message}</span>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">

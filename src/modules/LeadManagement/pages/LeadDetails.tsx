@@ -5,6 +5,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import { initialLeads, getStatusColor, getPriorityColor, Lead } from "../data/leadsData";
+import { initialFollowUps, type FollowUp } from "../../ContactFollowUp/data/contactData";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { Client, initialClients } from "../../ClientManagement/data/clientsData";
 import Select from "../../../components/form/Select";
@@ -201,6 +202,25 @@ export default function LeadDetails() {
         title: `Meeting Scheduled (${m.type})`,
         description: `Status: ${m.status}. Agenda: ${m.title}`,
         timestamp: new Date(m.date + (m.time ? "T" + m.time : "")).getTime()
+      });
+    });
+
+    // 4. Follow-up Events
+    const allFollowups = getStorage<FollowUp[]>("saiflow_followups", initialFollowUps);
+    const relatedFollowups = allFollowups.filter((f) => f.leadId === lead.id);
+
+    relatedFollowups.forEach((f) => {
+      const dateObj = new Date(f.date + "T" + (f.time || "09:00"));
+      const timeStr = f.time ? ` at ${formatTime12hr(f.time)}` : "";
+      events.push({
+        date: dateObj.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        title: `Follow-up ${f.status}`,
+        description: `Reason: ${f.reason}. Assigned to: ${f.assignedTo}${timeStr}`,
+        timestamp: dateObj.getTime(),
       });
     });
 
