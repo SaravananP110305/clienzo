@@ -55,6 +55,7 @@ const navItems: NavItem[] = [
       { name: "Lost reasons", path: "/master/lost-reasons" },
       { name: "Priorities", path: "/master/priorities" },
       { name: "Follow-up types", path: "/master/followup-types" },
+      { name: "Payment terms", path: "/master/payment-terms" },
     ],
   },
   {

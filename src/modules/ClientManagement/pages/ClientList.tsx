@@ -6,7 +6,6 @@ import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
-import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
@@ -20,7 +19,12 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
-import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import {
+  FiEye,
+  FiEdit,
+  FiTrash2,
+  FiPlus,
+} from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { initialClients, Client } from "../data/clientsData";
 
@@ -41,98 +45,13 @@ export default function ClientList() {
   // Dropdown states
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
-  // Modal states
-  const formModal = useModal();
+  // Delete modal
   const deleteModal = useModal();
-
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-
-  // Form Fields states
-  const [name, setName] = useState("");
-  const [company, setCompany] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState<"Active" | "Inactive" | "Blacklisted">("Active");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleOpenCreate = () => {
-    setModalMode("create");
-    setSelectedClient(null);
-    setName("");
-    setCompany("");
-    setEmail("");
-    setPhone("");
-    setStatus("Active");
-    setErrors({});
-    formModal.openModal();
-  };
-
-  const handleOpenEdit = (client: Client) => {
-    setModalMode("edit");
-    setSelectedClient(client);
-    setName(client.name);
-    setCompany(client.company);
-    setEmail(client.email);
-    setPhone(client.phone);
-    setStatus(client.status);
-    setErrors({});
-    formModal.openModal();
-  };
-
-    // Removed handleOpenView callback to navigate directly instead
 
   const handleOpenDelete = (client: Client) => {
     setSelectedClient(client);
     deleteModal.openModal();
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: Record<string, string> = {};
-    if (!name.trim()) newErrors.name = "Client name is required.";
-    if (!company.trim()) newErrors.company = "Company is required.";
-    if (!email.trim()) newErrors.email = "Email is required.";
-    if (!phone.trim()) newErrors.phone = "Phone is required.";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      showToast("Please fill all required fields.", "error");
-      return;
-    }
-
-    if (modalMode === "create") {
-      const newClient: Client = {
-        id: clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1,
-        name: name.trim(),
-        company: company.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        projectsCount: 0,
-        status,
-      };
-      const updated = [...clients, newClient];
-      setClients(updated);
-      setStorage("saiflow_clients", updated);
-      showToast("Client added successfully.", "success");
-    } else if (modalMode === "edit" && selectedClient) {
-      const updated = clients.map((c) =>
-        c.id === selectedClient.id
-          ? {
-              ...c,
-              name: name.trim(),
-              company: company.trim(),
-              email: email.trim(),
-              phone: phone.trim(),
-              status,
-            }
-          : c
-      );
-      setClients(updated);
-      setStorage("saiflow_clients", updated);
-      showToast("Client details updated.", "success");
-    }
-    formModal.closeModal();
   };
 
   const handleDeleteConfirm = () => {
@@ -245,7 +164,7 @@ export default function ClientList() {
                     All Statuses
                   </DropdownItem>
                 </li>
-                {["Active", "Inactive"].map((st) => (
+                {["Active", "Inactive", "Blacklisted"].map((st) => (
                   <li key={st}>
                     <DropdownItem
                       onItemClick={() => {
@@ -265,7 +184,7 @@ export default function ClientList() {
             </Dropdown>
           </div>
         </div>
-        <Button onClick={handleOpenCreate} variant="primary" size="sm" startIcon={<FiPlus />}>
+        <Button onClick={() => navigate("/clients/add")} variant="primary" size="sm" startIcon={<FiPlus />}>
           Add Client
         </Button>
       </div>
@@ -302,12 +221,12 @@ export default function ClientList() {
                     <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{client.phone}</TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400 text-center font-semibold">{client.projectsCount}</TableCell>
                     <TableCell className="px-5 py-4 text-sm">
-                      <Badge color={client.status === "Active" ? "success" : "error"}>{client.status}</Badge>
+                      <Badge color={client.status === "Active" ? "success" : client.status === "Blacklisted" ? "error" : "warning"}>{client.status}</Badge>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-end">
                       <div className="flex justify-end items-center gap-2">
                         <button onClick={() => navigate(`/clients/${client.id}`)} className="text-gray-500 hover:text-brand-500 p-1"><FiEye size={16} /></button>
-                        <button onClick={() => handleOpenEdit(client)} className="text-gray-500 hover:text-warning-500 p-1"><FiEdit size={16} /></button>
+                        <button onClick={() => navigate(`/clients/${client.id}/edit`)} className="text-gray-500 hover:text-warning-500 p-1"><FiEdit size={16} /></button>
                         <button onClick={() => handleOpenDelete(client)} className="text-gray-500 hover:text-error-500 p-1"><FiTrash2 size={16} /></button>
                       </div>
                     </TableCell>
@@ -340,47 +259,6 @@ export default function ClientList() {
         />
       )}
 
-      {/* Form Modal */}
-      <Modal isOpen={formModal.isOpen} onClose={formModal.closeModal} className="max-w-lg p-6">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-          {modalMode === "create" ? "Add Client" : "Edit Client"}
-        </h4>
-        <form onSubmit={handleSave} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Client Name *</label>
-            <Input type="text" placeholder="Johnathan Doe" value={name} onChange={(e) => setName(e.target.value)} error={!!errors.name} hint={errors.name} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Company Name *</label>
-            <Input type="text" placeholder="SpaceX Logistics" value={company} onChange={(e) => setCompany(e.target.value)} error={!!errors.company} hint={errors.company} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Email Address *</label>
-            <Input type="email" placeholder="john@spacex.com" value={email} onChange={(e) => setEmail(e.target.value)} error={!!errors.email} hint={errors.email} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Phone Number *</label>
-            <Input type="text" placeholder="+1 (555) 019-2831" value={phone} onChange={(e) => setPhone(e.target.value)} error={!!errors.phone} hint={errors.phone} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Status</label>
-            <Select
-              options={[
-                { value: "Active", label: "Active" },
-                { value: "Inactive", label: "Inactive" },
-                { value: "Blacklisted", label: "Blacklisted" },
-              ]}
-              defaultValue={status}
-              onChange={(val) => setStatus(val as any)}
-            />
-          </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button onClick={formModal.closeModal} variant="outline" size="sm">Cancel</Button>
-            <Button type="submit" variant="primary" size="sm">Save Client</Button>
-          </div>
-        </form>
-      </Modal>
-
       {/* Delete Modal */}
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.closeModal} className="max-w-md p-6">
         <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">Delete Client</h4>
@@ -390,7 +268,6 @@ export default function ClientList() {
           <Button onClick={handleDeleteConfirm} variant="primary" className="bg-error-600 hover:bg-error-700 border-error-600 text-white" size="sm">Delete</Button>
         </div>
       </Modal>
-
     </>
   );
 }

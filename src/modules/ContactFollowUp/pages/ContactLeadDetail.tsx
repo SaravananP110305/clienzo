@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
-import { initialLeads, getStatusColor, Lead } from "../../LeadManagement/data/leadsData";
+import { initialLeads, getStatusColor, getPriorityColor, Lead } from "../../LeadManagement/data/leadsData";
 import { getStorage } from "../../../utils/storage";
 import {
   FiBriefcase,
@@ -214,6 +214,19 @@ function ActivityItem({ activity, isLast }: { activity: Activity; isLast?: boole
 // Main component
 // ──────────────────────────────────────────────
 
+function formatTime12hr(timeStr: string) {
+  if (!timeStr) return "";
+  if (timeStr.includes("AM") || timeStr.includes("PM")) return timeStr;
+  const parts = timeStr.split(":");
+  if (parts.length < 2) return timeStr;
+  const hour = parseInt(parts[0], 10);
+  const minStr = parts[1];
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const formattedHour = hour % 12 || 12;
+  return `${formattedHour}:${minStr} ${ampm}`;
+}
+
 export default function ContactLeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -271,72 +284,326 @@ export default function ContactLeadDetail() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-200 bg-white px-6 py-5 mb-5 dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-            {lead.company}
+            {lead.leadTitle || `${lead.company} Expansion`}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {lead.contactPerson}
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
+            <span className="font-medium text-gray-700 dark:text-gray-300">{lead.company}</span>
+            <span className="text-gray-300 dark:text-gray-750">•</span>
+            <span>{lead.contactPerson}</span>
           </p>
         </div>
-        <Badge size="md" color={getStatusColor(lead.status)}>
-          {lead.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge size="md" color={getStatusColor(lead.status)}>
+            {lead.status}
+          </Badge>
+          <Badge size="md" color={getPriorityColor(lead.priority)}>
+            {lead.priority || "Medium"} Priority
+          </Badge>
+        </div>
       </div>
 
       {/* Info Cards Grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {/* Company Information */}
+        {/* Card 1: Lead Information */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Company information
+            Lead information
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <InfoCard
+              icon={<FiTag className="size-4" />}
+              label="Lead ID"
+              value={`SF-LEAD-${String(lead.id).padStart(4, "0")}`}
+            />
+            <InfoCard
+              icon={<FiFileText className="size-4" />}
+              label="Lead Title"
+              value={lead.leadTitle || `${lead.company} Expansion`}
+            />
             <InfoCard
               icon={<FiBriefcase className="size-4" />}
               label="Company Name"
               value={lead.company}
             />
-            <InfoCard icon={<FiGlobe className="size-4" />} label="Website" value={lead.website} />
+            <InfoCard
+              icon={<FiUser className="size-4" />}
+              label="Contact Person"
+              value={lead.contactPerson}
+            />
+            <InfoCard
+              icon={<FiUser className="size-4" />}
+              label="Designation"
+              value={lead.designation}
+            />
+          </div>
+        </div>
+
+        {/* Card 2: Contact Details */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Contact details
+          </h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <InfoCard
+              icon={<FiPhone className="size-4" />}
+              label="Mobile Number"
+              value={lead.phone}
+            />
+            <InfoCard
+              icon={<FiPhone className="size-4" />}
+              label="Alternate Mobile"
+              value={lead.alternatePhone}
+            />
+            <InfoCard
+              icon={<FiMail className="size-4" />}
+              label="Email Address"
+              value={
+                lead.email ? (
+                  <a href={`mailto:${lead.email}`} className="text-brand-500 hover:underline">
+                    {lead.email}
+                  </a>
+                ) : ""
+              }
+            />
+            <InfoCard
+              icon={<FiMail className="size-4" />}
+              label="Alternate Email"
+              value={
+                lead.alternateEmail ? (
+                  <a href={`mailto:${lead.alternateEmail}`} className="text-brand-500 hover:underline">
+                    {lead.alternateEmail}
+                  </a>
+                ) : ""
+              }
+            />
+            <InfoCard
+              icon={<FiGlobe className="size-4" />}
+              label="Website"
+              value={
+                lead.website ? (
+                  <a
+                    href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-500 hover:underline"
+                  >
+                    {lead.website}
+                  </a>
+                ) : ""
+              }
+            />
+          </div>
+        </div>
+
+        {/* Card 3: Company Details */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Company details
+          </h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <InfoCard
+              icon={<FiBriefcase className="size-4" />}
+              label="Industry"
+              value={lead.industry}
+            />
+            <InfoCard
+              icon={<FiBriefcase className="size-4" />}
+              label="Company Size"
+              value={lead.companySize}
+            />
+            <InfoCard
+              icon={<FiBriefcase className="size-4" />}
+              label="Annual Revenue"
+              value={lead.annualRevenue}
+            />
+            <InfoCard
+              icon={<FiFileText className="size-4" />}
+              label="GST Number"
+              value={lead.gstNumber}
+            />
+          </div>
+        </div>
+
+        {/* Card 4: Address */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Address
+          </h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <InfoCard
                 icon={<FiMapPin className="size-4" />}
-                label="Address"
-                value={lead.address}
+                label="Address Line 1"
+                value={lead.addressLine1 || lead.address}
               />
             </div>
-            <InfoCard icon={<FiTag className="size-4" />} label="Industry" value={lead.industry} />
-            <InfoCard icon={<FiTag className="size-4" />} label="Lead Source" value={lead.source} />
+            <div className="sm:col-span-2">
+              <InfoCard
+                icon={<FiMapPin className="size-4" />}
+                label="Address Line 2"
+                value={lead.addressLine2}
+              />
+            </div>
+            <InfoCard
+              icon={<FiMapPin className="size-4" />}
+              label="Country"
+              value={lead.country}
+            />
+            <InfoCard
+              icon={<FiMapPin className="size-4" />}
+              label="State"
+              value={lead.state}
+            />
+            <InfoCard
+              icon={<FiMapPin className="size-4" />}
+              label="City"
+              value={lead.city}
+            />
+            <InfoCard
+              icon={<FiMapPin className="size-4" />}
+              label="Pincode"
+              value={lead.pincode}
+            />
           </div>
         </div>
 
-        {/* Contact Information */}
+        {/* Card 5: Lead Details */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Contact information
+            Lead details
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <InfoCard icon={<FiUser className="size-4" />} label="Contact Person" value={lead.contactPerson} />
             <InfoCard
-              icon={<FiUserCheck className="size-4" />}
-              label="Assigned To"
-              value={lead.assignedTo}
+              icon={<FiTag className="size-4" />}
+              label="Lead Source"
+              value={lead.source}
             />
-            <InfoCard icon={<FiMail className="size-4" />} label="Email Address" value={lead.email} />
-            <InfoCard icon={<FiPhone className="size-4" />} label="Phone Number" value={lead.phone} />
+            <InfoCard
+              icon={<FiTag className="size-4" />}
+              label="Lead Status"
+              value={
+                <Badge size="sm" color={getStatusColor(lead.status)}>
+                  {lead.status}
+                </Badge>
+              }
+            />
+            <InfoCard
+              icon={<FiTag className="size-4" />}
+              label="Priority"
+              value={
+                <Badge size="sm" color={getPriorityColor(lead.priority)}>
+                  {lead.priority || "Medium"}
+                </Badge>
+              }
+            />
+            <InfoCard
+              icon={<FiTag className="size-4" />}
+              label="Expected Budget"
+              value={lead.expectedBudget}
+            />
+            <InfoCard
+              icon={<FiCalendar className="size-4" />}
+              label="Expected Closing Date"
+              value={
+                lead.expectedClosingDate
+                  ? new Date(lead.expectedClosingDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : ""
+              }
+            />
           </div>
         </div>
 
-        {/* Notes / Agenda */}
-        <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+        {/* Card 6: Assignment */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Lead notes / requirements
+            Assignment
           </h3>
-          <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5 dark:border-white/[0.05] dark:bg-white/[0.03]">
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-800">
-              <FiFileText className="size-4 text-gray-500" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <InfoCard
+              icon={<FiUserCheck className="size-4" />}
+              label="Lead Owner"
+              value={lead.assignedTo}
+            />
+            <InfoCard
+              icon={<FiCalendar className="size-4" />}
+              label="Assigned Date"
+              value={
+                lead.assignedDate
+                  ? new Date(lead.assignedDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : ""
+              }
+            />
+          </div>
+        </div>
+
+        {/* Card 7: Requirement */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 sm:col-span-1 lg:col-span-2">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Requirement
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <InfoCard
+              icon={<FiBriefcase className="size-4" />}
+              label="Project Category"
+              value={lead.projectCategory}
+            />
+            <InfoCard
+              icon={<FiBriefcase className="size-4" />}
+              label="Technology"
+              value={
+                lead.technologies && lead.technologies.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {lead.technologies.map((tech) => (
+                      <span
+                        key={tech}
+                        className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-800 dark:text-gray-300"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  ""
+                )
+              }
+            />
+            <div className="sm:col-span-2">
+              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
+                Requirement Summary
+              </label>
+              <div className="p-4 rounded-xl border border-gray-100 bg-gray-50 dark:border-white/[0.05] dark:bg-white/[0.03]">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
+                  {lead.requirementSummary || lead.notes || "No requirement summary provided."}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
-              {lead.notes || <span className="text-gray-400">No notes available for this lead.</span>}
-            </p>
+          </div>
+        </div>
+
+        {/* Card 8: Communication */}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Communication
+          </h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <InfoCard
+              icon={<FiMail className="size-4" />}
+              label="Preferred Contact Method"
+              value={lead.preferredContactMethod}
+            />
+            <InfoCard
+              icon={<FiCalendar className="size-4" />}
+              label="Preferred Contact Time"
+              value={formatTime12hr(lead.preferredContactTime || "")}
+            />
           </div>
         </div>
       </div>

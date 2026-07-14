@@ -5,20 +5,41 @@ import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import { useToast } from "../../../hooks/useToast";
+import { getStorage, setStorage } from "../../../utils/storage";
+
+interface Settings {
+  appName: string;
+  timeZone: string;
+  language: string;
+  companyName: string;
+  contactEmail: string;
+  address: string;
+}
+
+const DEFAULT_SETTINGS: Settings = {
+  appName: "SaiFlow ERP",
+  timeZone: "GMT+05:30",
+  language: "English (US)",
+  companyName: "Sai Technologies",
+  contactEmail: "info@saiflow.com",
+  address: "12, Tech Park Avenue, Bangalore, India",
+};
 
 export default function SettingsPage() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<"general" | "company" | "security">("general");
 
+  const saved = getStorage<Settings>("saiflow_settings", DEFAULT_SETTINGS);
+
   // General Settings States
-  const [appName, setAppName] = useState("SaiFlow ERP");
-  const [timeZone, setTimeZone] = useState("GMT+05:30");
-  const [language, setLanguage] = useState("English (US)");
+  const [appName, setAppName] = useState(saved.appName);
+  const [timeZone, setTimeZone] = useState(saved.timeZone);
+  const [language, setLanguage] = useState(saved.language);
 
   // Company Details States
-  const [companyName, setCompanyName] = useState("Sai Technologies");
-  const [contactEmail, setContactEmail] = useState("info@saiflow.com");
-  const [address, setAddress] = useState("12, Tech Park Avenue, Bangalore, India");
+  const [companyName, setCompanyName] = useState(saved.companyName);
+  const [contactEmail, setContactEmail] = useState(saved.contactEmail);
+  const [address, setAddress] = useState(saved.address);
 
   // Security/Password States
   const [currentPassword, setCurrentPassword] = useState("");
@@ -27,11 +48,25 @@ export default function SettingsPage() {
 
   const handleSaveGeneral = (e: React.FormEvent) => {
     e.preventDefault();
+    const current = getStorage<Settings>("saiflow_settings", DEFAULT_SETTINGS);
+    setStorage("saiflow_settings", {
+      ...current,
+      appName,
+      timeZone,
+      language,
+    });
     showToast("General system settings saved.", "success");
   };
 
   const handleSaveCompany = (e: React.FormEvent) => {
     e.preventDefault();
+    const current = getStorage<Settings>("saiflow_settings", DEFAULT_SETTINGS);
+    setStorage("saiflow_settings", {
+      ...current,
+      companyName,
+      contactEmail,
+      address,
+    });
     showToast("Company profile details updated.", "success");
   };
 

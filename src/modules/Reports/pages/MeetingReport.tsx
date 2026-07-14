@@ -332,7 +332,7 @@ export default function MeetingReport() {
                     <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
                       {row.subject}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-650 dark:text-gray-400 whitespace-nowrap">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.company}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">

@@ -51,7 +51,7 @@ const sidebarStructure = [
   { name: "Master Config", key: "master", subItems: [
     "Countries", "States", "Cities", "Departments", "Designations",
     "Lead sources", "Industries", "Meeting types", "Follow-up reasons", "Lost reasons",
-    "Priorities", "Follow-up types"
+    "Priorities", "Follow-up types", "Payment terms"
   ] },
   { name: "Manage Users", key: "users", subItems: ["User Roles", "Users"] },
   { name: "Leads", key: "leads" },
@@ -561,10 +561,10 @@ export default function UserRoleManagement() {
                     key={role.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-855 dark:text-white/90 text-center">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-center">
                       {role.id}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-855 dark:text-white/90 font-medium">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-medium">
                       {role.roleName}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 text-center">
@@ -685,7 +685,7 @@ export default function UserRoleManagement() {
                           const hasSub = sidebarStructure.find(item => item.key === perm.key)?.subItems !== undefined;
                           return (
                             <tr key={perm.key} className={`${isSub ? "bg-white dark:bg-transparent" : "bg-gray-50/40 dark:bg-white/[0.01] font-semibold"} hover:bg-gray-50 dark:hover:bg-white/[0.01]`}>
-                              <td className={`px-3 py-2 ${isSub ? "pl-6 text-gray-500 dark:text-gray-400 text-xs" : "text-xs text-gray-808 dark:text-white/90"}`}>
+                              <td className={`px-3 py-2 ${isSub ? "pl-6 text-gray-500 dark:text-gray-400 text-xs" : "text-xs text-gray-800 dark:text-white/90"}`}>
                                 {isSub ? `└─ ${perm.menu}` : perm.menu}
                               </td>
                               <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.view ? "✅" : "❌")}</td>
@@ -793,7 +793,7 @@ export default function UserRoleManagement() {
                             key={perm.key}
                             className={`${isSub ? "bg-white dark:bg-transparent" : "bg-gray-50/40 dark:bg-white/[0.01] font-semibold"} hover:bg-gray-100/50 dark:hover:bg-white/[0.01]`}
                           >
-                            <td className={`px-4 py-2.5 ${isSub ? "pl-8 text-gray-600 dark:text-gray-400 text-xs" : "text-sm text-gray-805 dark:text-white/90"}`}>
+                            <td className={`px-4 py-2.5 ${isSub ? "pl-8 text-gray-600 dark:text-gray-400 text-xs" : "text-sm text-gray-800 dark:text-white/90"}`}>
                               {isSub ? (
                                 <span className="flex items-center gap-1.5">
                                   <span className="text-gray-300 dark:text-gray-700">└─</span>

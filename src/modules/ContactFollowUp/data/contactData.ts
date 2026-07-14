@@ -15,6 +15,7 @@ export interface FollowUp {
   time: string;        // HH:MM
   reason: string;
   status: "Scheduled" | "Completed" | "Missed";
+  completedSummary?: string; // Summary notes when marked as completed
 }
 
 // Leads assigned to "John Doe" (logged-in user simulation)

@@ -31,14 +31,10 @@ import { ToastProvider } from "./context/ToastContext";
 import { getStorage, setStorage } from "./utils/storage";
 
 import ClientList from "./modules/ClientManagement/pages/ClientList";
+import AddClient from "./modules/ClientManagement/pages/AddClient";
 import ClientDetails from "./modules/ClientManagement/pages/ClientDetails";
 import RequirementList from "./modules/RequirementManagement/pages/RequirementList";
 import QuotationList from "./modules/Quotation/pages/QuotationList";
-import ProjectList from "./modules/ProjectManagement/pages/ProjectList";
-import TaskList from "./modules/TaskManagement/pages/TaskList";
-import QaList from "./modules/QaManagement/pages/QaList";
-import DeploymentList from "./modules/Deployment/pages/DeploymentList";
-import SupportList from "./modules/Support/pages/SupportList";
 import SettingsPage from "./modules/Settings/pages/SettingsPage";
 
 
@@ -55,6 +51,7 @@ import {
   DESIGNATIONS,
   PRIORITIES,
   FOLLOWUP_TYPES,
+  PAYMENT_TERMS,
 } from "./modules/Master/data/masterData";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -443,6 +440,20 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/master/payment-terms"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Payment terms"
+                    itemNameSingular="payment term"
+                    itemNamePlural="payment terms"
+                    initialData={PAYMENT_TERMS}
+                    storageKey="saiflow_master_payment_terms"
+                  />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Core Operational Routes */}
             <Route
@@ -450,6 +461,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={allowedRoles}>
                   <ClientList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients/add"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <AddClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <AddClient />
                 </ProtectedRoute>
               }
             />
@@ -474,46 +501,6 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={allowedRoles}>
                   <QuotationList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projects"
-              element={
-                <ProtectedRoute allowedRoles={allowedRoles}>
-                  <ProjectList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tasks"
-              element={
-                <ProtectedRoute allowedRoles={allowedRoles}>
-                  <TaskList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/qa"
-              element={
-                <ProtectedRoute allowedRoles={allowedRoles}>
-                  <QaList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/deployments"
-              element={
-                <ProtectedRoute allowedRoles={allowedRoles}>
-                  <DeploymentList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/support"
-              element={
-                <ProtectedRoute allowedRoles={allowedRoles}>
-                  <SupportList />
                 </ProtectedRoute>
               }
             />

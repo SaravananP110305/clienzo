@@ -331,7 +331,7 @@ export default function FollowUpReport() {
                     <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
                       {row.company}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-650 dark:text-gray-400 whitespace-nowrap">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.contactPerson}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
@@ -340,7 +340,7 @@ export default function FollowUpReport() {
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.time}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-650 dark:text-gray-400 whitespace-nowrap">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.reason}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">

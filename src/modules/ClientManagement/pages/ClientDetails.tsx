@@ -101,11 +101,6 @@ export default function ClientDetails() {
     { id: "contacts", label: "Contacts" },
     { id: "meetings", label: "Meetings", count: clientMeetings.length },
     { id: "projects", label: "Projects", count: client.projectsCount || 0 },
-    { id: "quotations", label: "Quotations", count: 0 },
-    { id: "invoices", label: "Invoices", count: 0 },
-    { id: "payments", label: "Payments", count: 0 },
-    { id: "documents", label: "Documents", count: 0 },
-    { id: "support", label: "Support Tickets", count: 0 },
     { id: "timeline", label: "Timeline" },
   ];
 
@@ -165,25 +160,25 @@ export default function ClientDetails() {
         </div>
       </div>
 
-      {/* Tab Navigators */}
+      {/* Premium Tab Navigators */}
       <div className="border-b border-gray-200 dark:border-white/[0.05] mb-6 overflow-x-auto scrollbar-none">
-        <nav className="flex space-x-6 min-w-max pb-px">
+        <nav className="flex min-w-max pb-px">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 text-xs font-semibold border-b-2 transition duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`py-3 px-4 text-sm font-semibold border-b-2 transition-all duration-200 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === tab.id
                   ? "border-brand-500 text-brand-600 dark:text-brand-400"
-                  : "border-transparent text-gray-450 hover:text-gray-700 dark:hover:text-white"
+                  : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/[0.03] rounded-t-lg"
               }`}
             >
               {tab.label}
               {tab.count !== undefined && (
-                <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full px-1.5 text-[11px] font-bold leading-none transition-all duration-200 ${
                   activeTab === tab.id
-                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
-                    : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                    ? "bg-brand-500 text-white shadow-xs"
+                    : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                 }`}>
                   {tab.count}
                 </span>
@@ -337,37 +332,41 @@ export default function ClientDetails() {
 
         {/* Mock Project List */}
         {activeTab === "projects" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            <h3 className="text-sm font-semibold text-gray-850 dark:text-white mb-4">
+          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4">
               Client Projects
             </h3>
             {client.projectsCount > 0 ? (
-              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-white/[0.05]">
+              <div className="max-w-full overflow-x-auto custom-scrollbar">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                     <TableRow>
-                      <TableCell isHeader>Project Name</TableCell>
-                      <TableCell isHeader>Category</TableCell>
-                      <TableCell isHeader>Status</TableCell>
-                      <TableCell isHeader>Launch Date</TableCell>
-                      <TableCell isHeader className="text-right">Progress</TableCell>
+                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Project Name</TableCell>
+                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Category</TableCell>
+                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</TableCell>
+                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Launch Date</TableCell>
+                      <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Progress</TableCell>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-semibold text-gray-850 dark:text-white/90">E-Commerce App Redesign</TableCell>
-                      <TableCell>Mobile Application</TableCell>
-                      <TableCell><Badge size="sm" color="primary">In Progress</Badge></TableCell>
-                      <TableCell>2026-09-01</TableCell>
-                      <TableCell className="text-right font-medium">60%</TableCell>
+                  <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                    <TableRow className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                      <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">E-Commerce App Redesign</TableCell>
+                      <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Mobile Application</TableCell>
+                      <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                        <Badge size="sm" color="primary">In Progress</Badge>
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">2026-09-01</TableCell>
+                      <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-end whitespace-nowrap">60%</TableCell>
                     </TableRow>
                     {client.projectsCount > 1 && (
-                      <TableRow>
-                        <TableCell className="font-semibold text-gray-855 dark:text-white/90">HR Portal Integration</TableCell>
-                        <TableCell>Web Application</TableCell>
-                        <TableCell><Badge size="sm" color="success">Active</Badge></TableCell>
-                        <TableCell>2026-06-15</TableCell>
-                        <TableCell className="text-right font-medium">100%</TableCell>
+                      <TableRow className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                        <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">HR Portal Integration</TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Web Application</TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                          <Badge size="sm" color="success">Active</Badge>
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">2026-06-15</TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-end whitespace-nowrap">100%</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -375,83 +374,11 @@ export default function ClientDetails() {
               </div>
             ) : (
               <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-                <p className="text-sm text-gray-450 dark:text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   No active projects found for this client.
                 </p>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Mock Quotations */}
-        {activeTab === "quotations" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            <h3 className="text-sm font-semibold text-gray-855 dark:text-white mb-4">
-              Quotations
-            </h3>
-            <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-              <p className="text-sm text-gray-450 dark:text-gray-500 mb-4">
-                No quotations found.
-              </p>
-              <Button size="sm">Create Quotation</Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mock Invoices */}
-        {activeTab === "invoices" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            <h3 className="text-sm font-semibold text-gray-855 dark:text-white mb-4">
-              Invoices
-            </h3>
-            <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-              <p className="text-sm text-gray-450 dark:text-gray-500">
-                No invoices issued.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Mock Payments */}
-        {activeTab === "payments" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            <h3 className="text-sm font-semibold text-gray-855 dark:text-white mb-4">
-              Payments History
-            </h3>
-            <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-              <p className="text-sm text-gray-455 dark:text-gray-500">
-                No payment transactions recorded.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Mock Documents */}
-        {activeTab === "documents" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            <h3 className="text-sm font-semibold text-gray-855 dark:text-white mb-4">
-              Documents & Contracts
-            </h3>
-            <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-              <p className="text-sm text-gray-455 dark:text-gray-500 mb-4">
-                No documents uploaded.
-              </p>
-              <Button size="sm">Upload Document</Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mock Support Tickets */}
-        {activeTab === "support" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            <h3 className="text-sm font-semibold text-gray-855 dark:text-white mb-4">
-              Support Tickets
-            </h3>
-            <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-              <p className="text-sm text-gray-455 dark:text-gray-500">
-                No support tickets filed.
-              </p>
-            </div>
           </div>
         )}
 

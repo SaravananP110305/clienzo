@@ -347,10 +347,10 @@ export default function LeadReport() {
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.phone}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-650 dark:text-gray-400 whitespace-nowrap">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.source}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-650 dark:text-gray-400 whitespace-nowrap">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.industry}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">

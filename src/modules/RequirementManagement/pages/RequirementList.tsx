@@ -301,51 +301,59 @@ export default function RequirementList() {
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto">
           <Table className="min-w-full">
-            <TableHeader className="bg-gray-55 dark:bg-gray-900 border-b border-gray-100 dark:border-white/[0.05]">
+            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">
-                  <button onClick={() => handleSort("title")} className="flex items-center gap-1">
-                    Requirement Details {sortField === "title" && (sortOrder === "asc" ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />)}
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  <button onClick={() => handleSort("title")} className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer">
+                    Requirement Details
+                    <span className="flex flex-col">
+                      <ChevronUpIcon className={`w-3 h-3 -mb-1 transition-colors ${sortField === "title" && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"}`} />
+                      <ChevronDownIcon className={`w-3 h-3 transition-colors ${sortField === "title" && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"}`} />
+                    </span>
                   </button>
-                </th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">
-                  <button onClick={() => handleSort("client")} className="flex items-center gap-1">
-                    Client {sortField === "client" && (sortOrder === "asc" ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />)}
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  <button onClick={() => handleSort("client")} className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer">
+                    Client
+                    <span className="flex flex-col">
+                      <ChevronUpIcon className={`w-3 h-3 -mb-1 transition-colors ${sortField === "client" && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"}`} />
+                      <ChevronDownIcon className={`w-3 h-3 transition-colors ${sortField === "client" && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"}`} />
+                    </span>
                   </button>
-                </th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Tech Stack</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Priority</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Date Logged</th>
-                <th className="px-5 py-3 text-end text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Actions</th>
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tech Stack</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Priority</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Date Logged</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</TableCell>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {paginatedRequirements.length > 0 ? (
                 paginatedRequirements.map((req) => (
-                  <TableRow key={req.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-55/50 dark:hover:bg-white/[0.01]">
-                    <TableCell className="px-5 py-4 text-sm font-medium text-gray-800 dark:text-white/90">{req.title}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{req.client}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{req.techStack}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm">
-                      <Badge color={getPriorityColor(req.priority)}>{req.priority}</Badge>
+                  <TableRow key={req.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{req.title}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400">{req.client}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400">{req.techStack}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                      <Badge size="sm" color={getPriorityColor(req.priority)}>{req.priority}</Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm">
-                      <Badge color={getStatusColor(req.status)} variant="solid">{req.status}</Badge>
+                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                      <Badge size="sm" color={getStatusColor(req.status)}>{req.status}</Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{req.date}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-end">
-                      <div className="flex justify-end items-center gap-2">
-                        <button onClick={() => handleOpenView(req)} className="text-gray-500 hover:text-brand-500 p-1"><FiEye size={16} /></button>
-                        <button onClick={() => handleOpenEdit(req)} className="text-gray-500 hover:text-warning-500 p-1"><FiEdit size={16} /></button>
-                        <button onClick={() => handleOpenDelete(req)} className="text-gray-500 hover:text-error-500 p-1"><FiTrash2 size={16} /></button>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400">{req.date}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleOpenView(req)} className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer" title="View"><FiEye className="size-4" /></button>
+                        <button onClick={() => handleOpenEdit(req)} className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer" title="Edit"><FiEdit className="size-4" /></button>
+                        <button onClick={() => handleOpenDelete(req)} className="p-1.5 text-gray-500 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer" title="Delete"><FiTrash2 className="size-4" /></button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                  <TableCell colSpan={7} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No requirements found.
                   </TableCell>
                 </TableRow>

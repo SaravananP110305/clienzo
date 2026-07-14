@@ -114,6 +114,15 @@ export const PRIORITIES: MasterItem[] = [
   { id: 4, name: "Low", status: "Active" }
 ];
 
+export const PAYMENT_TERMS: MasterItem[] = [
+  { id: 1, name: "Net 15", status: "Active" },
+  { id: 2, name: "Net 30", status: "Active" },
+  { id: 3, name: "Net 45", status: "Active" },
+  { id: 4, name: "Net 60", status: "Active" },
+  { id: 5, name: "Immediate", status: "Active" },
+  { id: 6, name: "Advance Payment", status: "Inactive" },
+];
+
 export const FOLLOWUP_TYPES: MasterItem[] = [
   { id: 1, name: "Email Outreach", status: "Active" },
   { id: 2, name: "Phone Call", status: "Active" },
@@ -130,9 +139,4 @@ export const PROJECT_CATEGORIES: MasterItem[] = [
   { id: 5, name: "UI/UX Consultation", status: "Active" }
 ];
 
-export const PROJECT_STATUSES: MasterItem[] = [
-  { id: 1, name: "Planning", status: "Active" },
-  { id: 2, name: "In Progress", status: "Active" },
-  { id: 3, name: "On Hold", status: "Active" },
-  { id: 4, name: "Completed", status: "Active" }
-];
+

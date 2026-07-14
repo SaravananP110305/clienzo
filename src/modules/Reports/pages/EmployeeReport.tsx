@@ -313,7 +313,7 @@ export default function EmployeeReport() {
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.email}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-650 dark:text-gray-400 whitespace-nowrap">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.role}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-center">

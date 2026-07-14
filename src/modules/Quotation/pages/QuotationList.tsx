@@ -285,47 +285,51 @@ export default function QuotationList() {
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto">
           <Table className="min-w-full">
-            <TableHeader className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-white/[0.05]">
+            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">
-                  <button onClick={() => handleSort("quotationNo")} className="flex items-center gap-1">
-                    Quotation No {sortField === "quotationNo" && (sortOrder === "asc" ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />)}
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  <button onClick={() => handleSort("quotationNo")} className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer">
+                    Quotation No
+                    <span className="flex flex-col">
+                      <ChevronUpIcon className={`w-3 h-3 -mb-1 transition-colors ${sortField === "quotationNo" && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"}`} />
+                      <ChevronDownIcon className={`w-3 h-3 transition-colors ${sortField === "quotationNo" && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"}`} />
+                    </span>
                   </button>
-                </th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Client</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Project Category</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 text-right">Amount</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
-                <th className="px-5 py-3 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Creation Date</th>
-                <th className="px-5 py-3 text-end text-theme-xs font-semibold text-gray-500 dark:text-gray-400">Actions</th>
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Client</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Project Category</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Amount</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Creation Date</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</TableCell>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {paginatedQuotations.length > 0 ? (
                 paginatedQuotations.map((quote) => (
-                  <TableRow key={quote.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-55/50 dark:hover:bg-white/[0.01]">
-                    <TableCell className="px-5 py-4 text-sm font-semibold text-gray-800 dark:text-white/90">{quote.quotationNo}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{quote.client}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{quote.category}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-800 dark:text-white/90 text-right font-semibold">
+                  <TableRow key={quote.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{quote.quotationNo}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400">{quote.client}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400">{quote.category}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-end font-medium">
                       ${quote.amount.toLocaleString()}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm">
-                      <Badge color={getStatusColor(quote.status)} variant="solid">{quote.status}</Badge>
+                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                      <Badge size="sm" color={getStatusColor(quote.status)}>{quote.status}</Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{quote.date}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-end">
-                      <div className="flex justify-end items-center gap-2">
-                        <button onClick={() => handleOpenView(quote)} className="text-gray-500 hover:text-brand-500 p-1"><FiEye size={16} /></button>
-                        <button onClick={() => handleOpenEdit(quote)} className="text-gray-500 hover:text-warning-500 p-1"><FiEdit size={16} /></button>
-                        <button onClick={() => handleOpenDelete(quote)} className="text-gray-500 hover:text-error-500 p-1"><FiTrash2 size={16} /></button>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400">{quote.date}</TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleOpenView(quote)} className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer" title="View"><FiEye className="size-4" /></button>
+                        <button onClick={() => handleOpenEdit(quote)} className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer" title="Edit"><FiEdit className="size-4" /></button>
+                        <button onClick={() => handleOpenDelete(quote)} className="p-1.5 text-gray-500 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer" title="Delete"><FiTrash2 className="size-4" /></button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                  <TableCell colSpan={7} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No quotations found.
                   </TableCell>
                 </TableRow>

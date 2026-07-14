@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -14,13 +15,17 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
-import { getStorage } from "../../../utils/storage";
+import { getStorage, setStorage } from "../../../utils/storage";
 import {
   initialFollowUps,
   getFollowUpStatusColor,
   type FollowUp,
 } from "../data/contactData";
 import { ASSIGNEES } from "../../LeadManagement/data/leadsData";
+import { useToast } from "../../../hooks/useToast";
+import { Modal } from "../../../components/ui/modal";
+import Button from "../../../components/ui/button/Button";
+import { FiCheckCircle, FiEye } from "react-icons/fi";
 
 const FOLLOW_UP_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -30,7 +35,11 @@ const FOLLOW_UP_STATUS_OPTIONS = [
 ];
 
 export default function FollowUps() {
-  const followupsList = getStorage<FollowUp[]>("saiflow_followups", initialFollowUps);
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [followupsList, setFollowupsList] = useState<FollowUp[]>(() =>
+    getStorage<FollowUp[]>("saiflow_followups", initialFollowUps)
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -87,7 +96,7 @@ export default function FollowUps() {
     });
 
     return result;
-  }, [searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
+  }, [followupsList, searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
 
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -127,6 +136,32 @@ export default function FollowUps() {
       month: "short",
       day: "numeric",
     });
+
+  // Modal state for completing follow-ups
+  const [selectedItemForComplete, setSelectedItemForComplete] = useState<FollowUp | null>(null);
+  const [completeSummary, setCompleteSummary] = useState("");
+
+  const handleOpenCompleteModal = (item: FollowUp) => {
+    setSelectedItemForComplete(item);
+    setCompleteSummary("");
+  };
+
+  const handleConfirmComplete = () => {
+    if (!selectedItemForComplete) return;
+    if (selectedItemForComplete.status === "Completed") return;
+
+    const summary = completeSummary.trim() || "No summary provided.";
+    const updatedList = followupsList.map((f) =>
+      f.id === selectedItemForComplete.id
+        ? { ...f, status: "Completed" as const, completedSummary: summary }
+        : f
+    );
+    setFollowupsList(updatedList);
+    setStorage("saiflow_followups", updatedList);
+    showToast(`Follow-up for ${selectedItemForComplete.company} marked as Completed.`, "success");
+    setSelectedItemForComplete(null);
+    setCompleteSummary("");
+  };
 
   return (
     <>
@@ -262,6 +297,9 @@ export default function FollowUps() {
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Status", "status")}
                 </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  Action
+                </TableCell>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -274,8 +312,14 @@ export default function FollowUps() {
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
                       {item.id}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
-                      {item.company}
+                    <TableCell className="px-5 py-4 text-theme-sm font-medium whitespace-nowrap">
+                      <button
+                        onClick={() => navigate(`/contacts/${item.leadId}`)}
+                        className="text-brand-500 hover:underline font-medium cursor-pointer text-left"
+                        title="View lead details"
+                      >
+                        {item.company}
+                      </button>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {item.contactPerson}
@@ -297,11 +341,31 @@ export default function FollowUps() {
                         {item.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="px-5 py-4 text-end whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/contacts/${item.leadId}`)}
+                          title="View lead details"
+                          className="flex items-center justify-center h-8 w-8 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 transition cursor-pointer"
+                        >
+                          <FiEye className="size-4" />
+                        </button>
+                        {(item.status === "Scheduled" || item.status === "Missed") && (
+                          <button
+                            onClick={() => handleOpenCompleteModal(item)}
+                            title="Mark as Completed"
+                            className="flex items-center justify-center h-8 w-8 rounded-lg bg-success-500 text-white hover:bg-success-600 transition cursor-pointer"
+                          >
+                            <FiCheckCircle className="size-4" />
+                          </button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell colSpan={9} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No follow-ups found.
                   </TableCell>
                 </TableRow>
@@ -322,6 +386,74 @@ export default function FollowUps() {
           />
         )}
       </div>
+
+      {/* Mark as Completed Modal */}
+      <Modal
+        isOpen={!!selectedItemForComplete}
+        onClose={() => { setSelectedItemForComplete(null); setCompleteSummary(""); }}
+        className="max-w-[500px] m-4"
+      >
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <FiCheckCircle className="size-5 text-success-500" />
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                Mark follow-up as Completed
+              </h4>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Log the outcome summary for{" "}
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                {selectedItemForComplete?.company}
+              </span>
+              {selectedItemForComplete?.contactPerson && (
+                <> ({selectedItemForComplete.contactPerson})</>
+              )}
+              .
+            </p>
+            {selectedItemForComplete && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Reason: {selectedItemForComplete.reason}
+                </span>
+                <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  {selectedItemForComplete.date} at {selectedItemForComplete.time}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Completion summary <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={completeSummary}
+              onChange={(e) => setCompleteSummary(e.target.value)}
+              placeholder="E.g., Client agreed to schedule a demo next week..."
+              rows={4}
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-white/[0.05]">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setSelectedItemForComplete(null); setCompleteSummary(""); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmComplete}
+              className="bg-success-600 hover:bg-success-700 text-white"
+            >
+              Confirm Completed
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
