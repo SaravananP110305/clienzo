@@ -374,7 +374,7 @@ export default function AddLead() {
       />
       <PageBreadcrumb pageTitle={isEditMode ? "Edit lead" : "Add lead"} />
 
-      <form onSubmit={handleSubmit(handleSave, handleFormError)} className="space-y-6 pb-24">
+      <form onSubmit={handleSubmit(handleSave, handleFormError)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1: Lead Information */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
@@ -1077,8 +1077,8 @@ export default function AddLead() {
 
         </div>
 
-        {/* Bottom Sticky Action Bar */}
-        <div className="fixed bottom-0 left-0 md:left-72 right-0 z-40 bg-white dark:bg-[#121212] border-t border-gray-200 dark:border-white/[0.08] py-4 px-8 flex items-center justify-end gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-6px_16px_rgba(0,0,0,0.2)]">
+        {/* Form Actions */}
+        <div className="flex items-center justify-end gap-3 mt-6">
           <Button size="sm" type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
