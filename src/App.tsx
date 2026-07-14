@@ -53,12 +53,8 @@ import {
   CITIES,
   DEPARTMENTS,
   DESIGNATIONS,
-  TECHNOLOGIES,
-  LEAD_STATUSES,
   PRIORITIES,
   FOLLOWUP_TYPES,
-  PROJECT_CATEGORIES,
-  PROJECT_STATUSES,
 } from "./modules/Master/data/masterData";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -350,20 +346,6 @@ export default function App() {
               }
             />
             <Route
-              path="/master/technologies"
-              element={
-                <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <MasterConfigPage
-                    pageTitle="Technologies"
-                    itemNameSingular="technology"
-                    itemNamePlural="technologies"
-                    initialData={TECHNOLOGIES}
-                    storageKey="saiflow_master_technologies"
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/master/lead-sources"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
@@ -434,20 +416,6 @@ export default function App() {
               }
             />
             <Route
-              path="/master/lead-statuses"
-              element={
-                <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <MasterConfigPage
-                    pageTitle="Lead statuses"
-                    itemNameSingular="lead status"
-                    itemNamePlural="lead statuses"
-                    initialData={LEAD_STATUSES}
-                    storageKey="saiflow_master_lead_statuses"
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/master/priorities"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
@@ -471,34 +439,6 @@ export default function App() {
                     itemNamePlural="follow-up types"
                     initialData={FOLLOWUP_TYPES}
                     storageKey="saiflow_master_followup_types"
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/master/project-categories"
-              element={
-                <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <MasterConfigPage
-                    pageTitle="Project categories"
-                    itemNameSingular="project category"
-                    itemNamePlural="project categories"
-                    initialData={PROJECT_CATEGORIES}
-                    storageKey="saiflow_master_project_categories"
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/master/project-statuses"
-              element={
-                <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <MasterConfigPage
-                    pageTitle="Project statuses"
-                    itemNameSingular="project status"
-                    itemNamePlural="project statuses"
-                    initialData={PROJECT_STATUSES}
-                    storageKey="saiflow_master_project_statuses"
                   />
                 </ProtectedRoute>
               }
