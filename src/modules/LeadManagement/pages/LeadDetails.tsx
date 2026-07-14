@@ -113,13 +113,6 @@ export default function LeadDetails() {
     const updatedClients = [...clientsList, newClient];
     setStorage("saiflow_clients", updatedClients);
 
-    // Update Lead to Won status
-    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
-    const updatedLeads = leadsList.map((l) =>
-      l.id === lead.id ? { ...l, status: "Won" as const } : l
-    );
-    setStorage("saiflow_leads", updatedLeads);
-
     showToast(`Lead converted to Client ${lead.company} successfully!`, "success");
     setShowConvertModal(false);
     navigate(`/clients/${newClientId}`);

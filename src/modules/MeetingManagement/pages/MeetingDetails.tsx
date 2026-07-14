@@ -8,7 +8,6 @@ import { initialMeetings, getMeetingStatusColor, Meeting } from "../data/meeting
 import { getStorage, setStorage } from "../../../utils/storage";
 import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
 import { Client, initialClients } from "../../ClientManagement/data/clientsData";
-import { LOST_REASONS } from "../../Master/data/masterData";
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
 import Select from "../../../components/form/Select";
@@ -69,22 +68,8 @@ export default function MeetingDetails() {
   const [matchingLead, setMatchingLead] = useState<Lead | null>(null);
   
   // Modals state
-  const [showLostModal, setShowLostModal] = useState(false);
-  const [showWonModal, setShowWonModal] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
 
-  // Form entries
-  const [wonSummary, setWonSummary] = useState("");
-  const [wonNextAction, setWonNextAction] = useState("Create Follow-up");
-  
-  const [lostSummary, setLostSummary] = useState("");
-  const [selectedLostReason, setSelectedLostReason] = useState("");
-  const [lostNextAction, setLostNextAction] = useState("Create Follow-up");
-
-  const [cancelNotes, setCancelNotes] = useState("");
-  const [selectedCancelReason, setSelectedCancelReason] = useState("");
-  
   // Conversion Form Entries
   const [paymentTerms, setPaymentTerms] = useState("Net 30");
   const [creditLimit, setCreditLimit] = useState("500000");
@@ -186,95 +171,6 @@ export default function MeetingDetails() {
     }
   }, [meeting]);
 
-  const handleMarkWon = (summary: string, nextAct: string) => {
-    if (!meeting) return;
-    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
-    const updatedMeetings = meetings.map((m) =>
-      m.id === meeting.id ? { ...m, status: "Completed" as const, nextAction: nextAct } : m
-    );
-    setStorage("saiflow_meetings", updatedMeetings);
-
-    if (matchingLead) {
-      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
-      const updatedLeads = leadsList.map((l) =>
-        l.id === matchingLead.id ? { 
-          ...l, 
-          status: "Won" as const,
-          remarks: `${l.remarks || ""}\n[Meeting Won Outcome Summary]: ${summary}`.trim()
-        } : l
-      );
-      setStorage("saiflow_leads", updatedLeads);
-    }
-
-    logActivity("Concluded - Won", `Concluded meeting successfully. Next Action: ${nextAct}. Summary: ${summary}`);
-    showToast("Meeting marked as Completed and Lead marked as Won!", "success");
-    setShowWonModal(false);
-    setWonSummary("");
-    
-    if (nextAct === "Convert Lead") {
-      setShowConvertModal(true);
-    } else {
-      loadData();
-    }
-  };
-
-  const handleMarkLost = (reason: string, summary: string, nextAct: string) => {
-    if (!meeting) return;
-    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
-    const updatedMeetings = meetings.map((m) =>
-      m.id === meeting.id ? { ...m, status: "Completed" as const, nextAction: nextAct } : m
-    );
-    setStorage("saiflow_meetings", updatedMeetings);
-
-    if (matchingLead) {
-      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
-      const updatedLeads = leadsList.map((l) =>
-        l.id === matchingLead.id
-          ? {
-              ...l,
-              status: "Lost" as const,
-              remarks: `${l.remarks || ""}\n[Meeting Lost Outcome Summary]: ${summary} (Lost Reason: ${reason})`.trim()
-            }
-          : l
-      );
-      setStorage("saiflow_leads", updatedLeads);
-    }
-
-    logActivity("Concluded - Lost", `Concluded meeting. Lost reason: ${reason}. Next Action: ${nextAct}. Summary: ${summary}`);
-    showToast("Meeting marked as Completed and Lead marked as Lost.", "error");
-    setShowLostModal(false);
-    setSelectedLostReason("");
-    setLostSummary("");
-    loadData();
-  };
-
-  const handleCancelMeeting = (reason: string, notes: string) => {
-    if (!meeting) return;
-    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
-    const updatedMeetings = meetings.map((m) =>
-      m.id === meeting.id ? { ...m, status: "Cancelled" as const } : m
-    );
-    setStorage("saiflow_meetings", updatedMeetings);
-
-    if (matchingLead) {
-      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
-      const updatedLeads = leadsList.map((l) =>
-        l.id === matchingLead.id ? {
-          ...l,
-          remarks: `${l.remarks || ""}\n[Meeting Cancelled]: Reason: ${reason}. Notes: ${notes}`.trim()
-        } : l
-      );
-      setStorage("saiflow_leads", updatedLeads);
-    }
-
-    logActivity("Cancelled", `Meeting has been cancelled. Reason: ${reason}. Notes: ${notes}`);
-    showToast("Meeting cancelled successfully.", "success");
-    setShowCancelModal(false);
-    setSelectedCancelReason("");
-    setCancelNotes("");
-    loadData();
-  };
-
   const handleConvertLeadConfirm = () => {
     if (!meeting || !matchingLead) return;
 
@@ -322,14 +218,7 @@ export default function MeetingDetails() {
     const updatedClients = [...clientsList, newClient];
     setStorage("saiflow_clients", updatedClients);
 
-    // Update Lead to Won status
-    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
-    const updatedLeads = leadsList.map((l) =>
-      l.id === matchingLead.id ? { ...l, status: "Won" as const } : l
-    );
-    setStorage("saiflow_leads", updatedLeads);
-
-    // Update Meeting relation to type Client
+    // Update Meeting relation to type Client (lead is already Won)
     const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
       m.id === meeting.id ? { ...m, relatedToType: "Client" as const, relatedToId: newClientId } : m
@@ -343,9 +232,6 @@ export default function MeetingDetails() {
     // Redirect directly to the Client Details View
     navigate(`/clients/${newClientId}`);
   };
-
-  const lostReasons = getStorage<any[]>("saiflow_master_lost_reasons", LOST_REASONS)
-    .filter((r) => r.status === "Active");
 
   if (!meeting) {
     return (
@@ -415,53 +301,6 @@ export default function MeetingDetails() {
           </Badge>
         </div>
       </div>
-
-      {/* Log Outcome Panel */}
-      {meeting.status !== "Completed" && meeting.status !== "Cancelled" && (
-        <div className="rounded-xl border border-warning-200 bg-warning-50/50 p-5 mb-5 dark:border-warning-500/20 dark:bg-warning-500/5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
-                Log Meeting Outcome
-              </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Conclude the meeting and update lead status for{" "}
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  {meeting.company}
-                </span>{" "}
-                (Current Lead Status:{" "}
-                <span className="font-semibold text-brand-500">
-                  {matchingLead ? matchingLead.status : "N/A"}
-                </span>
-                )
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                size="sm"
-                onClick={() => setShowWonModal(true)}
-                className="bg-success-600 hover:bg-success-700 text-white border-transparent"
-              >
-                Mark Won
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setShowLostModal(true)}
-                className="bg-error-600 hover:bg-error-700 text-white border-transparent"
-              >
-                Mark Lost
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowCancelModal(true)}
-              >
-                Cancel Meeting
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Convert Lead Alert Panel if Won but not yet converted */}
       {meeting.relatedToType === "Lead" && matchingLead && matchingLead.status === "Won" && (
@@ -728,225 +567,6 @@ export default function MeetingDetails() {
           )}
         </div>
       </div>
-
-      {/* Won Outcome Summary Modal */}
-      <Modal
-        isOpen={showWonModal}
-        onClose={() => setShowWonModal(false)}
-        className="max-w-[480px] m-4"
-      >
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="mb-6 space-y-4">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
-                Mark Meeting as Won
-              </h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Enter a brief summary detailing the meeting outcome and select the next action.
-              </p>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Outcome Summary notes
-              </label>
-              <textarea
-                value={wonSummary}
-                onChange={(e) => setWonSummary(e.target.value)}
-                placeholder="E.g., Client agreed to proceed with proposal. Signing contract next week..."
-                rows={4}
-                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Next Action
-              </label>
-              <Select
-                options={[
-                  { value: "Create Follow-up", label: "Create Follow-up" },
-                  { value: "Create Quotation", label: "Create Quotation" },
-                  { value: "Convert Lead", label: "Convert Lead" },
-                  { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
-                ]}
-                placeholder="Select next action"
-                defaultValue={wonNextAction}
-                onChange={(val) => setWonNextAction(val)}
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowWonModal(false);
-                setWonSummary("");
-              }}
-              className="w-1/2"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleMarkWon(wonSummary || "No outcome summary provided.", wonNextAction)}
-              className="w-1/2 bg-success-600 hover:bg-success-700 text-white"
-            >
-              Confirm Won
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Lost Outcome Summary Modal */}
-      <Modal
-        isOpen={showLostModal}
-        onClose={() => setShowLostModal(false)}
-        className="max-w-[480px] m-4"
-      >
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="mb-6 space-y-4">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
-                Mark Meeting as Lost
-              </h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Select the primary reason why this lead was lost and enter summary notes.
-              </p>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Lost Reason *
-              </label>
-              <Select
-                options={lostReasons.map((r) => ({ value: r.name, label: r.name }))}
-                placeholder="Select lost reason"
-                onChange={(val: string) => setSelectedLostReason(val)}
-                defaultValue={selectedLostReason}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Meeting Summary / Notes
-              </label>
-              <textarea
-                value={lostSummary}
-                onChange={(e) => setLostSummary(e.target.value)}
-                placeholder="E.g., Budget constraints. They will look into options later..."
-                rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Next Action
-              </label>
-              <Select
-                options={[
-                  { value: "Create Follow-up", label: "Create Follow-up" },
-                  { value: "Create Quotation", label: "Create Quotation" },
-                  { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
-                ]}
-                placeholder="Select next action"
-                defaultValue={lostNextAction}
-                onChange={(val) => setLostNextAction(val)}
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowLostModal(false);
-                setSelectedLostReason("");
-                setLostSummary("");
-              }}
-              className="w-1/2"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleMarkLost(selectedLostReason, lostSummary || "No details provided.", lostNextAction)}
-              className="w-1/2 bg-error-600 hover:bg-error-700 text-white"
-              disabled={!selectedLostReason}
-            >
-              Confirm Lost
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Cancel Meeting Modal */}
-      <Modal
-        isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        className="max-w-[480px] m-4"
-      >
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
-              Cancel Scheduled Meeting
-            </h4>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Select the primary reason for cancellation and add notes/context.
-            </p>
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Cancellation Reason *
-              </label>
-              <Select
-                options={[
-                  { value: "Scheduling Conflict", label: "Scheduling Conflict" },
-                  { value: "Client Unavailable", label: "Client Unavailable" },
-                  { value: "Requirement Changed", label: "Requirement Changed" },
-                  { value: "Technical Issues", label: "Technical Issues" },
-                  { value: "Other", label: "Other" }
-                ]}
-                placeholder="Select cancellation reason"
-                onChange={(val: string) => setSelectedCancelReason(val)}
-                defaultValue={selectedCancelReason}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                Cancellation Notes
-              </label>
-              <textarea
-                value={cancelNotes}
-                onChange={(e) => setCancelNotes(e.target.value)}
-                placeholder="E.g., Client requested rescheduling due to urgent conflict..."
-                rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowCancelModal(false);
-                setSelectedCancelReason("");
-                setCancelNotes("");
-              }}
-              className="w-1/2"
-            >
-              Back
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleCancelMeeting(selectedCancelReason, cancelNotes || "No details provided.")}
-              className="w-1/2 bg-error-600 hover:bg-error-700 text-white"
-              disabled={!selectedCancelReason}
-            >
-              Confirm Cancel
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Convert Lead to Client Modal */}
       <Modal

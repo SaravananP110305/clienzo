@@ -23,6 +23,10 @@ import {
 import { FiEye, FiEdit, FiTrash2, FiPlus, FiCalendar, FiClock, FiBriefcase, FiUser } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { Meeting } from "../data/meetingsData";
+import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
+import { LOST_REASONS } from "../../Master/data/masterData";
+import { getStorage, setStorage } from "../../../utils/storage";
+import Select from "../../../components/form/Select";
 
 interface MeetingsScopePageProps {
   meetings: Meeting[];
@@ -54,6 +58,14 @@ export default function MeetingsScopePage({
 
   // Selected meeting for delete
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+
+  // Outcome modal state
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [pendingOutcomeMeeting, setPendingOutcomeMeeting] = useState<Meeting | null>(null);
+  const [outcomeType, setOutcomeType] = useState<"Won" | "Lost" | null>(null);
+  const [outcomeSummary, setOutcomeSummary] = useState("");
+  const [outcomeLostReason, setOutcomeLostReason] = useState("");
+  const [outcomeNextAction, setOutcomeNextAction] = useState("Create Follow-up");
 
   const [viewMode, setViewMode] = useState<"table" | "calendar" | "kanban">("table");
   const [kanbanPages, setKanbanPages] = useState<Record<string, number>>({
@@ -171,10 +183,68 @@ export default function MeetingsScopePage({
   };
 
   const handleStatusChange = (meetingId: number, newStatus: Meeting["status"]) => {
+    // Intercept 'Completed' to show outcome modal
+    if (newStatus === "Completed") {
+      const meeting = meetings.find(m => m.id === meetingId);
+      if (meeting) {
+        setPendingOutcomeMeeting(meeting);
+        setOutcomeType(null);
+        setOutcomeSummary("");
+        setOutcomeLostReason("");
+        setOutcomeNextAction("Create Follow-up");
+        setShowOutcomeModal(true);
+      }
+      return;
+    }
+    // For non-Completed statuses, update directly
     if (onUpdateMeetingStatus) {
       onUpdateMeetingStatus(meetingId, newStatus);
       showToast(`Meeting status updated to "${newStatus}" successfully.`, "success");
     }
+  };
+
+  const handleConfirmOutcome = () => {
+    if (!pendingOutcomeMeeting || !outcomeType) return;
+
+    // 1. Update meeting to Completed
+    if (onUpdateMeetingStatus) {
+      onUpdateMeetingStatus(pendingOutcomeMeeting.id, "Completed");
+    }
+
+    // 2. Find matching lead and update its status (directly, no extra confirmation)
+    const allLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    let matchingLead: Lead | undefined;
+    if (pendingOutcomeMeeting.relatedToType === "Lead" && pendingOutcomeMeeting.relatedToId) {
+      matchingLead = allLeads.find((l) => l.id === pendingOutcomeMeeting.relatedToId);
+    } else {
+      matchingLead = allLeads.find((l) => l.company.toLowerCase() === pendingOutcomeMeeting.company.toLowerCase());
+    }
+
+    if (matchingLead) {
+      const summaryText = outcomeSummary || "No details provided.";
+      const remarksSuffix = outcomeType === "Lost"
+        ? `[Meeting Lost Outcome]: ${summaryText} (Reason: ${outcomeLostReason})`
+        : `[Meeting Won Outcome]: ${summaryText}`;
+
+      const updatedLeads = allLeads.map((l) =>
+        l.id === matchingLead!.id
+          ? {
+              ...l,
+              status: outcomeType as Lead["status"],
+              remarks: `${l.remarks || ""}\n${remarksSuffix}`.trim()
+            }
+          : l
+      );
+      setStorage("saiflow_leads", updatedLeads);
+    }
+
+    showToast(`Meeting marked as Completed (${outcomeType})!`, outcomeType === "Won" ? "success" : "error");
+    setShowOutcomeModal(false);
+    setPendingOutcomeMeeting(null);
+    setOutcomeType(null);
+    setOutcomeSummary("");
+    setOutcomeLostReason("");
+    setOutcomeNextAction("Create Follow-up");
   };
 
   const handleSort = (field: keyof Meeting) => {
@@ -527,27 +597,33 @@ export default function MeetingsScopePage({
                         {meeting.type}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                        <select
-                          value={meeting.status}
-                          onChange={(e) => handleStatusChange(meeting.id, e.target.value as Meeting["status"])}
-                          className="h-9 w-32 appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                            backgroundPosition: 'right 0.5rem center',
-                            backgroundSize: '1.25rem',
-                            backgroundRepeat: 'no-repeat'
-                          }}
-                        >
-                          {["Scheduled", "Completed", "Cancelled", "Rescheduled"].map((status) => (
-                            <option
-                              key={status}
-                              value={status}
-                              className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-normal"
-                            >
-                              {status}
-                            </option>
-                          ))}
-                        </select>
+                        {activeTab === "completed" ? (
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getMeetingStatusColor(meeting.status)}`}>
+                            {meeting.status}
+                          </span>
+                        ) : (
+                          <select
+                            value={meeting.status}
+                            onChange={(e) => handleStatusChange(meeting.id, e.target.value as Meeting["status"])}
+                            className="h-9 w-32 appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                              backgroundPosition: 'right 0.5rem center',
+                              backgroundSize: '1.25rem',
+                              backgroundRepeat: 'no-repeat'
+                            }}
+                          >
+                            {["Scheduled", "Completed", "Cancelled", "Rescheduled"].map((status) => (
+                              <option
+                                key={status}
+                                value={status}
+                                className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-normal"
+                              >
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-theme-sm">
                         <div className="flex items-center gap-2">
@@ -558,20 +634,24 @@ export default function MeetingsScopePage({
                           >
                             <FiEye className="size-4" />
                           </button>
-                          <button
-                            onClick={() => navigate(`/meetings/${meeting.id}/edit`)}
-                            className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
-                            title="Edit"
-                          >
-                            <FiEdit className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenDelete(meeting)}
-                            className="p-1.5 text-gray-500 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
-                            title="Delete"
-                          >
-                            <FiTrash2 className="size-4" />
-                          </button>
+                          {activeTab !== "completed" && (
+                            <>
+                              <button
+                                onClick={() => navigate(`/meetings/${meeting.id}/edit`)}
+                                className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                                title="Edit"
+                              >
+                                <FiEdit className="size-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenDelete(meeting)}
+                                className="p-1.5 text-gray-500 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                                title="Delete"
+                              >
+                                <FiTrash2 className="size-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -737,33 +817,42 @@ export default function MeetingsScopePage({
                               >
                                 <FiEye className="size-4" />
                               </button>
-                              <button
-                                onClick={() => navigate(`/meetings/${meeting.id}/edit`)}
-                                className="p-1 text-gray-500 hover:text-brand-500 rounded cursor-pointer"
-                                title="Edit"
-                              >
-                                <FiEdit className="size-4" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenDelete(meeting)}
-                                className="p-1 text-gray-500 hover:text-error-500 rounded cursor-pointer"
-                                title="Delete"
-                              >
-                                <FiTrash2 className="size-4" />
-                              </button>
+                              {activeTab !== "completed" && (
+                                <>
+                                  <button
+                                    onClick={() => navigate(`/meetings/${meeting.id}/edit`)}
+                                    className="p-1 text-gray-500 hover:text-brand-500 rounded cursor-pointer"
+                                    title="Edit"
+                                  >
+                                    <FiEdit className="size-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenDelete(meeting)}
+                                    className="p-1 text-gray-500 hover:text-error-500 rounded cursor-pointer"
+                                    title="Delete"
+                                  >
+                                    <FiTrash2 className="size-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
 
-                            {/* Direct Status Selector */}
-                            <select
-                              value={meeting.status}
-                              onChange={(e) => handleStatusChange(meeting.id, e.target.value as Meeting["status"])}
-                              className="h-7 rounded border border-gray-300 bg-white px-1.5 text-[10px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer"
-                            >
-                              <option value="Scheduled">Scheduled</option>
-                              <option value="Rescheduled">Rescheduled</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
+                            {activeTab === "completed" ? (
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${getMeetingStatusColor(meeting.status)}`}>
+                                {meeting.status}
+                              </span>
+                            ) : (
+                              <select
+                                value={meeting.status}
+                                onChange={(e) => handleStatusChange(meeting.id, e.target.value as Meeting["status"])}
+                                className="h-7 rounded border border-gray-300 bg-white px-1.5 text-[10px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer"
+                              >
+                                <option value="Scheduled">Scheduled</option>
+                                <option value="Rescheduled">Rescheduled</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
+                            )}
                           </div>
                         </div>
                       ))
@@ -800,6 +889,135 @@ export default function MeetingsScopePage({
           })}
         </div>
       )}
+
+      {/* Outcome Selection Modal (Won/Lost) */}
+      <Modal isOpen={showOutcomeModal} onClose={() => { setShowOutcomeModal(false); setOutcomeType(null); }} className="max-w-[480px] m-4">
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6 space-y-4">
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-1">
+                Complete Meeting Outcome
+              </h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Select the outcome for <span className="font-semibold text-gray-700 dark:text-gray-300">{pendingOutcomeMeeting?.company}</span> meeting.
+              </p>
+            </div>
+
+            {/* Won/Lost Toggle Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setOutcomeType("Won")}
+                className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer ${
+                  outcomeType === "Won"
+                    ? "border-success-500 bg-success-50 dark:bg-success-500/10 shadow-xs"
+                    : "border-gray-200 hover:border-gray-300 dark:border-white/[0.05] dark:hover:border-white/20"
+                }`}
+              >
+                <span className="text-2xl block mb-1">🏆</span>
+                <span className={`text-sm font-semibold ${outcomeType === "Won" ? "text-success-700 dark:text-success-400" : "text-gray-700 dark:text-gray-300"}`}>
+                  Won
+                </span>
+                <span className="text-xs text-gray-400 block mt-0.5">Deal closed</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutcomeType("Lost")}
+                className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer ${
+                  outcomeType === "Lost"
+                    ? "border-error-500 bg-error-50 dark:bg-error-500/10 shadow-xs"
+                    : "border-gray-200 hover:border-gray-300 dark:border-white/[0.05] dark:hover:border-white/20"
+                }`}
+              >
+                <span className="text-2xl block mb-1">📉</span>
+                <span className={`text-sm font-semibold ${outcomeType === "Lost" ? "text-error-700 dark:text-error-400" : "text-gray-700 dark:text-gray-300"}`}>
+                  Lost
+                </span>
+                <span className="text-xs text-gray-400 block mt-0.5">Deal dead</span>
+              </button>
+            </div>
+
+            {/* Lost Reason (shown when Lost) */}
+            {outcomeType === "Lost" && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                  Lost Reason <span className="text-error-500">*</span>
+                </label>
+                <Select
+                  options={getStorage<any[]>("saiflow_master_lost_reasons", LOST_REASONS)
+                    .filter((r: any) => r.status === "Active")
+                    .map((r: any) => ({ value: r.name, label: r.name }))}
+                  placeholder="Select lost reason"
+                  onChange={(val: string) => setOutcomeLostReason(val)}
+                />
+              </div>
+            )}
+
+            {/* Summary */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Outcome Summary / Notes
+              </label>
+              <textarea
+                value={outcomeSummary}
+                onChange={(e) => setOutcomeSummary(e.target.value)}
+                placeholder="E.g., Client agreed to proceed with proposal..."
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+
+            {/* Next Action */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Next Action
+              </label>
+              <Select
+                options={
+                  outcomeType === "Won"
+                    ? [
+                        { value: "Create Follow-up", label: "Create Follow-up" },
+                        { value: "Create Quotation", label: "Create Quotation" },
+                        { value: "Convert Lead", label: "Convert Lead" },
+                        { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
+                      ]
+                    : [
+                        { value: "Create Follow-up", label: "Create Follow-up" },
+                        { value: "Create Quotation", label: "Create Quotation" },
+                        { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
+                      ]
+                }
+                placeholder="Select next action"
+                defaultValue={outcomeNextAction}
+                onChange={(val: string) => setOutcomeNextAction(val)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setShowOutcomeModal(false); setOutcomeType(null); }}
+              className="w-1/2"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmOutcome}
+              className={`w-1/2 text-white ${
+                outcomeType === "Won"
+                  ? "bg-success-600 hover:bg-success-700"
+                  : "bg-error-600 hover:bg-error-700"
+              }`}
+              disabled={!outcomeType || (outcomeType === "Lost" && !outcomeLostReason)}
+            >
+              Confirm {outcomeType || "Outcome"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.closeModal} className="max-w-[450px] m-4">
