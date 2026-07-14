@@ -17,22 +17,14 @@ import {
 } from "../../../icons";
 import {
   FiLayers,
-  FiCalendar,
-  FiCheckCircle,
   FiUsers,
-  FiFolder,
-  FiClock,
-  FiAlertTriangle,
-  FiLifeBuoy,
+  FiCheckCircle,
+  FiDollarSign,
 } from "react-icons/fi";
 import { getStorage } from "../../../utils/storage";
 import { initialLeads as sourceLeads, Lead as SourceLead } from "../../LeadManagement/data/leadsData";
-import { initialMeetings, Meeting } from "../../MeetingManagement/data/meetingsData";
 import { initialClients } from "../../ClientManagement/data/clientsData";
-import { initialProjects } from "../../ProjectManagement/data/projectsData";
-import { initialTasks } from "../../TaskManagement/data/tasksData";
-import { initialQaTickets } from "../../QaManagement/data/qaData";
-import { initialSupportTickets } from "../../Support/data/supportData";
+import { initialQuotations, Quotation } from "../../Quotation/data/quotationsData";
 
 interface Lead {
   sNo: number;
@@ -47,7 +39,7 @@ export default function Dashboard() {
   const { isOpen, openModal, closeModal } = useModal();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-  // Dynamic lists from storage
+  // ── Dynamic lists from storage ──────────────────────────────
   const rawLeads = getStorage<SourceLead[]>("saiflow_leads", sourceLeads);
   const localLeads = useMemo<Lead[]>(() => {
     return rawLeads.map((l, index) => ({
@@ -60,17 +52,14 @@ export default function Dashboard() {
     }));
   }, [rawLeads]);
 
-  const projects = getStorage("saiflow_projects", initialProjects);
   const clients = getStorage("saiflow_clients", initialClients);
-  const tasks = getStorage("saiflow_tasks", initialTasks);
-  const qaTickets = getStorage("saiflow_qa_tickets", initialQaTickets);
-  const supportTickets = getStorage("saiflow_support_tickets", initialSupportTickets);
+  const quotations = getStorage<Quotation[]>("saiflow_quotations", initialQuotations);
 
-  // Custom Dropdown Open States
+  // ── Dropdown states ─────────────────────────────────────────
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
 
-  // Table state
+  // ── Table state ─────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
@@ -86,20 +75,13 @@ export default function Dashboard() {
 
   const getStatusColor = (status: Lead["status"]) => {
     switch (status) {
-      case "New":
-        return "primary";
-      case "Contacted":
-        return "info";
-      case "Qualified":
-        return "warning";
-      case "Proposal sent":
-        return "warning";
-      case "Won":
-        return "success";
-      case "Lost":
-        return "error";
-      default:
-        return "light";
+      case "New": return "primary";
+      case "Contacted": return "info";
+      case "Qualified": return "warning";
+      case "Proposal sent": return "warning";
+      case "Won": return "success";
+      case "Lost": return "error";
+      default: return "light";
     }
   };
 
@@ -206,35 +188,37 @@ export default function Dashboard() {
     );
   };
 
-  const summaryStats = useMemo(() => {
-    const activeMeetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
-    const todayMeetingsCount = activeMeetings.filter((m) => m.date === "2026-07-09" || m.date === "2026-07-13").length;
-    return {
-      totalLeads: localLeads.length,
-      activeClients: clients.filter((c: any) => c.status === "Active").length,
-      ongoingProjects: projects.filter((p: any) => p.status === "In Progress").length,
-      completedProjects: projects.filter((p: any) => p.status === "Completed").length,
-      todayMeetings: todayMeetingsCount,
-      pendingTasks: tasks.filter((t: any) => t.status !== "Done").length,
-      openDefects: qaTickets.filter((q: any) => q.status !== "Closed").length,
-      activeTickets: supportTickets.filter((s: any) => s.status !== "Closed" && s.status !== "Resolved").length,
-    };
-  }, [localLeads, clients, projects, tasks, qaTickets, supportTickets]);
+  // ── 4 KPI METRICS ──────────────────────────────────────────
+  const kpiMetrics = useMemo(() => {
+    const pipelineValue = quotations
+      .filter((q) => q.status === "Sent" || q.status === "Approved")
+      .reduce((sum, q) => sum + q.amount, 0);
 
-  const firstRowCards = [
-    { label: "Total leads", value: summaryStats.totalLeads, icon: <FiLayers className="text-brand-500 w-5 h-5" /> },
-    { label: "Active clients", value: summaryStats.activeClients, icon: <FiUsers className="text-info-500 w-5 h-5" /> },
-    { label: "Ongoing projects", value: summaryStats.ongoingProjects, icon: <FiFolder className="text-warning-500 w-5 h-5" /> },
-    { label: "Completed projects", value: summaryStats.completedProjects, icon: <FiCheckCircle className="text-success-500 w-5 h-5" /> },
-  ];
+    return [
+      {
+        label: "Total leads",
+        value: rawLeads.length,
+        icon: <FiLayers className="text-brand-500 w-5 h-5" />,
+      },
+      {
+        label: "Active clients",
+        value: clients.filter((c: any) => c.status === "Active").length,
+        icon: <FiUsers className="text-info-500 w-5 h-5" />,
+      },
+      {
+        label: "Won leads",
+        value: rawLeads.filter((l) => l.status === "Won").length,
+        icon: <FiCheckCircle className="text-success-500 w-5 h-5" />,
+      },
+      {
+        label: "Potential Revenue",
+        value: `$${pipelineValue.toLocaleString()}`,
+        icon: <FiDollarSign className="text-warning-500 w-5 h-5" />,
+      },
+    ];
+  }, [rawLeads, clients, quotations]);
 
-  const secondRowCards = [
-    { label: "Today's meetings", value: summaryStats.todayMeetings, icon: <FiCalendar className="text-purple-500 w-5 h-5" /> },
-    { label: "Pending tasks", value: summaryStats.pendingTasks, icon: <FiClock className="text-pink-500 w-5 h-5" /> },
-    { label: "Open defects", value: summaryStats.openDefects, icon: <FiAlertTriangle className="text-error-500 w-5 h-5" /> },
-    { label: "Active support tickets", value: summaryStats.activeTickets, icon: <FiLifeBuoy className="text-cyan-500 w-5 h-5" /> },
-  ];
-
+  // ── CHARTS ──────────────────────────────────────────────────
   const leadTrendOptions: ApexOptions = {
     colors: ["#ff3951"],
     chart: {
@@ -263,40 +247,10 @@ export default function Dashboard() {
   };
 
   const leadTrendSeries = [
-    {
-      name: "Leads generated",
-      data: [45, 60, 55, 75, 90, 80, 95, 110, 105, 130, 120, 150],
-    },
+    { name: "Leads generated", data: [45, 60, 55, 75, 90, 80, 95, 110, 105, 130, 120, 150] },
   ];
 
-  const projectStatusOptions: ApexOptions = {
-    colors: ["#9CA3AF", "#F59E0B", "#EF4444", "#10B981"],
-    chart: {
-      fontFamily: "Poppins, sans-serif",
-      type: "donut",
-    },
-    labels: ["Planning", "In Progress", "On Hold", "Completed"],
-    dataLabels: { enabled: false },
-    legend: {
-      position: "bottom",
-      fontSize: "12px",
-    },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: "65%",
-        },
-      },
-    },
-  };
-
-  const projectStatusSeries = [
-    projects.filter((p: any) => p.status === "Planning").length,
-    projects.filter((p: any) => p.status === "In Progress").length,
-    projects.filter((p: any) => p.status === "On Hold").length,
-    projects.filter((p: any) => p.status === "Completed").length,
-  ];
-
+  // ── Conversion Rate ─────────────────────────────────────────
   const conversionOptions: ApexOptions = {
     colors: ["#10B981", "#EF4444"],
     chart: {
@@ -305,11 +259,7 @@ export default function Dashboard() {
       type: "bar",
     },
     plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 4,
-      },
+      bar: { horizontal: false, columnWidth: "35%", borderRadius: 4 },
     },
     dataLabels: { enabled: false },
     stroke: { show: true, width: 2, colors: ["transparent"] },
@@ -331,80 +281,46 @@ export default function Dashboard() {
   };
 
   const conversionSeries = [
-    {
-      name: "Won leads",
-      data: [12, 18, 15, 22, 30, 28],
-    },
-    {
-      name: "Lost leads",
-      data: [4, 6, 5, 8, 10, 9],
-    },
+    { name: "Won leads", data: [12, 18, 15, 22, 30, 28] },
+    { name: "Lost leads", data: [4, 6, 5, 8, 10, 9] },
   ];
 
+  // ── RENDER ──────────────────────────────────────────────────
   return (
     <>
       <PageMeta
         title="Dashboard | SaiFlow"
-        description="SaiFlow CRM & ERP dashboard - overview of leads, clients, projects, meetings, and tickets."
+        description="SaiFlow CRM dashboard — overview of leads, clients, and pipeline."
       />
       <PageBreadcrumb pageTitle="Dashboard" />
 
-      {/* Row 1 Metrics */}
-      <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        {firstRowCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {card.label}
-                </span>
-                <h4 className="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                  {card.value}
-                </h4>
-              </div>
-              {card.icon && (
-                <div className="flex items-center justify-center rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800">
-                  {card.icon}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Row 2 Metrics */}
+      {/* ── 4 KPI METRICS ──────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        {secondRowCards.map((card) => (
+        {kpiMetrics.map((metric) => (
           <div
-            key={card.label}
+            key={metric.label}
             className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"
           >
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {card.label}
+                  {metric.label}
                 </span>
                 <h4 className="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                  {card.value}
+                  {metric.value}
                 </h4>
               </div>
-              {card.icon && (
-                <div className="flex items-center justify-center rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800">
-                  {card.icon}
-                </div>
-              )}
+              <div className="flex items-center justify-center rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800">
+                {metric.icon}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Charts Grid Row 1 */}
-      <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-3 md:gap-6">
-        {/* Lead Generation Trend Chart */}
-        <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      {/* Charts Row — side by side */}
+      <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-2 md:gap-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
             Lead generation trend
           </h3>
@@ -417,27 +333,6 @@ export default function Dashboard() {
             />
           </div>
         </div>
-
-        {/* Project Status Distribution Donut Chart */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
-            Projects by status
-          </h3>
-          <div className="max-w-full overflow-hidden flex justify-center">
-            <Chart
-              options={projectStatusOptions}
-              series={projectStatusSeries}
-              type="donut"
-              height={260}
-              width={260}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Grid Row 2 */}
-      <div className="grid grid-cols-1 gap-4 mb-6 md:gap-6">
-        {/* Lead Conversion Chart */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
             Lead conversion rate
@@ -453,7 +348,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Leads Section */}
+      {/* ── RECENT LEADS TABLE ─────────────────────────────── */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-800 dark:text-white/90">
           Recent leads
@@ -466,21 +361,16 @@ export default function Dashboard() {
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               />
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <button
-                  onClick={() => setIsStatusOpen(!isStatusOpen)}
+                  onClick={() => { setIsStatusOpen(!isStatusOpen); setIsAssigneeOpen(false); }}
                   className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-55 dark:hover:bg-white/5"
                 >
-                  <span>
-                    {statusOptions.find((o) => o.value === statusFilter)?.label || "Filter by status"}
-                  </span>
+                  <span>{statusOptions.find((o) => o.value === statusFilter)?.label || "Filter by status"}</span>
                   <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                 </button>
                 <Dropdown
@@ -492,14 +382,10 @@ export default function Dashboard() {
                     {statusOptions.map((opt) => (
                       <li key={opt.value}>
                         <DropdownItem
-                          onItemClick={() => {
-                            setStatusFilter(opt.value);
-                            setCurrentPage(1);
-                            setIsStatusOpen(false);
-                          }}
+                          onItemClick={() => { setStatusFilter(opt.value); setCurrentPage(1); setIsStatusOpen(false); }}
                           className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
-                            ? "bg-brand-500 text-white font-medium"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                              ? "bg-brand-500 text-white font-medium"
+                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                             }`}
                         >
                           {opt.label}
@@ -512,12 +398,10 @@ export default function Dashboard() {
 
               <div className="relative">
                 <button
-                  onClick={() => setIsAssigneeOpen(!isAssigneeOpen)}
+                  onClick={() => { setIsAssigneeOpen(!isAssigneeOpen); setIsStatusOpen(false); }}
                   className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-55 dark:hover:bg-white/5"
                 >
-                  <span>
-                    {assigneeOptions.find((o) => o.value === assigneeFilter)?.label || "Filter by assignee"}
-                  </span>
+                  <span>{assigneeOptions.find((o) => o.value === assigneeFilter)?.label || "Filter by assignee"}</span>
                   <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                 </button>
                 <Dropdown
@@ -529,14 +413,10 @@ export default function Dashboard() {
                     {assigneeOptions.map((opt) => (
                       <li key={opt.value}>
                         <DropdownItem
-                          onItemClick={() => {
-                            setAssigneeFilter(opt.value);
-                            setCurrentPage(1);
-                            setIsAssigneeOpen(false);
-                          }}
+                          onItemClick={() => { setAssigneeFilter(opt.value); setCurrentPage(1); setIsAssigneeOpen(false); }}
                           className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
-                            ? "bg-brand-500 text-white font-medium"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                              ? "bg-brand-500 text-white font-medium"
+                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                             }`}
                         >
                           {opt.label}
@@ -582,37 +462,17 @@ export default function Dashboard() {
               <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {paginatedLeads.length > 0 ? (
                   paginatedLeads.map((lead) => (
-                    <tr
-                      key={lead.sNo}
-                      className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
-                    >
-                      <td className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
-                        {lead.sNo}
+                    <tr key={lead.sNo} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                      <td className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{lead.sNo}</td>
+                      <td className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-medium">{lead.company}</td>
+                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">{lead.contactPerson}</td>
+                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">{lead.phone}</td>
+                      <td className="px-5 py-4 text-theme-sm">
+                        <Badge size="sm" color={getStatusColor(lead.status)}>{lead.status}</Badge>
                       </td>
-                      <td className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-medium">
-                        {lead.company}
-                      </td>
-                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {lead.contactPerson}
-                      </td>
-                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {lead.phone}
-                      </td>
-                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                        <Badge size="sm" color={getStatusColor(lead.status)}>
-                          {lead.status}
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {lead.assignedTo}
-                      </td>
-                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewLead(lead)}
-                          className="h-8 py-0 px-3 text-xs"
-                        >
+                      <td className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">{lead.assignedTo}</td>
+                      <td className="px-5 py-4 text-theme-sm">
+                        <Button size="sm" variant="outline" onClick={() => handleViewLead(lead)} className="h-8 py-0 px-3 text-xs">
                           View
                         </Button>
                       </td>
@@ -620,10 +480,7 @@ export default function Dashboard() {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                    >
+                    <td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       No leads match your search criteria.
                     </td>
                   </tr>
@@ -639,72 +496,51 @@ export default function Dashboard() {
               totalItems={totalItems}
               rowsPerPage={rowsPerPage}
               onPageChange={setCurrentPage}
-              onRowsPerPageChange={(rows) => {
-                setRowsPerPage(rows);
-                setCurrentPage(1);
-              }}
+              onRowsPerPageChange={(rows) => { setRowsPerPage(rows); setCurrentPage(1); }}
               itemName="leads"
             />
           )}
         </div>
       </div>
 
-      {/* Details Modal */}
+      {/* ── LEAD DETAILS MODAL ─────────────────────────────── */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[500px] m-4">
         <div className="no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
           <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              Lead details
-            </h4>
+            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">Lead details</h4>
           </div>
           {selectedLead && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-xs text-gray-400 block">S.No</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedLead.sNo}
-                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">{selectedLead.sNo}</span>
                 </div>
                 <div>
                   <span className="text-xs text-gray-400 block">Company</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedLead.company}
-                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">{selectedLead.company}</span>
                 </div>
                 <div>
                   <span className="text-xs text-gray-400 block">Contact person</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedLead.contactPerson}
-                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">{selectedLead.contactPerson}</span>
                 </div>
                 <div>
                   <span className="text-xs text-gray-400 block">Phone</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedLead.phone}
-                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">{selectedLead.phone}</span>
                 </div>
                 <div>
                   <span className="text-xs text-gray-400 block">Status</span>
-                  <div className="mt-1">
-                    <Badge size="sm" color={getStatusColor(selectedLead.status)}>
-                      {selectedLead.status}
-                    </Badge>
-                  </div>
+                  <Badge size="sm" color={getStatusColor(selectedLead.status)}>{selectedLead.status}</Badge>
                 </div>
                 <div>
                   <span className="text-xs text-gray-400 block">Assigned to</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedLead.assignedTo}
-                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">{selectedLead.assignedTo}</span>
                 </div>
               </div>
             </div>
           )}
           <div className="flex items-center justify-end mt-6">
-            <Button size="sm" onClick={closeModal}>
-              Close
-            </Button>
+            <Button size="sm" onClick={closeModal}>Close</Button>
           </div>
         </div>
       </Modal>
