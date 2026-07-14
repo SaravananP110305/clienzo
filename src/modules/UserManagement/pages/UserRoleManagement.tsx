@@ -29,6 +29,9 @@ import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 
 interface Permission {
   menu: string;
+  key: string;
+  parentKey?: string;
+  isSubMenu?: boolean;
   view: boolean;
   create: boolean;
   edit: boolean;
@@ -43,15 +46,115 @@ interface Role {
   permissions: Permission[];
 }
 
-const defaultPermissionsList: Permission[] = [
-  { menu: "Dashboard", view: false, create: false, edit: false, delete: false },
-  { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-  { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
-  { menu: "Leads", view: false, create: false, edit: false, delete: false },
-  { menu: "Connect", view: false, create: false, edit: false, delete: false },
-  { menu: "Meeting Management", view: false, create: false, edit: false, delete: false },
-  { menu: "Reports", view: false, create: false, edit: false, delete: false },
+const sidebarStructure = [
+  { name: "Dashboard", key: "dashboard" },
+  { name: "Master Config", key: "master", subItems: [
+    "Countries", "States", "Cities", "Departments", "Designations", "Technologies",
+    "Lead sources", "Industries", "Meeting types", "Follow-up reasons", "Lost reasons",
+    "Lead statuses", "Priorities", "Follow-up types", "Project categories", "Project statuses"
+  ] },
+  { name: "Manage Users", key: "users", subItems: ["User Roles", "Users"] },
+  { name: "Leads", key: "leads" },
+  { name: "Connect", key: "connect", subItems: ["All Leads", "Follow-ups"] },
+  { name: "Meetings", key: "meetings" },
+  { name: "Clients", key: "clients" },
+  { name: "Requirements", key: "requirements" },
+  { name: "Quotations", key: "quotations" },
+  { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report"] },
+  { name: "Settings", key: "settings" }
 ];
+
+export const buildDefaultPermissions = (): Permission[] => {
+  const list: Permission[] = [];
+  sidebarStructure.forEach(item => {
+    list.push({
+      menu: item.name,
+      key: item.key,
+      view: false,
+      create: false,
+      edit: false,
+      delete: false
+    });
+    if (item.subItems) {
+      item.subItems.forEach(sub => {
+        list.push({
+          menu: sub,
+          key: `${item.key}_${sub.toLowerCase().replace(/\s+/g, "_")}`,
+          parentKey: item.key,
+          isSubMenu: true,
+          view: false,
+          create: false,
+          edit: false,
+          delete: false
+        });
+      });
+    }
+  });
+  return list;
+};
+
+const defaultPermissionsList = buildDefaultPermissions();
+
+const buildRolePermissions = (
+  roleName: string,
+  rules: { all?: boolean }
+): Permission[] => {
+  return defaultPermissionsList.map(perm => {
+    const isMaster = perm.key === "master" || perm.parentKey === "master";
+    const isUsers = perm.key === "users" || perm.parentKey === "users";
+    const isReports = perm.key === "reports" || perm.parentKey === "reports";
+    const isSettings = perm.key === "settings";
+    
+    let view = false;
+    let create = false;
+    let edit = false;
+    let del = false;
+    
+    if (rules.all) {
+      view = create = edit = del = true;
+    }
+    
+    if (roleName === "Business Development Manager") {
+      if (isMaster) {
+        view = true;
+      } else if (isUsers) {
+        view = create = edit = true;
+      } else if (isReports) {
+        view = true;
+      } else if (isSettings) {
+        view = edit = true;
+      } else {
+        view = create = edit = del = true;
+      }
+    } else if (roleName === "Business Development Executive") {
+      if (!isMaster && !isUsers && !isReports) {
+        if (isSettings) {
+          view = true;
+        } else {
+          view = create = edit = true;
+        }
+      }
+    } else if (roleName === "Presales Consultant") {
+      if (perm.key === "leads" || perm.key === "meetings" || perm.key === "requirements" || perm.parentKey === "requirements") {
+        view = edit = true;
+      } else if (perm.key === "clients" || perm.key === "quotations" || isSettings) {
+        view = true;
+      }
+    } else if (roleName === "Guest User") {
+      if (perm.key === "dashboard") {
+        view = true;
+      }
+    }
+    
+    return {
+      ...perm,
+      view,
+      create,
+      edit,
+      delete: del
+    };
+  });
+};
 
 const initialRoles: Role[] = [
   {
@@ -59,77 +162,57 @@ const initialRoles: Role[] = [
     roleName: "Administrator",
     description: "Full system access to all modules, records, and configurations.",
     status: "Active",
-    permissions: [
-      { menu: "Dashboard", view: true, create: true, edit: true, delete: true },
-      { menu: "Master Config", view: true, create: true, edit: true, delete: true },
-      { menu: "Manage Users", view: true, create: true, edit: true, delete: true },
-      { menu: "Leads", view: true, create: true, edit: true, delete: true },
-      { menu: "Connect", view: true, create: true, edit: true, delete: true },
-      { menu: "Meeting Management", view: true, create: true, edit: true, delete: true },
-      { menu: "Reports", view: true, create: true, edit: true, delete: true },
-    ],
+    permissions: buildRolePermissions("Administrator", { all: true }),
   },
   {
     id: 2,
     roleName: "Business Development Manager",
     description: "Manage BDM team, view pipeline reports, and assign incoming leads.",
     status: "Active",
-    permissions: [
-      { menu: "Dashboard", view: true, create: true, edit: true, delete: true },
-      { menu: "Master Config", view: true, create: false, edit: false, delete: false },
-      { menu: "Manage Users", view: true, create: true, edit: true, delete: false },
-      { menu: "Leads", view: true, create: true, edit: true, delete: true },
-      { menu: "Connect", view: true, create: true, edit: true, delete: true },
-      { menu: "Meeting Management", view: true, create: true, edit: true, delete: true },
-      { menu: "Reports", view: true, create: false, edit: false, delete: false },
-    ],
+    permissions: buildRolePermissions("Business Development Manager", {}),
   },
   {
     id: 3,
     roleName: "Business Development Executive",
     description: "Add leads, log customer follow-ups, and coordinate meeting bookings.",
     status: "Active",
-    permissions: [
-      { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
-      { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-      { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
-      { menu: "Leads", view: true, create: true, edit: true, delete: false },
-      { menu: "Connect", view: true, create: true, edit: true, delete: false },
-      { menu: "Meeting Management", view: true, create: true, edit: true, delete: false },
-      { menu: "Reports", view: false, create: false, edit: false, delete: false },
-    ],
+    permissions: buildRolePermissions("Business Development Executive", {}),
   },
   {
     id: 4,
     roleName: "Presales Consultant",
     description: "Evaluate lead technical requirements and draft solution proposal details.",
     status: "Active",
-    permissions: [
-      { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
-      { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-      { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
-      { menu: "Leads", view: true, create: false, edit: true, delete: false },
-      { menu: "Connect", view: false, create: false, edit: false, delete: false },
-      { menu: "Meeting Management", view: true, create: false, edit: true, delete: false },
-      { menu: "Reports", view: false, create: false, edit: false, delete: false },
-    ],
+    permissions: buildRolePermissions("Presales Consultant", {}),
   },
   {
     id: 5,
     roleName: "Guest User",
     description: "Read-only access to basic performance metric counts on the dashboard.",
     status: "Inactive",
-    permissions: [
-      { menu: "Dashboard", view: true, create: false, edit: false, delete: false },
-      { menu: "Master Config", view: false, create: false, edit: false, delete: false },
-      { menu: "Manage Users", view: false, create: false, edit: false, delete: false },
-      { menu: "Leads", view: false, create: false, edit: false, delete: false },
-      { menu: "Connect", view: false, create: false, edit: false, delete: false },
-      { menu: "Meeting Management", view: false, create: false, edit: false, delete: false },
-      { menu: "Reports", view: false, create: false, edit: false, delete: false },
-    ],
+    permissions: buildRolePermissions("Guest User", {}),
   },
 ];
+
+const syncPermissions = (savedPermissions: Permission[]): Permission[] => {
+  if (!savedPermissions || !Array.isArray(savedPermissions)) {
+    return defaultPermissionsList.map(p => ({ ...p }));
+  }
+  
+  return defaultPermissionsList.map(defaultPerm => {
+    const saved = savedPermissions.find(p => p.key === defaultPerm.key) || savedPermissions.find(p => p.menu === defaultPerm.menu);
+    if (saved) {
+      return {
+        ...defaultPerm,
+        view: saved.view,
+        create: saved.create,
+        edit: saved.edit,
+        delete: saved.delete
+      };
+    }
+    return { ...defaultPerm };
+  });
+};
 
 interface RoleFormValues {
   roleName: string;
@@ -140,7 +223,13 @@ interface RoleFormValues {
 
 export default function UserRoleManagement() {
   const { showToast } = useToast();
-  const [roles, setRoles] = useState<Role[]>(() => getStorage("saiflow_roles", initialRoles));
+  const [roles, setRoles] = useState<Role[]>(() => {
+    const stored = getStorage<Role[]>("saiflow_roles", initialRoles);
+    return stored.map(role => ({
+      ...role,
+      permissions: syncPermissions(role.permissions)
+    }));
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -217,7 +306,7 @@ export default function UserRoleManagement() {
       roleName: role.roleName,
       description: role.description,
       status: role.status,
-      permissions: (role.permissions || defaultPermissionsList).map((p) => ({ ...p })),
+      permissions: syncPermissions(role.permissions),
     });
     formModal.openModal();
   };
@@ -591,15 +680,21 @@ export default function UserRoleManagement() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-150 dark:divide-gray-800 text-gray-800 dark:text-white/80">
-                        {(selectedRole.permissions || defaultPermissionsList).map((perm) => (
-                          <tr key={perm.menu} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
-                            <td className="px-3 py-2 font-medium">{perm.menu}</td>
-                            <td className="px-3 py-2 text-center">{perm.view ? "✅" : "❌"}</td>
-                            <td className="px-3 py-2 text-center">{perm.create ? "✅" : "❌"}</td>
-                            <td className="px-3 py-2 text-center">{perm.edit ? "✅" : "❌"}</td>
-                            <td className="px-3 py-2 text-center">{perm.delete ? "✅" : "❌"}</td>
-                          </tr>
-                        ))}
+                        {(selectedRole.permissions || defaultPermissionsList).map((perm) => {
+                          const isSub = perm.isSubMenu;
+                          const hasSub = sidebarStructure.find(item => item.key === perm.key)?.subItems !== undefined;
+                          return (
+                            <tr key={perm.key} className={`${isSub ? "bg-white dark:bg-transparent" : "bg-gray-50/40 dark:bg-white/[0.01] font-semibold"} hover:bg-gray-50 dark:hover:bg-white/[0.01]`}>
+                              <td className={`px-3 py-2 ${isSub ? "pl-6 text-gray-500 dark:text-gray-400 text-xs" : "text-xs text-gray-808 dark:text-white/90"}`}>
+                                {isSub ? `└─ ${perm.menu}` : perm.menu}
+                              </td>
+                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.view ? "✅" : "❌")}</td>
+                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.create ? "✅" : "❌")}</td>
+                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.edit ? "✅" : "❌")}</td>
+                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.delete ? "✅" : "❌")}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -690,50 +785,79 @@ export default function UserRoleManagement() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-150 dark:divide-gray-800 text-gray-800 dark:text-white/90">
-                      {currentPermissions.map((perm, idx) => (
-                        <tr
-                          key={perm.menu}
-                          className="hover:bg-gray-100/50 dark:hover:bg-white/[0.01]"
-                        >
-                          <td className="px-4 py-3.5 font-medium">{perm.menu}</td>
-                          <td className="px-4 py-3.5 text-center">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                checked={perm.view}
-                                onChange={(checked) => handlePermissionChange(idx, "view", checked)}
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 text-center">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                checked={perm.create}
-                                onChange={(checked) =>
-                                  handlePermissionChange(idx, "create", checked)
-                                }
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 text-center">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                checked={perm.edit}
-                                onChange={(checked) => handlePermissionChange(idx, "edit", checked)}
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 text-center">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                checked={perm.delete}
-                                onChange={(checked) =>
-                                  handlePermissionChange(idx, "delete", checked)
-                                }
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {currentPermissions.map((perm, idx) => {
+                        const isSub = perm.isSubMenu;
+                        const hasSub = sidebarStructure.find(item => item.key === perm.key)?.subItems !== undefined;
+                        return (
+                          <tr
+                            key={perm.key}
+                            className={`${isSub ? "bg-white dark:bg-transparent" : "bg-gray-50/40 dark:bg-white/[0.01] font-semibold"} hover:bg-gray-100/50 dark:hover:bg-white/[0.01]`}
+                          >
+                            <td className={`px-4 py-2.5 ${isSub ? "pl-8 text-gray-600 dark:text-gray-400 text-xs" : "text-sm text-gray-805 dark:text-white/90"}`}>
+                              {isSub ? (
+                                <span className="flex items-center gap-1.5">
+                                  <span className="text-gray-300 dark:text-gray-700">└─</span>
+                                  {perm.menu}
+                                </span>
+                              ) : (
+                                perm.menu
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <div className="flex justify-center">
+                                {!hasSub ? (
+                                  <Checkbox
+                                    checked={perm.view}
+                                    onChange={(checked) => handlePermissionChange(idx, "view", checked)}
+                                  />
+                                ) : (
+                                  <span className="text-gray-400 dark:text-gray-600">—</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <div className="flex justify-center">
+                                {!hasSub ? (
+                                  <Checkbox
+                                    checked={perm.create}
+                                    onChange={(checked) =>
+                                      handlePermissionChange(idx, "create", checked)
+                                    }
+                                  />
+                                ) : (
+                                  <span className="text-gray-400 dark:text-gray-600">—</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <div className="flex justify-center">
+                                {!hasSub ? (
+                                  <Checkbox
+                                    checked={perm.edit}
+                                    onChange={(checked) => handlePermissionChange(idx, "edit", checked)}
+                                  />
+                                ) : (
+                                  <span className="text-gray-400 dark:text-gray-600">—</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <div className="flex justify-center">
+                                {!hasSub ? (
+                                  <Checkbox
+                                    checked={perm.delete}
+                                    onChange={(checked) =>
+                                      handlePermissionChange(idx, "delete", checked)
+                                    }
+                                  />
+                                ) : (
+                                  <span className="text-gray-400 dark:text-gray-600">—</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

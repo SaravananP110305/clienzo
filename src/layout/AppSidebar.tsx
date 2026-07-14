@@ -9,6 +9,14 @@ import {
   MdAssessment,
   MdSettings,
   MdPeople,
+  MdWork,
+  MdAssignment,
+  MdBugReport,
+  MdCloudUpload,
+  MdSupportAgent,
+  MdReceiptLong,
+  MdFolderSpecial,
+  MdBusiness,
 } from "react-icons/md";
 import { ChevronDownIcon } from "../icons";
 import logo from "/images/logo/Saiflow.png"
@@ -35,11 +43,22 @@ const navItems: NavItem[] = [
     name: "Master",
     icon: <MdSettings className="size-5" />,
     subItems: [
+      { name: "Countries", path: "/master/countries" },
+      { name: "States", path: "/master/states" },
+      { name: "Cities", path: "/master/cities" },
+      { name: "Departments", path: "/master/departments" },
+      { name: "Designations", path: "/master/designations" },
+      { name: "Technologies", path: "/master/technologies" },
       { name: "Lead sources", path: "/master/lead-sources" },
       { name: "Industries", path: "/master/industries" },
       { name: "Meeting types", path: "/master/meeting-types" },
       { name: "Follow-up reasons", path: "/master/follow-up-reasons" },
       { name: "Lost reasons", path: "/master/lost-reasons" },
+      { name: "Lead statuses", path: "/master/lead-statuses" },
+      { name: "Priorities", path: "/master/priorities" },
+      { name: "Follow-up types", path: "/master/followup-types" },
+      { name: "Project categories", path: "/master/project-categories" },
+      { name: "Project statuses", path: "/master/project-statuses" },
     ],
   },
   {
@@ -69,6 +88,46 @@ const navItems: NavItem[] = [
     path: "/meetings",
   },
   {
+    name: "Clients",
+    icon: <MdBusiness className="size-5" />,
+    path: "/clients",
+  },
+  {
+    name: "Requirements",
+    icon: <MdFolderSpecial className="size-5" />,
+    path: "/requirements",
+  },
+  {
+    name: "Quotations",
+    icon: <MdReceiptLong className="size-5" />,
+    path: "/quotations",
+  },
+  {
+    name: "Projects",
+    icon: <MdWork className="size-5" />,
+    path: "/projects",
+  },
+  {
+    name: "Tasks",
+    icon: <MdAssignment className="size-5" />,
+    path: "/tasks",
+  },
+  {
+    name: "QA",
+    icon: <MdBugReport className="size-5" />,
+    path: "/qa",
+  },
+  {
+    name: "Deployments",
+    icon: <MdCloudUpload className="size-5" />,
+    path: "/deployments",
+  },
+  {
+    name: "Support",
+    icon: <MdSupportAgent className="size-5" />,
+    path: "/support",
+  },
+  {
     name: "Reports",
     icon: <MdAssessment className="size-5" />,
     subItems: [
@@ -77,6 +136,11 @@ const navItems: NavItem[] = [
       { name: "Employee report", path: "/reports/employees" },
       { name: "Follow-up report", path: "/reports/follow-ups" },
     ],
+  },
+  {
+    name: "Settings",
+    icon: <MdSettings className="size-5" />,
+    path: "/settings",
   },
 ];
 
@@ -92,6 +156,12 @@ const AppSidebar: React.FC = () => {
   const isAdmin = loggedInUser?.role === "Administrator";
 
   const visibleNavItems = navItems.filter((nav) => {
+    // Temporarily hide Projects, Tasks, QA, Deployments, Support
+    const hiddenModules = ["Projects", "Tasks", "QA", "Deployments", "Support"];
+    if (hiddenModules.includes(nav.name)) {
+      return false;
+    }
+
     if (isAdmin) {
       // Administrator: show ALL navigation items (full access)
       return true;
@@ -225,7 +295,7 @@ const AppSidebar: React.FC = () => {
                       </button>
                       <div
                         className={`transition-all duration-300 ease-in-out overflow-hidden ${isSubOpen && (isExpanded || isHovered || isMobileOpen)
-                          ? "max-h-60 opacity-100 mt-1"
+                          ? "max-h-[1000px] opacity-100 mt-1"
                           : "max-h-0 opacity-0 pointer-events-none"
                           }`}
                       >

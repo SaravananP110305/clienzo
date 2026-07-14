@@ -31,6 +31,7 @@ import {
   ASSIGNEES,
   type Lead,
   type LeadPriority,
+  type LeadStatus,
 } from "../data/leadsData";
 import { LEAD_SOURCES, INDUSTRIES } from "../../Master/data/masterData";
 
@@ -68,29 +69,10 @@ export default function LeadList() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   
-  const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
   const [industryFilter, setIndustryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [isIndustryOpen, setIsIndustryOpen] = useState(false);
   const [isSourceOpen, setIsSourceOpen] = useState(false);
-
-  const handleBulkAssign = (assignee: string) => {
-    const updated = leads.map((l) =>
-      selectedLeadIds.includes(l.id) ? { ...l, assignedTo: assignee } : l
-    );
-    setLeads(updated);
-    setStorage("saiflow_leads", updated);
-    setSelectedLeadIds([]);
-    showToast(`Successfully assigned selected leads to ${assignee}.`, "success");
-  };
-
-  const handleBulkDelete = () => {
-    const updated = leads.filter((l) => !selectedLeadIds.includes(l.id));
-    setLeads(updated);
-    setStorage("saiflow_leads", updated);
-    setSelectedLeadIds([]);
-    showToast("Successfully deleted selected leads.", "success");
-  };
 
   // Filter dropdown open states
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -128,22 +110,70 @@ export default function LeadList() {
   const downloadSampleTemplate = () => {
     const sampleData = [
       {
-        "Company": "Google LLC",
+        "Lead Title": "Enterprise ERP Implementation",
+        "Company Name": "Google LLC",
         "Contact Person": "Larry Page",
-        "Email": "larry@google.com",
-        "Phone": "9876543210",
-        "Status": "New",
+        "Designation": "Chief Executive Officer",
+        "Mobile Number": "9876543210",
+        "Alternate Mobile": "9876543219",
+        "Email Address": "larry@google.com",
+        "Alternate Email": "larry.page@google.com",
+        "Website": "https://google.com",
+        "Industry": "Information Technology",
+        "Company Size": "501+",
+        "Annual Revenue": "$150B",
+        "GST Number": "22AAAAA0000A1Z5",
+        "Address Line 1": "1600 Amphitheatre Parkway",
+        "Address Line 2": "Mountain View",
+        "Country": "United States",
+        "State": "California",
+        "City": "San Francisco",
+        "Pincode": "94043",
+        "Lead Source": "Website",
+        "Lead Status": "New",
         "Priority": "High",
-        "Assigned To": ASSIGNEES[0] || "John Doe",
+        "Expected Budget": "$500,000",
+        "Expected Closing Date": "2026-12-31",
+        "Lead Owner": ASSIGNEES[0] || "John Doe",
+        "Assigned Date": "2026-07-14",
+        "Project Category": "ERP Software Development",
+        "Technology": "React.js, Node.js, TypeScript",
+        "Requirement Summary": "Complete CRM & Project Management ERP software tailored for search & ads teams.",
+        "Preferred Contact Method": "Google Meet",
+        "Preferred Contact Time": "10:00 AM - 12:00 PM"
       },
       {
-        "Company": "Microsoft Corp",
-        "Contact Person": "Bill Gates",
-        "Email": "bill@microsoft.com",
-        "Phone": "9876543211",
-        "Status": "Contacted",
+        "Lead Title": "Cloud Migration Consultation",
+        "Company Name": "Microsoft Corp",
+        "Contact Person": "Satya Nadella",
+        "Designation": "CEO",
+        "Mobile Number": "9876543211",
+        "Alternate Mobile": "",
+        "Email Address": "satya@microsoft.com",
+        "Alternate Email": "",
+        "Website": "https://microsoft.com",
+        "Industry": "Information Technology",
+        "Company Size": "501+",
+        "Annual Revenue": "$240B",
+        "GST Number": "22AAAAA1111B2Y4",
+        "Address Line 1": "One Microsoft Way",
+        "Address Line 2": "",
+        "Country": "United States",
+        "State": "Washington",
+        "City": "Seattle",
+        "Pincode": "98052",
+        "Lead Source": "Referral",
+        "Lead Status": "Contacted",
         "Priority": "Medium",
-        "Assigned To": ASSIGNEES[1] || "Jane Smith",
+        "Expected Budget": "$250,000",
+        "Expected Closing Date": "2026-11-30",
+        "Lead Owner": ASSIGNEES[1] || "Jane Smith",
+        "Assigned Date": "2026-07-13",
+        "Project Category": "Cloud Migration Service",
+        "Technology": "AWS Cloud, Docker & K8s",
+        "Requirement Summary": "Reviewing hybrid cloud setup options for key development sub-teams.",
+        "Preferred Contact Method": "Zoom",
+        "Preferred Contact Time": "2:00 PM - 4:00 PM"
       }
     ];
 
@@ -538,46 +568,7 @@ export default function LeadList() {
         </div>
       </div>
 
-      {/* Bulk Action Bar */}
-      {selectedLeadIds.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 mb-4 rounded-xl border border-brand-200 bg-brand-50/50 dark:border-brand-500/30 dark:bg-brand-500/5">
-          <span className="text-sm font-medium text-brand-700 dark:text-brand-400">
-            {selectedLeadIds.length} lead{selectedLeadIds.length > 1 ? "s" : ""} selected
-          </span>
-          <div className="flex items-center gap-3">
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleBulkAssign(e.target.value);
-                  e.target.value = "";
-                }
-              }}
-              className="h-9 w-44 appearance-none rounded-lg border border-gray-300 bg-white px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
-              style={{
-                backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                backgroundPosition: 'right 0.5rem center',
-                backgroundSize: '1.25rem',
-                backgroundRepeat: 'no-repeat'
-              }}
-            >
-              <option value="">Assign to...</option>
-              {ASSIGNEES.map((assignee) => (
-                <option key={assignee} value={assignee}>
-                  {assignee}
-                </option>
-              ))}
-            </select>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleBulkDelete}
-              className="h-9 px-4 py-1.5 border-error-500 text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10 dark:text-error-400 font-medium"
-            >
-              Delete selected
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       {/* Table Container */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -585,22 +576,7 @@ export default function LeadList() {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
-                <TableCell isHeader className="px-5 py-3 text-start whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeadIds.includes(l.id))}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        const newIds = [...new Set([...selectedLeadIds, ...paginatedLeads.map(l => l.id)])];
-                        setSelectedLeadIds(newIds);
-                      } else {
-                        const filteredIds = selectedLeadIds.filter(id => !paginatedLeads.some(l => l.id === id));
-                        setSelectedLeadIds(filteredIds);
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                  />
-                </TableCell>
+
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("S.No", "id")}
                 </TableCell>
@@ -637,20 +613,7 @@ export default function LeadList() {
                     key={lead.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <TableCell className="px-5 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedLeadIds.includes(lead.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedLeadIds([...selectedLeadIds, lead.id]);
-                          } else {
-                            setSelectedLeadIds(selectedLeadIds.filter(id => id !== lead.id));
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                      />
-                    </TableCell>
+
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
                       {lead.id}
                     </TableCell>
@@ -873,16 +836,40 @@ export default function LeadList() {
 
                     // Dynamically scan headers row (row index 0) for lead property mapping
                     const headers = rows[0].map(h => String(h || "").trim().toLowerCase());
+                    const leadTitleIdx = headers.findIndex(h => h.includes("lead title") || h.includes("title"));
                     const companyIdx = headers.findIndex(h => h.includes("company") || h.includes("lead"));
                     const contactIdx = headers.findIndex(h => h.includes("contact") || h.includes("person") || h.includes("name"));
+                    const designationIdx = headers.findIndex(h => h.includes("designation"));
+                    const phoneIdx = headers.findIndex(h => h.includes("mobile") || h.includes("phone") || h.includes("contact"));
+                    const altPhoneIdx = headers.findIndex(h => h.includes("alternate mobile") || h.includes("alt mobile") || h.includes("alternate phone"));
                     const emailIdx = headers.findIndex(h => h.includes("email") || h.includes("mail"));
-                    const phoneIdx = headers.findIndex(h => h.includes("phone") || h.includes("mobile") || h.includes("contact"));
+                    const altEmailIdx = headers.findIndex(h => h.includes("alternate email") || h.includes("alt email"));
+                    const websiteIdx = headers.findIndex(h => h.includes("website"));
                     const industryIdx = headers.findIndex(h => h.includes("industry"));
-                    const sourceIdx = headers.findIndex(h => h.includes("source"));
+                    const sizeIdx = headers.findIndex(h => h.includes("size") || h.includes("employees"));
+                    const revenueIdx = headers.findIndex(h => h.includes("revenue") || h.includes("annual"));
+                    const gstIdx = headers.findIndex(h => h.includes("gst"));
+                    const address1Idx = headers.findIndex(h => h.includes("address line 1") || h.includes("street"));
+                    const address2Idx = headers.findIndex(h => h.includes("address line 2") || h.includes("suite") || h.includes("unit"));
+                    const countryIdx = headers.findIndex(h => h.includes("country"));
+                    const stateIdx = headers.findIndex(h => h.includes("state"));
+                    const cityIdx = headers.findIndex(h => h.includes("city"));
+                    const pincodeIdx = headers.findIndex(h => h.includes("pincode") || h.includes("zip"));
+                    const sourceIdx = headers.findIndex(h => h.includes("source") || h.includes("lead source"));
+                    const statusIdx = headers.findIndex(h => h.includes("status") || h.includes("lead status"));
                     const priorityIdx = headers.findIndex(h => h.includes("priority"));
+                    const budgetIdx = headers.findIndex(h => h.includes("budget") || h.includes("expected budget"));
+                    const closeDateIdx = headers.findIndex(h => h.includes("closing") || h.includes("close date") || h.includes("expected closing"));
+                    const ownerIdx = headers.findIndex(h => h.includes("owner") || h.includes("assigned to") || h.includes("lead owner"));
+                    const assignedDateIdx = headers.findIndex(h => h.includes("assigned date"));
+                    const categoryIdx = headers.findIndex(h => h.includes("category") || h.includes("project category"));
+                    const techIdx = headers.findIndex(h => h.includes("technology") || h.includes("technologies") || h.includes("tech"));
+                    const summaryIdx = headers.findIndex(h => h.includes("summary") || h.includes("requirement") || h.includes("notes"));
+                    const contactMethodIdx = headers.findIndex(h => h.includes("method") || h.includes("contact method") || h.includes("preferred contact"));
+                    const contactTimeIdx = headers.findIndex(h => h.includes("time") || h.includes("contact time") || h.includes("preferred contact time"));
 
                     if (companyIdx === -1 && contactIdx === -1 && emailIdx === -1) {
-                      showToast("Required columns ('Company', 'Contact Person', or 'Email') not found.", "error");
+                      showToast("Required columns ('Company Name', 'Contact Person', or 'Email Address') not found.", "error");
                       return;
                     }
 
@@ -897,11 +884,6 @@ export default function LeadList() {
                       const company = companyIdx !== -1 ? String(row[companyIdx] || "").trim() : "";
                       const contactPerson = contactIdx !== -1 ? String(row[contactIdx] || "").trim() : "";
                       const email = emailIdx !== -1 ? String(row[emailIdx] || "").trim() : "";
-                      const phone = phoneIdx !== -1 ? String(row[phoneIdx] || "").trim() : "";
-                      const industry = industryIdx !== -1 ? String(row[industryIdx] || "").trim() : "";
-                      const source = sourceIdx !== -1 ? String(row[sourceIdx] || "").trim() : "";
-                      const rawPriority = priorityIdx !== -1 ? String(row[priorityIdx] || "").trim() : "";
-                      const priority = ["Low", "Medium", "High"].includes(rawPriority) ? rawPriority as LeadPriority : "Medium";
 
                       if (!company && !contactPerson && !email) continue;
 
@@ -915,20 +897,44 @@ export default function LeadList() {
                       }
 
                       const nextId = newLeadsList.length > 0 ? Math.max(...newLeadsList.map(l => l.id)) + 1 : 1;
+                      const rawTech = techIdx !== -1 ? String(row[techIdx] || "").trim() : "";
+                      const technologies = rawTech ? rawTech.split(",").map(t => t.trim()) : [];
+
                       newLeadsList.push({
                         id: nextId,
+                        leadTitle: leadTitleIdx !== -1 ? String(row[leadTitleIdx] || "").trim() : `${company} Expansion`,
                         company: company || "Unknown Corp",
                         contactPerson: contactPerson || "Jane Doe",
+                        designation: designationIdx !== -1 ? String(row[designationIdx] || "").trim() : "",
+                        phone: phoneIdx !== -1 ? String(row[phoneIdx] || "").trim() : "+91 98765 00000",
+                        alternatePhone: altPhoneIdx !== -1 ? String(row[altPhoneIdx] || "").trim() : "",
                         email: email || `contact@${company.toLowerCase().replace(/\s+/g, "") || "unknown"}.com`,
-                        phone: phone || "+91 98765 00000",
-                        status: "New",
-                        priority: priority,
-                        assignedTo: "John Doe",
-                        industry: industry || "Technology",
-                        source: source || "Website",
-                        website: `https://${company.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
-                        address: "Imported Address",
-                        notes: "Imported from file template.",
+                        alternateEmail: altEmailIdx !== -1 ? String(row[altEmailIdx] || "").trim() : "",
+                        website: websiteIdx !== -1 ? String(row[websiteIdx] || "").trim() : `https://${company.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
+                        industry: industryIdx !== -1 ? String(row[industryIdx] || "").trim() : "Information Technology",
+                        companySize: sizeIdx !== -1 ? String(row[sizeIdx] || "").trim() : "",
+                        annualRevenue: revenueIdx !== -1 ? String(row[revenueIdx] || "").trim() : "",
+                        gstNumber: gstIdx !== -1 ? String(row[gstIdx] || "").trim() : "",
+                        addressLine1: address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1",
+                        addressLine2: address2Idx !== -1 ? String(row[address2Idx] || "").trim() : "",
+                        address: `${address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1"} ${address2Idx !== -1 ? String(row[address2Idx] || "").trim() : ""}`.trim(),
+                        country: countryIdx !== -1 ? String(row[countryIdx] || "").trim() : "",
+                        state: stateIdx !== -1 ? String(row[stateIdx] || "").trim() : "",
+                        city: cityIdx !== -1 ? String(row[cityIdx] || "").trim() : "",
+                        pincode: pincodeIdx !== -1 ? String(row[pincodeIdx] || "").trim() : "",
+                        source: sourceIdx !== -1 ? String(row[sourceIdx] || "").trim() : "Website",
+                        status: statusIdx !== -1 ? String(row[statusIdx] || "").trim() as LeadStatus : "New",
+                        priority: priorityIdx !== -1 ? String(row[priorityIdx] || "").trim() as LeadPriority : "Medium",
+                        expectedBudget: budgetIdx !== -1 ? String(row[budgetIdx] || "").trim() : "",
+                        expectedClosingDate: closeDateIdx !== -1 ? String(row[closeDateIdx] || "").trim() : "",
+                        assignedTo: ownerIdx !== -1 ? String(row[ownerIdx] || "").trim() : "John Doe",
+                        assignedDate: assignedDateIdx !== -1 ? String(row[assignedDateIdx] || "").trim() : "",
+                        projectCategory: categoryIdx !== -1 ? String(row[categoryIdx] || "").trim() : "",
+                        technologies: technologies,
+                        requirementSummary: summaryIdx !== -1 ? String(row[summaryIdx] || "").trim() : "Imported from file template.",
+                        notes: summaryIdx !== -1 ? String(row[summaryIdx] || "").trim() : "Imported from file template.",
+                        preferredContactMethod: contactMethodIdx !== -1 ? String(row[contactMethodIdx] || "").trim() : "",
+                        preferredContactTime: contactTimeIdx !== -1 ? String(row[contactTimeIdx] || "").trim() : "",
                         createdAt: new Date().toISOString().split("T")[0],
                       });
                       addedCount++;

@@ -20,7 +20,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "../../../icons";
-import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { FiEye, FiEdit, FiTrash2, FiPlus, FiCalendar, FiClock, FiBriefcase, FiUser } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import { Meeting } from "../data/meetingsData";
 
@@ -55,7 +55,13 @@ export default function MeetingsScopePage({
   // Selected meeting for delete
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
-  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
+  const [viewMode, setViewMode] = useState<"table" | "calendar" | "kanban">("table");
+  const [kanbanPages, setKanbanPages] = useState<Record<string, number>>({
+    Scheduled: 1,
+    Rescheduled: 1,
+    Completed: 1,
+    Cancelled: 1,
+  });
   const [currentMonth, setCurrentMonth] = useState(6); // 0-indexed, July
   const [currentYear, setCurrentYear] = useState(2026);
 
@@ -180,6 +186,15 @@ export default function MeetingsScopePage({
     }
     setCurrentPage(1);
   };
+
+  const tabCounts = useMemo(() => {
+    const todayStr = "2026-07-09";
+    return {
+      upcoming: meetings.filter(m => m.date > todayStr && m.status !== "Completed" && m.status !== "Cancelled").length,
+      today: meetings.filter(m => m.date === todayStr).length,
+      completed: meetings.filter(m => m.date < todayStr || m.status === "Completed" || m.status === "Cancelled").length,
+    };
+  }, [meetings]);
 
   // Scope filter: filter actual list based on today's simulated date: 2026-07-09
   const scopedMeetings = useMemo(() => {
@@ -309,30 +324,39 @@ export default function MeetingsScopePage({
       <div className="flex border-b border-gray-200 dark:border-white/[0.05] mb-6">
         <button
           onClick={() => handleTabChange("upcoming")}
-          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${activeTab === "upcoming"
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeTab === "upcoming"
               ? "border-brand-500 text-brand-500 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
         >
           Upcoming Meetings
+          <span className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-600 dark:bg-white/[0.08] dark:text-gray-400">
+            {tabCounts.upcoming}
+          </span>
         </button>
         <button
           onClick={() => handleTabChange("today")}
-          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${activeTab === "today"
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeTab === "today"
               ? "border-brand-500 text-brand-500 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
         >
           Today's Meetings
+          <span className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-600 dark:bg-white/[0.08] dark:text-gray-400">
+            {tabCounts.today}
+          </span>
         </button>
         <button
           onClick={() => handleTabChange("completed")}
-          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer ${activeTab === "completed"
+          className={`pb-3 text-sm font-medium px-4 border-b-2 transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeTab === "completed"
               ? "border-brand-500 text-brand-500 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
         >
           Completed Meetings
+          <span className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-600 dark:bg-white/[0.08] dark:text-gray-400">
+            {tabCounts.completed}
+          </span>
         </button>
       </div>
 
@@ -392,14 +416,41 @@ export default function MeetingsScopePage({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setViewMode(viewMode === "table" ? "calendar" : "table")}
-            className="w-full sm:w-auto h-11 px-4 py-2.5"
-          >
-            {viewMode === "table" ? "Calendar view" : "Table view"}
-          </Button>
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/[0.05] dark:bg-white/[0.02] h-11 items-center">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white text-gray-800 shadow-xs dark:bg-gray-800 dark:text-white"
+                  : "text-gray-500 hover:text-gray-800 dark:hover:text-white"
+              }`}
+            >
+              Table
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("calendar")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                viewMode === "calendar"
+                  ? "bg-white text-gray-800 shadow-xs dark:bg-gray-800 dark:text-white"
+                  : "text-gray-500 hover:text-gray-800 dark:hover:text-white"
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("kanban")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                viewMode === "kanban"
+                  ? "bg-white text-gray-800 shadow-xs dark:bg-gray-800 dark:text-white"
+                  : "text-gray-500 hover:text-gray-800 dark:hover:text-white"
+              }`}
+            >
+              Kanban
+            </button>
+          </div>
           <Button
             size="sm"
             onClick={() => navigate("/meetings/add")}
@@ -555,7 +606,7 @@ export default function MeetingsScopePage({
             />
           )}
         </div>
-      ) : (
+      ) : viewMode === "calendar" ? (
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           {/* Calendar Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-white/[0.05]">
@@ -612,6 +663,141 @@ export default function MeetingsScopePage({
               );
             })}
           </div>
+        </div>
+      ) : (
+        /* Kanban View */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {["Scheduled", "Rescheduled", "Completed", "Cancelled"].map((status) => {
+            const columnItems = processedMeetings.filter((m) => m.status === status);
+            const colTotalPages = Math.ceil(columnItems.length / 3) || 1;
+            const colPage = kanbanPages[status] || 1;
+            const startIndex = (colPage - 1) * 3;
+            const colPaginatedItems = columnItems.slice(startIndex, startIndex + 3);
+
+            let headerBg = "bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-500/5 dark:border-brand-500/20 dark:text-brand-400";
+            if (status === "Completed") {
+              headerBg = "bg-success-50 border-success-200 text-success-700 dark:bg-success-500/5 dark:border-success-500/20 dark:text-success-400";
+            } else if (status === "Cancelled") {
+              headerBg = "bg-error-50 border-error-200 text-error-700 dark:bg-error-500/5 dark:border-error-500/20 dark:text-error-400";
+            } else if (status === "Rescheduled") {
+              headerBg = "bg-warning-50 border-warning-200 text-warning-700 dark:bg-warning-500/5 dark:border-warning-500/20 dark:text-warning-400";
+            }
+
+            return (
+              <div
+                key={status}
+                className="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-4 min-h-[400px] justify-between"
+              >
+                <div>
+                  {/* Column Header */}
+                  <div className={`flex items-center justify-between p-2.5 rounded-lg border mb-4 font-semibold text-xs ${headerBg}`}>
+                    <span>{status}</span>
+                    <span className="rounded-full px-2 py-0.5 bg-white/80 dark:bg-black/20 text-xs font-semibold">
+                      {columnItems.length}
+                    </span>
+                  </div>
+
+                  {/* Cards List */}
+                  <div className="space-y-3">
+                    {colPaginatedItems.length > 0 ? (
+                      colPaginatedItems.map((meeting) => (
+                        <div
+                          key={meeting.id}
+                          className="rounded-lg border border-gray-150 bg-gray-50/50 p-3.5 hover:shadow-xs transition dark:border-white/[0.05] dark:bg-white/[0.02]"
+                        >
+                          <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate mb-2" title={meeting.subject}>
+                            {meeting.subject}
+                          </h4>
+                          <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+                            <p className="flex items-center gap-1.5 truncate">
+                              <FiBriefcase className="size-3.5 shrink-0" />
+                              <span>{meeting.company}</span>
+                            </p>
+                            <p className="flex items-center gap-1.5 truncate">
+                              <FiUser className="size-3.5 shrink-0" />
+                              <span>{meeting.contactPerson}</span>
+                            </p>
+                            <p className="flex items-center gap-1.5">
+                              <FiCalendar className="size-3.5 shrink-0" />
+                              <span>{formatDate(meeting.date)}</span>
+                            </p>
+                            <p className="flex items-center gap-1.5">
+                              <FiClock className="size-3.5 shrink-0" />
+                              <span>{meeting.time}</span>
+                            </p>
+                          </div>
+
+                          {/* Action Panel inside Card */}
+                          <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-150 pt-2.5 dark:border-white/[0.05]">
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => navigate(`/meetings/${meeting.id}`)}
+                                className="p-1 text-gray-500 hover:text-brand-500 rounded cursor-pointer"
+                                title="View Details"
+                              >
+                                <FiEye className="size-4" />
+                              </button>
+                              <button
+                                onClick={() => navigate(`/meetings/${meeting.id}/edit`)}
+                                className="p-1 text-gray-500 hover:text-brand-500 rounded cursor-pointer"
+                                title="Edit"
+                              >
+                                <FiEdit className="size-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenDelete(meeting)}
+                                className="p-1 text-gray-500 hover:text-error-500 rounded cursor-pointer"
+                                title="Delete"
+                              >
+                                <FiTrash2 className="size-4" />
+                              </button>
+                            </div>
+
+                            {/* Direct Status Selector */}
+                            <select
+                              value={meeting.status}
+                              onChange={(e) => handleStatusChange(meeting.id, e.target.value as Meeting["status"])}
+                              className="h-7 rounded border border-gray-300 bg-white px-1.5 text-[10px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer"
+                            >
+                              <option value="Scheduled">Scheduled</option>
+                              <option value="Rescheduled">Rescheduled</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 rounded-lg dark:border-white/[0.05]">
+                        <p className="text-xs text-gray-400">No meetings</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Column Pagination Controls */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-150 dark:border-white/[0.05]">
+                  <button
+                    disabled={colPage === 1}
+                    onClick={() => setKanbanPages((prev) => ({ ...prev, [status]: Math.max(1, colPage - 1) }))}
+                    className="px-2 py-1 rounded text-xs font-semibold text-gray-500 hover:bg-gray-150 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/5 cursor-pointer"
+                  >
+                    &larr; Prev
+                  </button>
+                  <span className="text-[10px] font-medium text-gray-400">
+                    {colPage} of {colTotalPages}
+                  </span>
+                  <button
+                    disabled={colPage === colTotalPages}
+                    onClick={() => setKanbanPages((prev) => ({ ...prev, [status]: Math.min(colTotalPages, colPage + 1) }))}
+                    className="px-2 py-1 rounded text-xs font-semibold text-gray-500 hover:bg-gray-150 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/5 cursor-pointer"
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

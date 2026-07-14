@@ -7,10 +7,12 @@ import Button from "../../../components/ui/button/Button";
 import { initialMeetings, getMeetingStatusColor, Meeting } from "../data/meetingsData";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
+import { Client, initialClients } from "../../ClientManagement/data/clientsData";
 import { LOST_REASONS } from "../../Master/data/masterData";
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
 import Select from "../../../components/form/Select";
+import Input from "../../../components/form/input/InputField";
 import {
   FiBriefcase,
   FiUser,
@@ -18,10 +20,21 @@ import {
   FiClock,
   FiVideo,
   FiMapPin,
-  FiFileText,
   FiArrowLeft,
   FiEdit,
+  FiActivity,
+  FiExternalLink,
+  FiLink,
 } from "react-icons/fi";
+
+interface MeetingActivityLog {
+  id: string;
+  meetingId: number;
+  action: string;
+  description: string;
+  timestamp: string;
+  operator: string;
+}
 
 interface InfoCardProps {
   icon: React.ReactNode;
@@ -54,8 +67,53 @@ export default function MeetingDetails() {
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [matchingLead, setMatchingLead] = useState<Lead | null>(null);
+  
+  // Modals state
   const [showLostModal, setShowLostModal] = useState(false);
+  const [showWonModal, setShowWonModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+
+  // Form entries
+  const [wonSummary, setWonSummary] = useState("");
+  const [wonNextAction, setWonNextAction] = useState("Create Follow-up");
+  
+  const [lostSummary, setLostSummary] = useState("");
   const [selectedLostReason, setSelectedLostReason] = useState("");
+  const [lostNextAction, setLostNextAction] = useState("Create Follow-up");
+
+  const [cancelNotes, setCancelNotes] = useState("");
+  const [selectedCancelReason, setSelectedCancelReason] = useState("");
+  
+  // Conversion Form Entries
+  const [paymentTerms, setPaymentTerms] = useState("Net 30");
+  const [creditLimit, setCreditLimit] = useState("500000");
+  const [relManager, setRelManager] = useState("John Doe");
+  const [accManager, setAccManager] = useState("Jane Smith");
+
+  const [activityLogs, setActivityLogs] = useState<MeetingActivityLog[]>([]);
+
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
+    name: "Admin User",
+    email: "admin@gmail.com",
+    role: "Administrator",
+  });
+
+  const logActivity = (action: string, description: string) => {
+    if (!meeting) return;
+    const logs = getStorage<MeetingActivityLog[]>("saiflow_meeting_logs", []);
+    const newLog: MeetingActivityLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      meetingId: meeting.id,
+      action,
+      description,
+      timestamp: new Date().toISOString(),
+      operator: loggedInUser?.name || "Admin User",
+    };
+    const updatedLogs = [newLog, ...logs];
+    setStorage("saiflow_meeting_logs", updatedLogs);
+    setActivityLogs(updatedLogs.filter(l => l.meetingId === meeting.id).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+  };
 
   const loadData = () => {
     const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
@@ -63,7 +121,14 @@ export default function MeetingDetails() {
     if (foundMeeting) {
       setMeeting(foundMeeting);
       const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
-      const lead = leads.find((l) => l.company.toLowerCase() === foundMeeting.company.toLowerCase());
+      
+      // Attempt to search matching lead by relatedToId or by company name
+      let lead: Lead | undefined;
+      if (foundMeeting.relatedToType === "Lead" && foundMeeting.relatedToId) {
+        lead = leads.find((l) => l.id === foundMeeting.relatedToId);
+      } else {
+        lead = leads.find((l) => l.company.toLowerCase() === foundMeeting.company.toLowerCase());
+      }
       setMatchingLead(lead || null);
     }
   };
@@ -80,35 +145,84 @@ export default function MeetingDetails() {
     }
   };
 
+  const formatTime12hr = (timeStr: string) => {
+    if (!timeStr) return "";
+    if (timeStr.includes("AM") || timeStr.includes("PM")) return timeStr;
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return timeStr;
+    const hour = parseInt(parts[0], 10);
+    const minStr = parts[1];
+    if (isNaN(hour)) return timeStr;
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minStr} ${ampm}`;
+  };
+
   useEffect(() => {
     loadData();
   }, [id]);
 
-  const handleMarkWon = () => {
+  useEffect(() => {
+    if (meeting) {
+      const allLogs = getStorage<MeetingActivityLog[]>("saiflow_meeting_logs", []);
+      let meetingLogs = allLogs.filter((l) => l.meetingId === meeting.id);
+      
+      if (meetingLogs.length === 0) {
+        const initialLog: MeetingActivityLog = {
+          id: `log-init-${meeting.id}`,
+          meetingId: meeting.id,
+          action: "Meeting Scheduled",
+          description: `Meeting scheduled with ${meeting.contactPerson} from ${meeting.company}.`,
+          timestamp: new Date(meeting.date + (meeting.time ? "T" + meeting.time : "")).toISOString(),
+          operator: "System",
+        };
+        const updatedLogs = [initialLog, ...allLogs];
+        setStorage("saiflow_meeting_logs", updatedLogs);
+        meetingLogs = [initialLog];
+      }
+      
+      meetingLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setActivityLogs(meetingLogs);
+    }
+  }, [meeting]);
+
+  const handleMarkWon = (summary: string, nextAct: string) => {
     if (!meeting) return;
     const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
-      m.id === meeting.id ? { ...m, status: "Completed" as const } : m
+      m.id === meeting.id ? { ...m, status: "Completed" as const, nextAction: nextAct } : m
     );
     setStorage("saiflow_meetings", updatedMeetings);
 
     if (matchingLead) {
       const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
       const updatedLeads = leadsList.map((l) =>
-        l.id === matchingLead.id ? { ...l, status: "Won" as const } : l
+        l.id === matchingLead.id ? { 
+          ...l, 
+          status: "Won" as const,
+          remarks: `${l.remarks || ""}\n[Meeting Won Outcome Summary]: ${summary}`.trim()
+        } : l
       );
       setStorage("saiflow_leads", updatedLeads);
     }
 
+    logActivity("Concluded - Won", `Concluded meeting successfully. Next Action: ${nextAct}. Summary: ${summary}`);
     showToast("Meeting marked as Completed and Lead marked as Won!", "success");
-    loadData();
+    setShowWonModal(false);
+    setWonSummary("");
+    
+    if (nextAct === "Convert Lead") {
+      setShowConvertModal(true);
+    } else {
+      loadData();
+    }
   };
 
-  const handleMarkLost = (reason: string) => {
+  const handleMarkLost = (reason: string, summary: string, nextAct: string) => {
     if (!meeting) return;
     const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
-      m.id === meeting.id ? { ...m, status: "Completed" as const } : m
+      m.id === meeting.id ? { ...m, status: "Completed" as const, nextAction: nextAct } : m
     );
     setStorage("saiflow_meetings", updatedMeetings);
 
@@ -119,27 +233,115 @@ export default function MeetingDetails() {
           ? {
               ...l,
               status: "Lost" as const,
-              notes: `${l.notes || ""}\nMeeting concluded. Lost reason: ${reason}`,
+              remarks: `${l.remarks || ""}\n[Meeting Lost Outcome Summary]: ${summary} (Lost Reason: ${reason})`.trim()
             }
           : l
       );
       setStorage("saiflow_leads", updatedLeads);
     }
 
+    logActivity("Concluded - Lost", `Concluded meeting. Lost reason: ${reason}. Next Action: ${nextAct}. Summary: ${summary}`);
     showToast("Meeting marked as Completed and Lead marked as Lost.", "error");
     setShowLostModal(false);
+    setSelectedLostReason("");
+    setLostSummary("");
     loadData();
   };
 
-  const handleCancelMeeting = () => {
+  const handleCancelMeeting = (reason: string, notes: string) => {
     if (!meeting) return;
     const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     const updatedMeetings = meetings.map((m) =>
       m.id === meeting.id ? { ...m, status: "Cancelled" as const } : m
     );
     setStorage("saiflow_meetings", updatedMeetings);
+
+    if (matchingLead) {
+      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+      const updatedLeads = leadsList.map((l) =>
+        l.id === matchingLead.id ? {
+          ...l,
+          remarks: `${l.remarks || ""}\n[Meeting Cancelled]: Reason: ${reason}. Notes: ${notes}`.trim()
+        } : l
+      );
+      setStorage("saiflow_leads", updatedLeads);
+    }
+
+    logActivity("Cancelled", `Meeting has been cancelled. Reason: ${reason}. Notes: ${notes}`);
     showToast("Meeting cancelled successfully.", "success");
+    setShowCancelModal(false);
+    setSelectedCancelReason("");
+    setCancelNotes("");
     loadData();
+  };
+
+  const handleConvertLeadConfirm = () => {
+    if (!meeting || !matchingLead) return;
+
+    const clientsList = getStorage<Client[]>("saiflow_clients", initialClients);
+    
+    // Check if client company already exists
+    const exists = clientsList.some((c) => c.company.toLowerCase() === matchingLead.company.toLowerCase());
+    if (exists) {
+      showToast(`A client with company name "${matchingLead.company}" already exists.`, "error");
+      setShowConvertModal(false);
+      return;
+    }
+
+    const newClientId = clientsList.length > 0 ? Math.max(...clientsList.map((c) => c.id)) + 1 : 1;
+    const newClient: Client = {
+      id: newClientId,
+      company: matchingLead.company,
+      name: matchingLead.contactPerson,
+      email: matchingLead.email,
+      phone: matchingLead.phone,
+      projectsCount: 0,
+      status: "Active",
+      industry: matchingLead.industry,
+      gstNumber: matchingLead.gstNumber || "",
+      panNumber: "",
+      website: matchingLead.website || "",
+      companyEmail: matchingLead.email,
+      companyPhone: matchingLead.phone,
+      address: matchingLead.addressLine1 || matchingLead.address || "",
+      city: matchingLead.city || "",
+      state: matchingLead.state || "",
+      country: matchingLead.country || "India",
+      pincode: matchingLead.pincode || "",
+      contactName: matchingLead.contactPerson,
+      designation: matchingLead.designation || "",
+      mobile: matchingLead.phone,
+      relationshipManager: relManager,
+      accountManager: accManager,
+      clientSince: new Date().toISOString().split("T")[0],
+      paymentTerms: paymentTerms,
+      preferredCommunication: matchingLead.preferredContactMethod || "Email",
+      creditLimit: creditLimit,
+    };
+
+    const updatedClients = [...clientsList, newClient];
+    setStorage("saiflow_clients", updatedClients);
+
+    // Update Lead to Won status
+    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    const updatedLeads = leadsList.map((l) =>
+      l.id === matchingLead.id ? { ...l, status: "Won" as const } : l
+    );
+    setStorage("saiflow_leads", updatedLeads);
+
+    // Update Meeting relation to type Client
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
+    const updatedMeetings = meetings.map((m) =>
+      m.id === meeting.id ? { ...m, relatedToType: "Client" as const, relatedToId: newClientId } : m
+    );
+    setStorage("saiflow_meetings", updatedMeetings);
+
+    logActivity("Converted Lead", `Lead ${matchingLead.company} successfully converted to Client.`);
+    showToast(`Lead converted to Client ${matchingLead.company} successfully!`, "success");
+    setShowConvertModal(false);
+    
+    // Redirect directly to the Client Details View
+    navigate(`/clients/${newClientId}`);
   };
 
   const lostReasons = getStorage<any[]>("saiflow_master_lost_reasons", LOST_REASONS)
@@ -196,11 +398,18 @@ export default function MeetingDetails() {
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
             {meeting.subject}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Conducted via {meeting.type}
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+            <span>Type: {meeting.meetingType || "Discussion"}</span>
+            <span>•</span>
+            <span>Platform: {meeting.meetingPlatform || meeting.type || "Online"}</span>
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
+          {meeting.relatedToType && meeting.relatedToId && (
+            <Badge size="md" color="info">
+              Related: {meeting.relatedToType}
+            </Badge>
+          )}
           <Badge size="md" color={getMeetingStatusColor(meeting.status)}>
             {meeting.status}
           </Badge>
@@ -230,7 +439,7 @@ export default function MeetingDetails() {
             <div className="flex items-center gap-3">
               <Button
                 size="sm"
-                onClick={handleMarkWon}
+                onClick={() => setShowWonModal(true)}
                 className="bg-success-600 hover:bg-success-700 text-white border-transparent"
               >
                 Mark Won
@@ -245,7 +454,7 @@ export default function MeetingDetails() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleCancelMeeting}
+                onClick={() => setShowCancelModal(true)}
               >
                 Cancel Meeting
               </Button>
@@ -254,12 +463,33 @@ export default function MeetingDetails() {
         </div>
       )}
 
+      {/* Convert Lead Alert Panel if Won but not yet converted */}
+      {meeting.relatedToType === "Lead" && matchingLead && matchingLead.status === "Won" && (
+        <div className="rounded-xl border border-success-200 bg-success-50/50 p-5 mb-5 dark:border-success-500/20 dark:bg-success-500/5 flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-semibold text-success-850 dark:text-success-400">
+              Lead is Won! Ready to convert?
+            </h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              This lead has been successfully won. Convert it to Client Management to start projects.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setShowConvertModal(true)}
+            className="bg-success-600 hover:bg-success-700 text-white"
+          >
+            Convert to Client
+          </Button>
+        </div>
+      )}
+
       {/* Information Cards Grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Core Schedule Details */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Schedule details
+            Schedule Details
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <InfoCard
@@ -269,18 +499,42 @@ export default function MeetingDetails() {
             />
             <InfoCard
               icon={<FiClock className="size-4" />}
-              label="Meeting Time"
-              value={meeting.time}
+              label="Start / End Time"
+              value={`${formatTime12hr(meeting.startTime || meeting.time)} - ${formatTime12hr(meeting.endTime || "")}`}
             />
             <InfoCard
               icon={<FiBriefcase className="size-4" />}
-              label="Company / Lead"
-              value={meeting.company}
+              label={`Related ${meeting.relatedToType || "Lead"}`}
+              value={
+                meeting.relatedToId ? (
+                  <button
+                    onClick={() =>
+                      navigate(meeting.relatedToType === "Client" ? `/clients/${meeting.relatedToId}` : `/leads/${meeting.relatedToId}`)
+                    }
+                    className="text-brand-500 hover:underline flex items-center gap-1 text-left font-medium cursor-pointer"
+                  >
+                    {meeting.company}
+                    <FiExternalLink className="size-3" />
+                  </button>
+                ) : (
+                  meeting.company
+                )
+              }
             />
             <InfoCard
               icon={<FiUser className="size-4" />}
               label="Contact Person"
               value={meeting.contactPerson}
+            />
+            <InfoCard
+              icon={<FiClock className="size-4" />}
+              label="Duration & Timezone"
+              value={`${meeting.duration || "—"} (${meeting.timezone || "IST"})`}
+            />
+            <InfoCard
+              icon={<FiActivity className="size-4" />}
+              label="Next Action Status"
+              value={meeting.nextAction || "—"}
             />
           </div>
         </div>
@@ -288,27 +542,38 @@ export default function MeetingDetails() {
         {/* Location & Link Info */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Location / Link Info
+            Platform / Location
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <InfoCard
-              icon={meeting.type === "Google Meet" ? <FiVideo className="size-4 text-brand-500" /> : <FiMapPin className="size-4" />}
-              label="Meeting Type"
-              value={meeting.type}
+              icon={<FiVideo className="size-4" />}
+              label="Meeting Platform"
+              value={meeting.meetingPlatform || meeting.type}
             />
             <div className="sm:col-span-2">
               <InfoCard
-                icon={meeting.type === "Google Meet" ? <FiVideo className="size-4 text-brand-500" /> : <FiMapPin className="size-4" />}
-                label={meeting.type === "Google Meet" ? "Google Meet Link" : "Venue / Location"}
+                icon={
+                  ["Google Meet", "Zoom", "Microsoft Teams"].includes(meeting.meetingPlatform || meeting.type) ? (
+                    <FiLink className="size-4 text-brand-500" />
+                  ) : (
+                    <FiMapPin className="size-4" />
+                  )
+                }
+                label={
+                  ["Google Meet", "Zoom", "Microsoft Teams"].includes(meeting.meetingPlatform || meeting.type)
+                    ? "Meeting URL Link"
+                    : "Venue / Physical Address"
+                }
                 value={
-                  meeting.type === "Google Meet" ? (
+                  ["Google Meet", "Zoom", "Microsoft Teams"].includes(meeting.meetingPlatform || meeting.type) ? (
                     <a
                       href={meeting.linkOrLocation}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-brand-500 hover:underline break-all"
+                      className="text-brand-500 hover:underline break-all flex items-center gap-1 font-medium"
                     >
                       {meeting.linkOrLocation}
+                      <FiExternalLink className="size-3 shrink-0" />
                     </a>
                   ) : (
                     meeting.linkOrLocation
@@ -319,59 +584,467 @@ export default function MeetingDetails() {
           </div>
         </div>
 
-        {/* Notes & Agenda */}
+        {/* Participants Panel */}
         <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Agenda & Notes
+            Participants
           </h3>
-          <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5 dark:border-white/[0.05] dark:bg-white/[0.03]">
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-800">
-              <FiFileText className="size-4 text-gray-500 dark:text-gray-400" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <span className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
+                Meeting Owners (Employees)
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {meeting.meetingOwner && meeting.meetingOwner.length > 0 ? (
+                  meeting.meetingOwner.map((owner) => (
+                    <span
+                      key={owner}
+                      className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    >
+                      {owner}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400">John Doe</span>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-              {meeting.notes || <span className="text-gray-400">No agenda notes provided.</span>}
-            </p>
+
+            <div>
+              <span className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
+                Client Contact Person
+              </span>
+              <span className="text-sm font-medium text-gray-800 dark:text-white/95">
+                {meeting.clientContactPerson || meeting.contactPerson}
+              </span>
+            </div>
+
+            <div>
+              <span className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
+                Attendees
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                {meeting.attendees || "—"}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* Notes & Agenda Details */}
+        <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Agenda & Discussion details
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
+                Agenda Purpose
+              </label>
+              <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                  {meeting.agenda || meeting.notes || "No agenda provided."}
+                </p>
+              </div>
+            </div>
+            {meeting.discussionPoints && (
+              <div>
+                <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
+                  Discussion Points
+                </label>
+                <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                    {meeting.discussionPoints}
+                  </p>
+                </div>
+              </div>
+            )}
+            {meeting.requirements && (
+              <div>
+                <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
+                  Client Requirements
+                </label>
+                <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+                  <p className="text-sm text-gray-650 dark:text-gray-350 leading-relaxed whitespace-pre-wrap">
+                    {meeting.requirements}
+                  </p>
+                </div>
+              </div>
+            )}
+            {meeting.remarks && (
+              <div>
+                <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
+                  Remarks / Comments
+                </label>
+                <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                    {meeting.remarks}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Activity Log */}
+        <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
+            <FiActivity className="size-4 text-brand-500" />
+            Activity Log
+          </h3>
+          {activityLogs.length > 0 ? (
+            <div className="relative border-l-2 border-gray-100 dark:border-gray-850 ml-4 pl-6 space-y-6">
+              {activityLogs.map((log) => (
+                <div key={log.id} className="relative">
+                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
+                  </span>
+                  <div>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 block mb-0.5">
+                      {new Date(log.timestamp).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      • by {log.operator}
+                    </span>
+                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
+                      {log.action}
+                    </p>
+                    {log.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {log.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-400">No logs found.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Lost Reason Modal */}
+      {/* Won Outcome Summary Modal */}
       <Modal
-        isOpen={showLostModal}
-        onClose={() => setShowLostModal(false)}
-        className="max-w-[450px] m-4"
+        isOpen={showWonModal}
+        onClose={() => setShowWonModal(false)}
+        className="max-w-[480px] m-4"
       >
         <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
-              Mark Lead as Lost
-            </h4>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Please specify the reason why this lead was lost.
-            </p>
-            <Select
-              options={lostReasons.map((r) => ({ value: r.name, label: r.name }))}
-              placeholder="Select lost reason"
-              onChange={(val: string) => setSelectedLostReason(val)}
-              defaultValue={selectedLostReason}
-            />
+          <div className="mb-6 space-y-4">
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
+                Mark Meeting as Won
+              </h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Enter a brief summary detailing the meeting outcome and select the next action.
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Outcome Summary notes
+              </label>
+              <textarea
+                value={wonSummary}
+                onChange={(e) => setWonSummary(e.target.value)}
+                placeholder="E.g., Client agreed to proceed with proposal. Signing contract next week..."
+                rows={4}
+                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Next Action
+              </label>
+              <Select
+                options={[
+                  { value: "Create Follow-up", label: "Create Follow-up" },
+                  { value: "Create Quotation", label: "Create Quotation" },
+                  { value: "Convert Lead", label: "Convert Lead" },
+                  { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
+                ]}
+                placeholder="Select next action"
+                defaultValue={wonNextAction}
+                onChange={(val) => setWonNextAction(val)}
+              />
+            </div>
           </div>
           <div className="flex items-center justify-end gap-3">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setShowLostModal(false)}
+              onClick={() => {
+                setShowWonModal(false);
+                setWonSummary("");
+              }}
               className="w-1/2"
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              onClick={() => handleMarkLost(selectedLostReason || "No reason specified")}
+              onClick={() => handleMarkWon(wonSummary || "No outcome summary provided.", wonNextAction)}
+              className="w-1/2 bg-success-600 hover:bg-success-700 text-white"
+            >
+              Confirm Won
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Lost Outcome Summary Modal */}
+      <Modal
+        isOpen={showLostModal}
+        onClose={() => setShowLostModal(false)}
+        className="max-w-[480px] m-4"
+      >
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6 space-y-4">
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
+                Mark Meeting as Lost
+              </h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Select the primary reason why this lead was lost and enter summary notes.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Lost Reason *
+              </label>
+              <Select
+                options={lostReasons.map((r) => ({ value: r.name, label: r.name }))}
+                placeholder="Select lost reason"
+                onChange={(val: string) => setSelectedLostReason(val)}
+                defaultValue={selectedLostReason}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Meeting Summary / Notes
+              </label>
+              <textarea
+                value={lostSummary}
+                onChange={(e) => setLostSummary(e.target.value)}
+                placeholder="E.g., Budget constraints. They will look into options later..."
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Next Action
+              </label>
+              <Select
+                options={[
+                  { value: "Create Follow-up", label: "Create Follow-up" },
+                  { value: "Create Quotation", label: "Create Quotation" },
+                  { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
+                ]}
+                placeholder="Select next action"
+                defaultValue={lostNextAction}
+                onChange={(val) => setLostNextAction(val)}
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowLostModal(false);
+                setSelectedLostReason("");
+                setLostSummary("");
+              }}
+              className="w-1/2"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleMarkLost(selectedLostReason, lostSummary || "No details provided.", lostNextAction)}
               className="w-1/2 bg-error-600 hover:bg-error-700 text-white"
               disabled={!selectedLostReason}
             >
               Confirm Lost
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Cancel Meeting Modal */}
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        className="max-w-[480px] m-4"
+      >
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
+              Cancel Scheduled Meeting
+            </h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Select the primary reason for cancellation and add notes/context.
+            </p>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Cancellation Reason *
+              </label>
+              <Select
+                options={[
+                  { value: "Scheduling Conflict", label: "Scheduling Conflict" },
+                  { value: "Client Unavailable", label: "Client Unavailable" },
+                  { value: "Requirement Changed", label: "Requirement Changed" },
+                  { value: "Technical Issues", label: "Technical Issues" },
+                  { value: "Other", label: "Other" }
+                ]}
+                placeholder="Select cancellation reason"
+                onChange={(val: string) => setSelectedCancelReason(val)}
+                defaultValue={selectedCancelReason}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                Cancellation Notes
+              </label>
+              <textarea
+                value={cancelNotes}
+                onChange={(e) => setCancelNotes(e.target.value)}
+                placeholder="E.g., Client requested rescheduling due to urgent conflict..."
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowCancelModal(false);
+                setSelectedCancelReason("");
+                setCancelNotes("");
+              }}
+              className="w-1/2"
+            >
+              Back
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleCancelMeeting(selectedCancelReason, cancelNotes || "No details provided.")}
+              className="w-1/2 bg-error-600 hover:bg-error-700 text-white"
+              disabled={!selectedCancelReason}
+            >
+              Confirm Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Convert Lead to Client Modal */}
+      <Modal
+        isOpen={showConvertModal}
+        onClose={() => setShowConvertModal(false)}
+        className="max-w-[500px] m-4"
+      >
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6 space-y-4">
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-1">
+                Convert Lead to Client
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Setup relationship profile and credit limits for <span className="font-semibold text-gray-850 dark:text-white/80">{matchingLead?.company}</span>.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Payment Terms
+                </label>
+                <Select
+                  options={[
+                    { value: "Net 15", label: "Net 15" },
+                    { value: "Net 30", label: "Net 30" },
+                    { value: "Net 45", label: "Net 45" },
+                    { value: "Immediate", label: "Immediate" }
+                  ]}
+                  placeholder="Select terms"
+                  defaultValue={paymentTerms}
+                  onChange={(val) => setPaymentTerms(val)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Credit Limit (INR)
+                </label>
+                <Input
+                  type="number"
+                  value={creditLimit}
+                  onChange={(e) => setCreditLimit(e.target.value)}
+                  placeholder="E.g., 500000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Relationship Manager
+                </label>
+                <Select
+                  options={[
+                    { value: "John Doe", label: "John Doe" },
+                    { value: "Jane Smith", label: "Jane Smith" },
+                    { value: "Alice Johnson", label: "Alice Johnson" },
+                    { value: "Robert Lee", label: "Robert Lee" }
+                  ]}
+                  placeholder="Select manager"
+                  defaultValue={relManager}
+                  onChange={(val) => setRelManager(val)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Account Manager
+                </label>
+                <Select
+                  options={[
+                    { value: "John Doe", label: "John Doe" },
+                    { value: "Jane Smith", label: "Jane Smith" },
+                    { value: "Alice Johnson", label: "Alice Johnson" },
+                    { value: "Robert Lee", label: "Robert Lee" }
+                  ]}
+                  placeholder="Select manager"
+                  defaultValue={accManager}
+                  onChange={(val) => setAccManager(val)}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowConvertModal(false)}
+              className="w-1/2"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConvertLeadConfirm}
+              className="w-1/2 bg-success-600 hover:bg-success-700 text-white"
+            >
+              Convert to Client
             </Button>
           </div>
         </div>

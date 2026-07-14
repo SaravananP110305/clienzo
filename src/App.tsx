@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
+// import SignUp from "./pages/AuthPages/SignUp";
 import ForgotPassword from "./pages/AuthPages/ForgotPassword";
 import ResetPassword from "./pages/AuthPages/ResetPassword";
 import NotFound from "./pages/OtherPage/NotFound";
@@ -30,12 +30,35 @@ import FollowUpReport from "./modules/Reports/pages/FollowUpReport";
 import { ToastProvider } from "./context/ToastContext";
 import { getStorage, setStorage } from "./utils/storage";
 
+import ClientList from "./modules/ClientManagement/pages/ClientList";
+import ClientDetails from "./modules/ClientManagement/pages/ClientDetails";
+import RequirementList from "./modules/RequirementManagement/pages/RequirementList";
+import QuotationList from "./modules/Quotation/pages/QuotationList";
+import ProjectList from "./modules/ProjectManagement/pages/ProjectList";
+import TaskList from "./modules/TaskManagement/pages/TaskList";
+import QaList from "./modules/QaManagement/pages/QaList";
+import DeploymentList from "./modules/Deployment/pages/DeploymentList";
+import SupportList from "./modules/Support/pages/SupportList";
+import SettingsPage from "./modules/Settings/pages/SettingsPage";
+
+
 import {
   LEAD_SOURCES,
   INDUSTRIES,
   MEETING_TYPES,
   FOLLOWUP_REASONS,
   LOST_REASONS,
+  COUNTRIES,
+  STATES,
+  CITIES,
+  DEPARTMENTS,
+  DESIGNATIONS,
+  TECHNOLOGIES,
+  LEAD_STATUSES,
+  PRIORITIES,
+  FOLLOWUP_TYPES,
+  PROJECT_CATEGORIES,
+  PROJECT_STATUSES,
 } from "./modules/Master/data/masterData";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -257,6 +280,90 @@ export default function App() {
 
             {/* Master Routes */}
             <Route
+              path="/master/countries"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Countries"
+                    itemNameSingular="country"
+                    itemNamePlural="countries"
+                    initialData={COUNTRIES}
+                    storageKey="saiflow_master_countries"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/states"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="States"
+                    itemNameSingular="state"
+                    itemNamePlural="states"
+                    initialData={STATES}
+                    storageKey="saiflow_master_states"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/cities"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Cities"
+                    itemNameSingular="city"
+                    itemNamePlural="cities"
+                    initialData={CITIES}
+                    storageKey="saiflow_master_cities"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/departments"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Departments"
+                    itemNameSingular="department"
+                    itemNamePlural="departments"
+                    initialData={DEPARTMENTS}
+                    storageKey="saiflow_master_departments"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/designations"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Designations"
+                    itemNameSingular="designation"
+                    itemNamePlural="designations"
+                    initialData={DESIGNATIONS}
+                    storageKey="saiflow_master_designations"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/technologies"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Technologies"
+                    itemNameSingular="technology"
+                    itemNamePlural="technologies"
+                    initialData={TECHNOLOGIES}
+                    storageKey="saiflow_master_technologies"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/master/lead-sources"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
@@ -326,11 +433,163 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/master/lead-statuses"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Lead statuses"
+                    itemNameSingular="lead status"
+                    itemNamePlural="lead statuses"
+                    initialData={LEAD_STATUSES}
+                    storageKey="saiflow_master_lead_statuses"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/priorities"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Priorities"
+                    itemNameSingular="priority"
+                    itemNamePlural="priorities"
+                    initialData={PRIORITIES}
+                    storageKey="saiflow_master_priorities"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/followup-types"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Follow-up types"
+                    itemNameSingular="follow-up type"
+                    itemNamePlural="follow-up types"
+                    initialData={FOLLOWUP_TYPES}
+                    storageKey="saiflow_master_followup_types"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/project-categories"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Project categories"
+                    itemNameSingular="project category"
+                    itemNamePlural="project categories"
+                    initialData={PROJECT_CATEGORIES}
+                    storageKey="saiflow_master_project_categories"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/project-statuses"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Project statuses"
+                    itemNameSingular="project status"
+                    itemNamePlural="project statuses"
+                    initialData={PROJECT_STATUSES}
+                    storageKey="saiflow_master_project_statuses"
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Core Operational Routes */}
+            <Route
+              path="/clients"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <ClientList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients/:id"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <ClientDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/requirements"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <RequirementList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <QuotationList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <ProjectList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tasks"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <TaskList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/qa"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <QaList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deployments"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <DeploymentList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <SupportList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/*<Route path="/signup" element={<SignUp />} />*/}
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

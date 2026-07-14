@@ -17,15 +17,23 @@ import {
 } from "../../../icons";
 import {
   FiLayers,
-  FiPhoneCall,
   FiCalendar,
   FiCheckCircle,
+  FiUsers,
+  FiFolder,
+  FiClock,
+  FiAlertTriangle,
+  FiLifeBuoy,
 } from "react-icons/fi";
 import { getStorage } from "../../../utils/storage";
 import { initialLeads as sourceLeads, Lead as SourceLead } from "../../LeadManagement/data/leadsData";
 import { initialMeetings, Meeting } from "../../MeetingManagement/data/meetingsData";
+import { initialClients } from "../../ClientManagement/data/clientsData";
+import { initialProjects } from "../../ProjectManagement/data/projectsData";
+import { initialTasks } from "../../TaskManagement/data/tasksData";
+import { initialQaTickets } from "../../QaManagement/data/qaData";
+import { initialSupportTickets } from "../../Support/data/supportData";
 
-// We map source leads schema to local layout type
 interface Lead {
   sNo: number;
   company: string;
@@ -39,7 +47,7 @@ export default function Dashboard() {
   const { isOpen, openModal, closeModal } = useModal();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-  // Dynamic leads list from storage
+  // Dynamic lists from storage
   const rawLeads = getStorage<SourceLead[]>("saiflow_leads", sourceLeads);
   const localLeads = useMemo<Lead[]>(() => {
     return rawLeads.map((l, index) => ({
@@ -51,6 +59,12 @@ export default function Dashboard() {
       assignedTo: l.assignedTo,
     }));
   }, [rawLeads]);
+
+  const projects = getStorage("saiflow_projects", initialProjects);
+  const clients = getStorage("saiflow_clients", initialClients);
+  const tasks = getStorage("saiflow_tasks", initialTasks);
+  const qaTickets = getStorage("saiflow_qa_tickets", initialQaTickets);
+  const supportTickets = getStorage("saiflow_support_tickets", initialSupportTickets);
 
   // Custom Dropdown Open States
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -70,7 +84,6 @@ export default function Dashboard() {
     openModal();
   };
 
-  // Status mapping for badge colors
   const getStatusColor = (status: Lead["status"]) => {
     switch (status) {
       case "New":
@@ -90,7 +103,6 @@ export default function Dashboard() {
     }
   };
 
-  // Sorting handler
   const handleSort = (field: keyof Lead) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -101,7 +113,6 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
-  // Filter options for dropdowns
   const statusOptions = [
     { value: "all", label: "All statuses" },
     { value: "New", label: "New" },
@@ -119,11 +130,9 @@ export default function Dashboard() {
     { value: "Alice Johnson", label: "Alice Johnson" },
   ];
 
-  // Process data (Search, Filter, Sort)
   const processedLeads = useMemo(() => {
     let result = [...localLeads];
 
-    // 1. Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -136,17 +145,14 @@ export default function Dashboard() {
       );
     }
 
-    // 2. Status filter
     if (statusFilter !== "all") {
       result = result.filter((lead) => lead.status === statusFilter);
     }
 
-    // 3. Assignee filter
     if (assigneeFilter !== "all") {
       result = result.filter((lead) => lead.assignedTo === assigneeFilter);
     }
 
-    // 4. Sort
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -164,9 +170,8 @@ export default function Dashboard() {
     });
 
     return result;
-  }, [searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
+  }, [searchQuery, statusFilter, assigneeFilter, sortField, sortOrder, localLeads]);
 
-  // Paginated leads
   const paginatedLeads = useMemo(() => {
     const startIndex = (currentPage - 1) * rowsPerPage;
     return processedLeads.slice(startIndex, startIndex + rowsPerPage);
@@ -175,7 +180,6 @@ export default function Dashboard() {
   const totalItems = processedLeads.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
-  // Render header sort status indicators
   const renderSortHeader = (label: string, field: keyof Lead) => {
     const isActive = sortField === field;
     return (
@@ -202,25 +206,33 @@ export default function Dashboard() {
     );
   };
 
-  // Card summary statistics
   const summaryStats = useMemo(() => {
     const activeMeetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
-    const todayMeetingsCount = activeMeetings.filter((m) => m.date === "2026-07-09").length;
+    const todayMeetingsCount = activeMeetings.filter((m) => m.date === "2026-07-09" || m.date === "2026-07-13").length;
     return {
-      total: localLeads.length,
-      myLeads: localLeads.filter((l) => l.assignedTo === "John Doe").length,
-      followUps: localLeads.filter((l) => l.status === "Contacted" || l.status === "Qualified").length,
+      totalLeads: localLeads.length,
+      activeClients: clients.filter((c: any) => c.status === "Active").length,
+      ongoingProjects: projects.filter((p: any) => p.status === "In Progress").length,
+      completedProjects: projects.filter((p: any) => p.status === "Completed").length,
       todayMeetings: todayMeetingsCount,
-      won: localLeads.filter((l) => l.status === "Won").length,
-      lost: localLeads.filter((l) => l.status === "Lost").length,
+      pendingTasks: tasks.filter((t: any) => t.status !== "Done").length,
+      openDefects: qaTickets.filter((q: any) => q.status !== "Closed").length,
+      activeTickets: supportTickets.filter((s: any) => s.status !== "Closed" && s.status !== "Resolved").length,
     };
-  }, [localLeads]);
+  }, [localLeads, clients, projects, tasks, qaTickets, supportTickets]);
 
-  const cards = [
-    { label: "Total leads", value: summaryStats.total, icon: <FiLayers className="text-brand-500 w-5 h-5" /> },
-    { label: "Follow-ups", value: summaryStats.followUps, icon: <FiPhoneCall className="text-warning-500 w-5 h-5" /> },
+  const firstRowCards = [
+    { label: "Total leads", value: summaryStats.totalLeads, icon: <FiLayers className="text-brand-500 w-5 h-5" /> },
+    { label: "Active clients", value: summaryStats.activeClients, icon: <FiUsers className="text-info-500 w-5 h-5" /> },
+    { label: "Ongoing projects", value: summaryStats.ongoingProjects, icon: <FiFolder className="text-warning-500 w-5 h-5" /> },
+    { label: "Completed projects", value: summaryStats.completedProjects, icon: <FiCheckCircle className="text-success-500 w-5 h-5" /> },
+  ];
+
+  const secondRowCards = [
     { label: "Today's meetings", value: summaryStats.todayMeetings, icon: <FiCalendar className="text-purple-500 w-5 h-5" /> },
-    { label: "Won", value: summaryStats.won, icon: <FiCheckCircle className="text-success-500 w-5 h-5" /> },
+    { label: "Pending tasks", value: summaryStats.pendingTasks, icon: <FiClock className="text-pink-500 w-5 h-5" /> },
+    { label: "Open defects", value: summaryStats.openDefects, icon: <FiAlertTriangle className="text-error-500 w-5 h-5" /> },
+    { label: "Active support tickets", value: summaryStats.activeTickets, icon: <FiLifeBuoy className="text-cyan-500 w-5 h-5" /> },
   ];
 
   const leadTrendOptions: ApexOptions = {
@@ -257,8 +269,36 @@ export default function Dashboard() {
     },
   ];
 
+  const projectStatusOptions: ApexOptions = {
+    colors: ["#9CA3AF", "#F59E0B", "#EF4444", "#10B981"],
+    chart: {
+      fontFamily: "Poppins, sans-serif",
+      type: "donut",
+    },
+    labels: ["Planning", "In Progress", "On Hold", "Completed"],
+    dataLabels: { enabled: false },
+    legend: {
+      position: "bottom",
+      fontSize: "12px",
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "65%",
+        },
+      },
+    },
+  };
+
+  const projectStatusSeries = [
+    projects.filter((p: any) => p.status === "Planning").length,
+    projects.filter((p: any) => p.status === "In Progress").length,
+    projects.filter((p: any) => p.status === "On Hold").length,
+    projects.filter((p: any) => p.status === "Completed").length,
+  ];
+
   const conversionOptions: ApexOptions = {
-    colors: ["#65c15c", "#ff3951"],
+    colors: ["#10B981", "#EF4444"],
     chart: {
       fontFamily: "Poppins, sans-serif",
       toolbar: { show: false },
@@ -267,7 +307,7 @@ export default function Dashboard() {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "45%",
+        columnWidth: "35%",
         borderRadius: 4,
       },
     },
@@ -305,14 +345,13 @@ export default function Dashboard() {
     <>
       <PageMeta
         title="Dashboard | SaiFlow"
-        description="SaiFlow CRM dashboard - overview of leads, meetings, and performance."
+        description="SaiFlow CRM & ERP dashboard - overview of leads, clients, projects, meetings, and tickets."
       />
-      {/* Page Title & Breadcrumb */}
       <PageBreadcrumb pageTitle="Dashboard" />
 
-      {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        {cards.map((card) => (
+      {/* Row 1 Metrics */}
+      <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+        {firstRowCards.map((card) => (
           <div
             key={card.label}
             className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"
@@ -336,10 +375,36 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-2 md:gap-6">
+      {/* Row 2 Metrics */}
+      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+        {secondRowCards.map((card) => (
+          <div
+            key={card.label}
+            className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {card.label}
+                </span>
+                <h4 className="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+                  {card.value}
+                </h4>
+              </div>
+              {card.icon && (
+                <div className="flex items-center justify-center rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800">
+                  {card.icon}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Grid Row 1 */}
+      <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-3 md:gap-6">
         {/* Lead Generation Trend Chart */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
             Lead generation trend
           </h3>
@@ -353,6 +418,25 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Project Status Distribution Donut Chart */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
+            Projects by status
+          </h3>
+          <div className="max-w-full overflow-hidden flex justify-center">
+            <Chart
+              options={projectStatusOptions}
+              series={projectStatusSeries}
+              type="donut"
+              height={260}
+              width={260}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Grid Row 2 */}
+      <div className="grid grid-cols-1 gap-4 mb-6 md:gap-6">
         {/* Lead Conversion Chart */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
@@ -363,7 +447,7 @@ export default function Dashboard() {
               options={conversionOptions}
               series={conversionSeries}
               type="bar"
-              height={260}
+              height={265}
             />
           </div>
         </div>
@@ -371,12 +455,10 @@ export default function Dashboard() {
 
       {/* Recent Leads Section */}
       <div className="space-y-4">
-        {/* Table Title */}
         <h3 className="text-lg font-medium text-gray-800 dark:text-white/90">
           Recent leads
         </h3>
 
-        {/* Search, Filters, and Page Length above the Table */}
         <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full lg:w-auto">
             <div className="w-full sm:w-64">
@@ -391,16 +473,15 @@ export default function Dashboard() {
               />
             </div>
             <div className="flex items-center gap-3">
-              {/* Custom Dropdown Filter for Status */}
               <div className="relative">
                 <button
                   onClick={() => setIsStatusOpen(!isStatusOpen)}
-                  className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+                  className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-55 dark:hover:bg-white/5"
                 >
                   <span>
                     {statusOptions.find((o) => o.value === statusFilter)?.label || "Filter by status"}
                   </span>
-                  <ChevronDownIcon className="w-4 h-4 text-gray-505" />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                 </button>
                 <Dropdown
                   isOpen={isStatusOpen}
@@ -429,16 +510,15 @@ export default function Dashboard() {
                 </Dropdown>
               </div>
 
-              {/* Custom Dropdown Filter for Assignee */}
               <div className="relative">
                 <button
                   onClick={() => setIsAssigneeOpen(!isAssigneeOpen)}
-                  className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+                  className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-55 dark:hover:bg-white/5"
                 >
                   <span>
                     {assigneeOptions.find((o) => o.value === assigneeFilter)?.label || "Filter by assignee"}
                   </span>
-                  <ChevronDownIcon className="w-4 h-4 text-gray-550" />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                 </button>
                 <Dropdown
                   isOpen={isAssigneeOpen}
@@ -470,11 +550,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Table Container */}
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
           <div className="max-w-full overflow-x-auto">
             <table className="min-w-full">
-              {/* Table Header with Sticky Class */}
               <thead className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
                 <tr>
                   <th className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
@@ -501,7 +579,6 @@ export default function Dashboard() {
                 </tr>
               </thead>
 
-              {/* Table Body */}
               <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {paginatedLeads.length > 0 ? (
                   paginatedLeads.map((lead) => (
@@ -555,7 +632,6 @@ export default function Dashboard() {
             </table>
           </div>
 
-          {/* Pagination Controls */}
           {totalItems > 0 && (
             <Pagination
               currentPage={currentPage}

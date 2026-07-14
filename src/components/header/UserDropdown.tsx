@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { Link } from "react-router";
-import { FiUser, FiLock, FiLogOut } from "react-icons/fi";
+import { FiUser, FiLogOut } from "react-icons/fi";
 import { getStorage } from "../../utils/storage";
 import { useToast } from "../../hooks/useToast";
 import ownerImg from "/images/user/owner.jpg";
@@ -45,9 +45,8 @@ export default function UserDropdown() {
 
         <span className="block mr-1 font-medium text-theme-sm">{firstName}</span>
         <svg
-          className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+            }`}
           width="18"
           height="20"
           viewBox="0 0 18 20"
@@ -90,7 +89,7 @@ export default function UserDropdown() {
               Profile
             </DropdownItem>
           </li>
-          <li>
+          {/*<li>
             <DropdownItem
               onItemClick={closeDropdown}
               tag="a"
@@ -100,7 +99,7 @@ export default function UserDropdown() {
               <FiLock className="w-5 h-5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300" />
               Change password
             </DropdownItem>
-          </li>
+          </li>*/}
         </ul>
         <div className="mt-2">
           <Link
