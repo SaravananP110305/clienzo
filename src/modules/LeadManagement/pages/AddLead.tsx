@@ -218,6 +218,16 @@ export default function AddLead() {
           : l
       );
       setStorage("saiflow_leads", updated);
+      // Log update activity
+      const leadLogs = getStorage<any[]>("saiflow_lead_logs", []);
+      setStorage("saiflow_lead_logs", [...leadLogs, {
+        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        leadId: Number(id),
+        action: "lead_updated",
+        description: `Lead for ${data.company.trim()} was updated. Assigned to ${data.assignedTo || "John Doe"}.`,
+        timestamp: new Date().toISOString(),
+        operator: data.assignedTo || "John Doe",
+      }]);
       showToast("Lead updated successfully.", "success");
     } else {
       const nextId = currentLeads.length > 0 ? Math.max(...currentLeads.map((l) => l.id)) + 1 : 1;
@@ -253,6 +263,16 @@ export default function AddLead() {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setStorage("saiflow_leads", [...currentLeads, newLead]);
+      // Log creation activity
+      const leadLogs = getStorage<any[]>("saiflow_lead_logs", []);
+      setStorage("saiflow_lead_logs", [...leadLogs, {
+        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        leadId: nextId,
+        action: "lead_created",
+        description: `Lead created for ${data.company.trim()} by ${data.assignedTo || data.contactPerson || "John Doe"}.`,
+        timestamp: new Date().toISOString(),
+        operator: data.assignedTo || "John Doe",
+      }]);
       showToast("Lead created successfully.", "success");
     }
     navigate("/leads");

@@ -85,17 +85,38 @@ export default function LeadList() {
       const updated = leads.filter((l) => l.id !== selectedLead.id);
       setLeads(updated);
       setStorage("saiflow_leads", updated);
+      // Log deletion activity
+      const leadLogs = getStorage<any[]>("saiflow_lead_logs", []);
+      setStorage("saiflow_lead_logs", [...leadLogs, {
+        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        leadId: selectedLead.id,
+        action: "lead_deleted",
+        description: `Lead "${selectedLead.company}" was deleted.`,
+        timestamp: new Date().toISOString(),
+      }]);
       showToast(`Lead "${selectedLead.company}" deleted successfully.`, "success");
     }
     deleteModal.closeModal();
   };
 
   const handleDirectAssign = (leadId: number, newAssignee: string) => {
+    const prevLead = leads.find(l => l.id === leadId);
+    const prevAssignee = prevLead?.assignedTo || "Unknown";
     const updated = leads.map((l) =>
       l.id === leadId ? { ...l, assignedTo: newAssignee } : l
     );
     setLeads(updated);
     setStorage("saiflow_leads", updated);
+    // Log reassignment activity
+    const leadLogs = getStorage<any[]>("saiflow_lead_logs", []);
+    setStorage("saiflow_lead_logs", [...leadLogs, {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      leadId,
+      action: "lead_reassigned",
+      description: `Lead reassigned from ${prevAssignee} to ${newAssignee}.`,
+      timestamp: new Date().toISOString(),
+      operator: newAssignee,
+    }]);
     showToast(`Lead assigned to ${newAssignee} successfully.`, "success");
   };
 
@@ -438,116 +459,223 @@ export default function LeadList() {
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto custom-scrollbar">
           <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <TableRow>
-
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("S.No", "id")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Company", "company")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Contact person", "contactPerson")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Email", "email")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Phone", "phone")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Assigned to", "assignedTo")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {paginatedLeads.length > 0 ? (
-                paginatedLeads.map((lead) => (
-                  <TableRow
-                    key={lead.id}
-                    className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
-                  >
-
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
-                      {lead.id}
+            {/* ═══ DESKTOP TABLE VIEW (md and up) ═══ */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
+                  <TableRow>
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap w-12">
+                      S.No
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
-                      {lead.company}
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {renderSortHeader("Lead ID", "id")}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {lead.contactPerson}
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {renderSortHeader("Company", "company")}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {lead.email}
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {renderSortHeader("Contact person", "contactPerson")}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {lead.phone}
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {renderSortHeader("Email", "email")}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                      <select
-                        value={lead.assignedTo}
-                        onChange={(e) => handleDirectAssign(lead.id, e.target.value)}
-                        className="h-9 w-44 appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                          backgroundPosition: 'right 0.5rem center',
-                          backgroundSize: '1.25rem',
-                          backgroundRepeat: 'no-repeat'
-                        }}
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {renderSortHeader("Phone", "phone")}
+                    </TableCell>
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {renderSortHeader("Assigned to", "assignedTo")}
+                    </TableCell>
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      Action
+                    </TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                  {paginatedLeads.length > 0 ? (
+                    paginatedLeads.map((lead, index) => (
+                      <TableRow
+                        key={lead.id}
+                        className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                       >
-                        {ASSIGNEES.map((assignee) => (
-                          <option
-                            key={assignee}
-                            value={assignee}
-                            className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
+                          {(currentPage - 1) * rowsPerPage + index + 1}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                          <span className="font-mono text-xs tracking-wider">
+                            SF-LEAD-{String(lead.id).padStart(4, "0")}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
+                          {lead.company}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          {lead.contactPerson}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          {lead.email}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          {lead.phone}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
+                          <select
+                            value={lead.assignedTo}
+                            onChange={(e) => handleDirectAssign(lead.id, e.target.value)}
+                            className="h-9 w-40 appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                              backgroundPosition: 'right 0.5rem center',
+                              backgroundSize: '1.25rem',
+                              backgroundRepeat: 'no-repeat'
+                            }}
                           >
-                            {assignee}
-                          </option>
-                        ))}
-                      </select>
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm">
-                      <div className="flex items-center gap-2">
+                            {ASSIGNEES.map((assignee) => (
+                              <option
+                                key={assignee}
+                                value={assignee}
+                                className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+                              >
+                                {assignee}
+                              </option>
+                            ))}
+                          </select>
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-theme-sm">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/leads/${lead.id}`)}
+                              className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                              title="View"
+                            >
+                              <FiEye className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => navigate(`/leads/${lead.id}/edit`)}
+                              className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                              title="Edit"
+                            >
+                              <FiEdit className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDelete(lead)}
+                              className="p-1.5 text-gray-500 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                              title="Delete"
+                            >
+                              <FiTrash2 className="size-4" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                      >
+                        No leads found matching search criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* ═══ MOBILE / TABLET CARD VIEW (below md) ═══ */}
+            <div className="block md:hidden divide-y divide-gray-100 dark:divide-white/[0.05]">
+              {paginatedLeads.length > 0 ? (
+                paginatedLeads.map((lead, index) => (
+                  <div
+                    key={lead.id}
+                    className="p-4 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-50 dark:bg-brand-500/10 text-theme-xs font-semibold text-brand-600 dark:text-brand-400">
+                          {(currentPage - 1) * rowsPerPage + index + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate">
+                            {lead.company}
+                          </p>
+                          <span className="font-mono text-[10px] tracking-wider text-gray-400 dark:text-gray-500">
+                            SF-LEAD-{String(lead.id).padStart(4, "0")}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         <button
                           onClick={() => navigate(`/leads/${lead.id}`)}
-                          className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                          className="p-2 text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
                           title="View"
                         >
                           <FiEye className="size-4" />
                         </button>
                         <button
                           onClick={() => navigate(`/leads/${lead.id}/edit`)}
-                          className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                          className="p-2 text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
                           title="Edit"
                         >
                           <FiEdit className="size-4" />
                         </button>
                         <button
                           onClick={() => handleOpenDelete(lead)}
-                          className="p-1.5 text-gray-500 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
+                          className="p-2 text-gray-400 hover:text-error-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
                           title="Delete"
                         >
                           <FiTrash2 className="size-4" />
                         </button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+
+                    {/* Card Body - two column grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+                      <div>
+                        <span className="block text-gray-400 dark:text-gray-500 mb-0.5">Contact</span>
+                        <span className="text-gray-700 dark:text-gray-300 truncate block">{lead.contactPerson}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-400 dark:text-gray-500 mb-0.5">Email</span>
+                        <span className="text-gray-700 dark:text-gray-300 truncate block">{lead.email}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-400 dark:text-gray-500 mb-0.5">Phone</span>
+                        <span className="text-gray-700 dark:text-gray-300 truncate block">{lead.phone}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-400 dark:text-gray-500 mb-0.5">Assigned to</span>
+                        <select
+                          value={lead.assignedTo}
+                          onChange={(e) => handleDirectAssign(lead.id, e.target.value)}
+                          className="h-8 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-2.5 py-1 pr-7 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                            backgroundPosition: 'right 0.35rem center',
+                            backgroundSize: '1rem',
+                            backgroundRepeat: 'no-repeat'
+                          }}
+                        >
+                          {ASSIGNEES.map((assignee) => (
+                            <option
+                              key={assignee}
+                              value={assignee}
+                              className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+                            >
+                              {assignee}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    No leads found matching search criteria.
-                  </TableCell>
-                </TableRow>
+                <div className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No leads found matching search criteria.
+                </div>
               )}
-            </TableBody>
+            </div>
           </Table>
         </div>
 

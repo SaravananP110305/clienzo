@@ -5,7 +5,6 @@ import PageMeta from "../../../components/common/PageMeta";
 
 import Button from "../../../components/ui/button/Button";
 import { initialLeads, Lead } from "../data/leadsData";
-import { initialFollowUps, type FollowUp } from "../../ContactFollowUp/data/contactData";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { Client, initialClients } from "../../ClientManagement/data/clientsData";
 import Select from "../../../components/form/Select";
@@ -25,6 +24,8 @@ import {
   FiFileText,
   FiEdit,
   FiArrowLeft,
+  FiActivity,
+  FiXCircle,
 } from "react-icons/fi";
 
 interface InfoCardProps {
@@ -117,19 +118,6 @@ export default function LeadDetails() {
     setShowConvertModal(false);
     navigate(`/clients/${newClientId}`);
   };
-  const formatTime12hr = (timeStr: string) => {
-    if (!timeStr) return "";
-    if (timeStr.includes("AM") || timeStr.includes("PM")) return timeStr;
-    const parts = timeStr.split(":");
-    if (parts.length < 2) return timeStr;
-    const hour = parseInt(parts[0], 10);
-    const minStr = parts[1];
-    if (isNaN(hour)) return timeStr;
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const formattedHour = hour % 12 || 12;
-    return `${formattedHour}:${minStr} ${ampm}`;
-  };
-
   if (!lead) {
     return (
       <>
@@ -149,71 +137,100 @@ export default function LeadDetails() {
     );
   }
 
+  interface LeadLogEntry {
+    id: string;
+    leadId: number;
+    action: "lead_created" | "lead_updated" | "lead_deleted" | "lead_assigned" | "lead_reassigned";
+    description: string;
+    timestamp: string;
+    operator?: string;
+  }
+
   const timelineEvents = useMemo(() => {
     if (!lead) return [];
-    const events = [];
-    
-    // 1. Created Event
-    events.push({
-      date: new Date(lead.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      title: "Lead Created",
-      description: `Lead for ${lead.company} was added to the system.`,
-      timestamp: new Date(lead.createdAt).getTime()
-    });
+    const events: {
+      id: string;
+      type: string;
+      title: string;
+      description: string;
+      timestamp: number;
+      icon: React.ReactNode;
+      color: string;
+    }[] = [];
 
-    // 2. Assigned Event
-    if (lead.assignedTo) {
+    // 1. Lead Created from lead data
+    if (lead.createdAt) {
       events.push({
-        date: new Date(lead.createdAt).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        title: "Assigned Owner",
-        description: `Lead assigned to ${lead.assignedTo}.`,
-        timestamp: new Date(lead.createdAt).getTime() + 1000
+        id: `created-${lead.id}`,
+        type: "lead_created",
+        title: "Lead created",
+        description: `Lead for ${lead.company} was created by ${lead.assignedTo || "the system"}.`,
+        timestamp: new Date(lead.createdAt).getTime(),
+        icon: <FiActivity className="size-4" />,
+        color: "bg-brand-500",
       });
     }
 
-    // 3. Meetings Events
-    const allMeetings = getStorage<any[]>("saiflow_meetings", []);
-    const relatedMeetings = allMeetings.filter(
-      (m) => m.leadId === lead.id || m.company.toLowerCase() === lead.company.toLowerCase()
-    );
-
-    relatedMeetings.forEach((m) => {
+    // 2. Lead Assigned from lead data
+    if (lead.assignedTo) {
+      const assignedTs = lead.assignedDate
+        ? new Date(lead.assignedDate).getTime()
+        : new Date(lead.createdAt).getTime() + 1000;
       events.push({
-        date: new Date(m.date + (m.time ? "T" + m.time : "")).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        title: `Meeting Scheduled (${m.type})`,
-        description: `Status: ${m.status}. Agenda: ${m.title}`,
-        timestamp: new Date(m.date + (m.time ? "T" + m.time : "")).getTime()
+        id: `assigned-${lead.id}`,
+        type: "lead_assigned",
+        title: "Lead assigned",
+        description: `Lead assigned to ${lead.assignedTo}.`,
+        timestamp: assignedTs,
+        icon: <FiUserCheck className="size-4" />,
+        color: "bg-blue-500",
       });
-    });
+    }
 
-    // 4. Follow-up Events
-    const allFollowups = getStorage<FollowUp[]>("saiflow_followups", initialFollowUps);
-    const relatedFollowups = allFollowups.filter((f) => f.leadId === lead.id);
+    // 3. Lead activity logs from saiflow_lead_logs
+    const leadLogs = getStorage<LeadLogEntry[]>("saiflow_lead_logs", []);
+    const relatedLogs = leadLogs.filter((log) => log.leadId === lead.id);
+    relatedLogs.forEach((log) => {
+      let icon: React.ReactNode = <FiEdit className="size-4" />;
+      let color = "bg-warning-500";
 
-    relatedFollowups.forEach((f) => {
-      const dateObj = new Date(f.date + "T" + (f.time || "09:00"));
-      const timeStr = f.time ? ` at ${formatTime12hr(f.time)}` : "";
+      switch (log.action) {
+        case "lead_created":
+          icon = <FiActivity className="size-4" />;
+          color = "bg-success-500";
+          break;
+        case "lead_updated":
+          icon = <FiEdit className="size-4" />;
+          color = "bg-orange-500";
+          break;
+        case "lead_deleted":
+          icon = <FiXCircle className="size-4" />;
+          color = "bg-error-500";
+          break;
+        case "lead_assigned":
+        case "lead_reassigned":
+          icon = <FiUserCheck className="size-4" />;
+          color = "bg-blue-500";
+          break;
+      }
+
       events.push({
-        date: dateObj.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        title: `Follow-up ${f.status}`,
-        description: `Reason: ${f.reason}. Assigned to: ${f.assignedTo}${timeStr}`,
-        timestamp: dateObj.getTime(),
+        id: log.id,
+        type: log.action,
+        title:
+          log.action === "lead_created"
+            ? "Lead created"
+            : log.action === "lead_updated"
+            ? "Lead updated"
+            : log.action === "lead_deleted"
+            ? "Lead deleted"
+            : log.action === "lead_reassigned"
+            ? "Lead reassigned"
+            : "Lead assigned",
+        description: log.description,
+        timestamp: new Date(log.timestamp).getTime(),
+        icon,
+        color,
       });
     });
 
@@ -473,35 +490,55 @@ export default function LeadDetails() {
 
         {/* Activity Timeline */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 lg:col-span-2">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-5 pb-3 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
+            <FiActivity className="size-4 text-brand-500" />
             Activity Timeline
           </h3>
           {timelineEvents.length > 0 ? (
-            <div className="relative border-l-2 border-gray-100 dark:border-gray-800 ml-4 pl-6 space-y-6">
+            <div className="pl-1">
               {timelineEvents.map((event, idx) => (
-                <div key={idx} className="relative">
-                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
-                  </span>
-                  <div>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 block mb-0.5">
-                      {event.date}
-                    </span>
-                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                      {event.title}
-                    </p>
-                    {event.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {event.description}
-                      </p>
+                <div key={event.id} className="relative flex gap-4 pb-6 last:pb-0">
+                  {/* Timeline dot & line */}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${event.color}`}
+                    >
+                      {event.icon}
+                    </div>
+                    {idx < timelineEvents.length - 1 && (
+                      <div className="mt-1 w-px flex-1 bg-gray-200 dark:bg-gray-700" />
                     )}
+                  </div>
+                  {/* Content */}
+                  <div className="min-w-0 flex-1 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                        {event.title}
+                      </h4>
+                      <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(event.timestamp).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                      {event.description}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-6">
-              <p className="text-sm text-gray-400">No activities logged yet.</p>
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <FiActivity className="size-8 text-gray-300 dark:text-gray-600 mb-3" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No activities recorded yet.
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Activities will appear as you manage this lead.
+              </p>
             </div>
           )}
         </div>
