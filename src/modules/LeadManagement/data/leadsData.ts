@@ -26,28 +26,17 @@ export interface Lead {
   notes: string;
   createdAt: string;
 
-  // New optional properties for 10-card form
   leadTitle?: string;
   designation?: string;
   alternatePhone?: string;
   alternateEmail?: string;
-  companySize?: string;
-  annualRevenue?: string;
   gstNumber?: string;
   addressLine1?: string;
-  addressLine2?: string;
   country?: string;
   state?: string;
   city?: string;
   pincode?: string;
-  expectedBudget?: string;
-  expectedClosingDate?: string;
   assignedDate?: string;
-  projectCategory?: string;
-  technologies?: string[];
-  requirementSummary?: string;
-  preferredContactMethod?: string;
-  preferredContactTime?: string;
   nextFollowUpDate?: string;
   followUpType?: string;
   followUpNotes?: string;

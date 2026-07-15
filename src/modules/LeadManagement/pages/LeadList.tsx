@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
-import Badge from "../../../components/ui/badge/Badge";
+
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import { Modal } from "../../../components/ui/modal";
@@ -24,10 +24,6 @@ import { getStorage, setStorage } from "../../../utils/storage";
 import * as XLSX from "xlsx";
 import {
   initialLeads,
-  getStatusColor,
-  getPriorityColor,
-  LEAD_STATUSES,
-  LEAD_PRIORITIES,
   ASSIGNEES,
   type Lead,
   type LeadPriority,
@@ -60,9 +56,7 @@ export default function LeadList() {
     return cleaned;
   });
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Lead>("id");
@@ -75,9 +69,7 @@ export default function LeadList() {
   const [isSourceOpen, setIsSourceOpen] = useState(false);
 
   // Filter dropdown open states
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
-  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
 
   // Upload dialog state
   const [dragOver, setDragOver] = useState(false);
@@ -120,11 +112,8 @@ export default function LeadList() {
         "Alternate Email": "larry.page@google.com",
         "Website": "https://google.com",
         "Industry": "Information Technology",
-        "Company Size": "501+",
-        "Annual Revenue": "$150B",
         "GST Number": "22AAAAA0000A1Z5",
         "Address Line 1": "1600 Amphitheatre Parkway",
-        "Address Line 2": "Mountain View",
         "Country": "United States",
         "State": "California",
         "City": "San Francisco",
@@ -132,15 +121,8 @@ export default function LeadList() {
         "Lead Source": "Website",
         "Lead Status": "New",
         "Priority": "High",
-        "Expected Budget": "$500,000",
-        "Expected Closing Date": "2026-12-31",
         "Lead Owner": ASSIGNEES[0] || "John Doe",
-        "Assigned Date": "2026-07-14",
-        "Project Category": "ERP Software Development",
-        "Technology": "React.js, Node.js, TypeScript",
-        "Requirement Summary": "Complete CRM & Project Management ERP software tailored for search & ads teams.",
-        "Preferred Contact Method": "Google Meet",
-        "Preferred Contact Time": "10:00 AM - 12:00 PM"
+        "Assigned Date": "2026-07-14"
       },
       {
         "Lead Title": "Cloud Migration Consultation",
@@ -153,11 +135,8 @@ export default function LeadList() {
         "Alternate Email": "",
         "Website": "https://microsoft.com",
         "Industry": "Information Technology",
-        "Company Size": "501+",
-        "Annual Revenue": "$240B",
         "GST Number": "22AAAAA1111B2Y4",
         "Address Line 1": "One Microsoft Way",
-        "Address Line 2": "",
         "Country": "United States",
         "State": "Washington",
         "City": "Seattle",
@@ -165,15 +144,8 @@ export default function LeadList() {
         "Lead Source": "Referral",
         "Lead Status": "Contacted",
         "Priority": "Medium",
-        "Expected Budget": "$250,000",
-        "Expected Closing Date": "2026-11-30",
         "Lead Owner": ASSIGNEES[1] || "Jane Smith",
-        "Assigned Date": "2026-07-13",
-        "Project Category": "Cloud Migration Service",
-        "Technology": "AWS Cloud, Docker & K8s",
-        "Requirement Summary": "Reviewing hybrid cloud setup options for key development sub-teams.",
-        "Preferred Contact Method": "Zoom",
-        "Preferred Contact Time": "2:00 PM - 4:00 PM"
+        "Assigned Date": "2026-07-13"
       }
     ];
 
@@ -194,19 +166,9 @@ export default function LeadList() {
     setCurrentPage(1);
   };
 
-  const statusOptions = [
-    { value: "all", label: "All statuses" },
-    ...LEAD_STATUSES.map((s) => ({ value: s, label: s })),
-  ];
-
   const assigneeOptions = [
     { value: "all", label: "All assignees" },
     ...ASSIGNEES.map((a) => ({ value: a, label: a })),
-  ];
-
-  const priorityOptions = [
-    { value: "all", label: "All priorities" },
-    ...LEAD_PRIORITIES.map((p) => ({ value: p, label: p })),
   ];
 
   const industryOptions = [
@@ -235,16 +197,8 @@ export default function LeadList() {
       );
     }
 
-    if (statusFilter !== "all") {
-      result = result.filter((l) => l.status === statusFilter);
-    }
-
     if (assigneeFilter !== "all") {
       result = result.filter((l) => l.assignedTo === assigneeFilter);
-    }
-
-    if (priorityFilter !== "all") {
-      result = result.filter((l) => l.priority === priorityFilter);
     }
 
     if (industryFilter !== "all") {
@@ -269,7 +223,7 @@ export default function LeadList() {
     });
 
     return result;
-  }, [leads, searchQuery, statusFilter, assigneeFilter, priorityFilter, industryFilter, sourceFilter, sortField, sortOrder]);
+  }, [leads, searchQuery, assigneeFilter, industryFilter, sourceFilter, sortField, sortOrder]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -330,55 +284,11 @@ export default function LeadList() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Status Filter */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsStatusOpen(!isStatusOpen);
-                  setIsAssigneeOpen(false);
-                  setIsPriorityOpen(false);
-                }}
-                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <span className="truncate">
-                  {statusOptions.find((o) => o.value === statusFilter)?.label}
-                </span>
-                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
-              </button>
-              <Dropdown
-                isOpen={isStatusOpen}
-                onClose={() => setIsStatusOpen(false)}
-                className="left-0 right-auto w-44 p-1 mt-2"
-              >
-                <ul className="flex flex-col gap-0.5">
-                  {statusOptions.map((opt) => (
-                    <li key={opt.value}>
-                      <DropdownItem
-                        onItemClick={() => {
-                          setStatusFilter(opt.value);
-                          setCurrentPage(1);
-                          setIsStatusOpen(false);
-                        }}
-                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
-                            ? "bg-brand-500 text-white font-medium"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                          }`}
-                      >
-                        {opt.label}
-                      </DropdownItem>
-                    </li>
-                  ))}
-                </ul>
-              </Dropdown>
-            </div>
-
             {/* Assignee Filter */}
             <div className="relative">
               <button
                 onClick={() => {
                   setIsAssigneeOpen(!isAssigneeOpen);
-                  setIsStatusOpen(false);
-                  setIsPriorityOpen(false);
                 }}
                 className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
               >
@@ -414,56 +324,12 @@ export default function LeadList() {
               </Dropdown>
             </div>
 
-            {/* Priority Filter */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsPriorityOpen(!isPriorityOpen);
-                  setIsStatusOpen(false);
-                  setIsAssigneeOpen(false);
-                }}
-                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <span className="truncate">
-                  {priorityOptions.find((o) => o.value === priorityFilter)?.label}
-                </span>
-                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
-              </button>
-              <Dropdown
-                isOpen={isPriorityOpen}
-                onClose={() => setIsPriorityOpen(false)}
-                className="left-0 right-auto w-44 p-1 mt-2"
-              >
-                <ul className="flex flex-col gap-0.5">
-                  {priorityOptions.map((opt) => (
-                    <li key={opt.value}>
-                      <DropdownItem
-                        onItemClick={() => {
-                          setPriorityFilter(opt.value);
-                          setCurrentPage(1);
-                          setIsPriorityOpen(false);
-                        }}
-                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${priorityFilter === opt.value
-                            ? "bg-brand-500 text-white font-medium"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                          }`}
-                      >
-                        {opt.label}
-                      </DropdownItem>
-                    </li>
-                  ))}
-                </ul>
-              </Dropdown>
-            </div>
-
             {/* Industry Filter */}
             <div className="relative">
               <button
                 onClick={() => {
                   setIsIndustryOpen(!isIndustryOpen);
-                  setIsStatusOpen(false);
                   setIsAssigneeOpen(false);
-                  setIsPriorityOpen(false);
                   setIsSourceOpen(false);
                 }}
                 className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
@@ -505,9 +371,7 @@ export default function LeadList() {
               <button
                 onClick={() => {
                   setIsSourceOpen(!isSourceOpen);
-                  setIsStatusOpen(false);
                   setIsAssigneeOpen(false);
-                  setIsPriorityOpen(false);
                   setIsIndustryOpen(false);
                 }}
                 className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
@@ -593,12 +457,6 @@ export default function LeadList() {
                   {renderSortHeader("Phone", "phone")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Status", "status")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Priority", "priority")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Assigned to", "assignedTo")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -628,16 +486,6 @@ export default function LeadList() {
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {lead.phone}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                      <Badge size="sm" color={getStatusColor(lead.status)}>
-                        {lead.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                      <Badge size="sm" color={getPriorityColor(lead.priority)}>
-                        {lead.priority || "Medium"}
-                      </Badge>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
                       <select
@@ -692,7 +540,7 @@ export default function LeadList() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={6}
                     className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No leads found matching search criteria.
@@ -846,11 +694,8 @@ export default function LeadList() {
                     const altEmailIdx = headers.findIndex(h => h.includes("alternate email") || h.includes("alt email"));
                     const websiteIdx = headers.findIndex(h => h.includes("website"));
                     const industryIdx = headers.findIndex(h => h.includes("industry"));
-                    const sizeIdx = headers.findIndex(h => h.includes("size") || h.includes("employees"));
-                    const revenueIdx = headers.findIndex(h => h.includes("revenue") || h.includes("annual"));
                     const gstIdx = headers.findIndex(h => h.includes("gst"));
                     const address1Idx = headers.findIndex(h => h.includes("address line 1") || h.includes("street"));
-                    const address2Idx = headers.findIndex(h => h.includes("address line 2") || h.includes("suite") || h.includes("unit"));
                     const countryIdx = headers.findIndex(h => h.includes("country"));
                     const stateIdx = headers.findIndex(h => h.includes("state"));
                     const cityIdx = headers.findIndex(h => h.includes("city"));
@@ -858,15 +703,8 @@ export default function LeadList() {
                     const sourceIdx = headers.findIndex(h => h.includes("source") || h.includes("lead source"));
                     const statusIdx = headers.findIndex(h => h.includes("status") || h.includes("lead status"));
                     const priorityIdx = headers.findIndex(h => h.includes("priority"));
-                    const budgetIdx = headers.findIndex(h => h.includes("budget") || h.includes("expected budget"));
-                    const closeDateIdx = headers.findIndex(h => h.includes("closing") || h.includes("close date") || h.includes("expected closing"));
                     const ownerIdx = headers.findIndex(h => h.includes("owner") || h.includes("assigned to") || h.includes("lead owner"));
                     const assignedDateIdx = headers.findIndex(h => h.includes("assigned date"));
-                    const categoryIdx = headers.findIndex(h => h.includes("category") || h.includes("project category"));
-                    const techIdx = headers.findIndex(h => h.includes("technology") || h.includes("technologies") || h.includes("tech"));
-                    const summaryIdx = headers.findIndex(h => h.includes("summary") || h.includes("requirement") || h.includes("notes"));
-                    const contactMethodIdx = headers.findIndex(h => h.includes("method") || h.includes("contact method") || h.includes("preferred contact"));
-                    const contactTimeIdx = headers.findIndex(h => h.includes("time") || h.includes("contact time") || h.includes("preferred contact time"));
 
                     if (companyIdx === -1 && contactIdx === -1 && emailIdx === -1) {
                       showToast("Required columns ('Company Name', 'Contact Person', or 'Email Address') not found.", "error");
@@ -897,8 +735,6 @@ export default function LeadList() {
                       }
 
                       const nextId = newLeadsList.length > 0 ? Math.max(...newLeadsList.map(l => l.id)) + 1 : 1;
-                      const rawTech = techIdx !== -1 ? String(row[techIdx] || "").trim() : "";
-                      const technologies = rawTech ? rawTech.split(",").map(t => t.trim()) : [];
 
                       newLeadsList.push({
                         id: nextId,
@@ -912,12 +748,9 @@ export default function LeadList() {
                         alternateEmail: altEmailIdx !== -1 ? String(row[altEmailIdx] || "").trim() : "",
                         website: websiteIdx !== -1 ? String(row[websiteIdx] || "").trim() : `https://${company.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
                         industry: industryIdx !== -1 ? String(row[industryIdx] || "").trim() : "Information Technology",
-                        companySize: sizeIdx !== -1 ? String(row[sizeIdx] || "").trim() : "",
-                        annualRevenue: revenueIdx !== -1 ? String(row[revenueIdx] || "").trim() : "",
                         gstNumber: gstIdx !== -1 ? String(row[gstIdx] || "").trim() : "",
                         addressLine1: address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1",
-                        addressLine2: address2Idx !== -1 ? String(row[address2Idx] || "").trim() : "",
-                        address: `${address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1"} ${address2Idx !== -1 ? String(row[address2Idx] || "").trim() : ""}`.trim(),
+                        address: address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1",
                         country: countryIdx !== -1 ? String(row[countryIdx] || "").trim() : "",
                         state: stateIdx !== -1 ? String(row[stateIdx] || "").trim() : "",
                         city: cityIdx !== -1 ? String(row[cityIdx] || "").trim() : "",
@@ -925,16 +758,9 @@ export default function LeadList() {
                         source: sourceIdx !== -1 ? String(row[sourceIdx] || "").trim() : "Website",
                         status: statusIdx !== -1 ? String(row[statusIdx] || "").trim() as LeadStatus : "New",
                         priority: priorityIdx !== -1 ? String(row[priorityIdx] || "").trim() as LeadPriority : "Medium",
-                        expectedBudget: budgetIdx !== -1 ? String(row[budgetIdx] || "").trim() : "",
-                        expectedClosingDate: closeDateIdx !== -1 ? String(row[closeDateIdx] || "").trim() : "",
                         assignedTo: ownerIdx !== -1 ? String(row[ownerIdx] || "").trim() : "John Doe",
                         assignedDate: assignedDateIdx !== -1 ? String(row[assignedDateIdx] || "").trim() : "",
-                        projectCategory: categoryIdx !== -1 ? String(row[categoryIdx] || "").trim() : "",
-                        technologies: technologies,
-                        requirementSummary: summaryIdx !== -1 ? String(row[summaryIdx] || "").trim() : "Imported from file template.",
-                        notes: summaryIdx !== -1 ? String(row[summaryIdx] || "").trim() : "Imported from file template.",
-                        preferredContactMethod: contactMethodIdx !== -1 ? String(row[contactMethodIdx] || "").trim() : "",
-                        preferredContactTime: contactTimeIdx !== -1 ? String(row[contactTimeIdx] || "").trim() : "",
+                        notes: "Imported from file template.",
                         createdAt: new Date().toISOString().split("T")[0],
                       });
                       addedCount++;

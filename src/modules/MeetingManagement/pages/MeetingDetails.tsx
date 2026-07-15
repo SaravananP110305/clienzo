@@ -211,7 +211,7 @@ export default function MeetingDetails() {
       accountManager: accManager,
       clientSince: new Date().toISOString().split("T")[0],
       paymentTerms: paymentTerms,
-      preferredCommunication: matchingLead.preferredContactMethod || "Email",
+      preferredCommunication: "Email",
       creditLimit: creditLimit,
     };
 

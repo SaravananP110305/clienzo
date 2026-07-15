@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
-import Badge from "../../../components/ui/badge/Badge";
+
 import Button from "../../../components/ui/button/Button";
-import { initialLeads, getStatusColor, getPriorityColor, Lead } from "../data/leadsData";
+import { initialLeads, Lead } from "../data/leadsData";
 import { initialFollowUps, type FollowUp } from "../../ContactFollowUp/data/contactData";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { Client, initialClients } from "../../ClientManagement/data/clientsData";
@@ -106,7 +106,7 @@ export default function LeadDetails() {
       accountManager: accManager,
       clientSince: new Date().toISOString().split("T")[0],
       paymentTerms: paymentTerms,
-      preferredCommunication: lead.preferredContactMethod || "Email",
+      preferredCommunication: "Email",
       creditLimit: creditLimit,
     };
 
@@ -279,14 +279,6 @@ export default function LeadDetails() {
             <span>{lead.contactPerson}</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge size="md" color={getStatusColor(lead.status)}>
-            {lead.status}
-          </Badge>
-          <Badge size="md" color={getPriorityColor(lead.priority)}>
-            {lead.priority || "Medium"} Priority
-          </Badge>
-        </div>
       </div>
 
       {/* Cards Grid */}
@@ -395,16 +387,6 @@ export default function LeadDetails() {
               value={lead.industry}
             />
             <InfoCard
-              icon={<FiBriefcase className="size-4" />}
-              label="Company Size"
-              value={lead.companySize}
-            />
-            <InfoCard
-              icon={<FiBriefcase className="size-4" />}
-              label="Annual Revenue"
-              value={lead.annualRevenue}
-            />
-            <InfoCard
               icon={<FiFileText className="size-4" />}
               label="GST Number"
               value={lead.gstNumber}
@@ -423,13 +405,6 @@ export default function LeadDetails() {
                 icon={<FiMapPin className="size-4" />}
                 label="Address Line 1"
                 value={lead.addressLine1 || lead.address}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <InfoCard
-                icon={<FiMapPin className="size-4" />}
-                label="Address Line 2"
-                value={lead.addressLine2}
               />
             </div>
             <InfoCard
@@ -466,42 +441,6 @@ export default function LeadDetails() {
               label="Lead Source"
               value={lead.source}
             />
-            <InfoCard
-              icon={<FiTag className="size-4" />}
-              label="Lead Status"
-              value={
-                <Badge size="sm" color={getStatusColor(lead.status)}>
-                  {lead.status}
-                </Badge>
-              }
-            />
-            <InfoCard
-              icon={<FiTag className="size-4" />}
-              label="Priority"
-              value={
-                <Badge size="sm" color={getPriorityColor(lead.priority)}>
-                  {lead.priority || "Medium"}
-                </Badge>
-              }
-            />
-            <InfoCard
-              icon={<FiTag className="size-4" />}
-              label="Expected Budget"
-              value={lead.expectedBudget}
-            />
-            <InfoCard
-              icon={<FiCalendar className="size-4" />}
-              label="Expected Closing Date"
-              value={
-                lead.expectedClosingDate
-                  ? new Date(lead.expectedClosingDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : ""
-              }
-            />
           </div>
         </div>
 
@@ -528,69 +467,6 @@ export default function LeadDetails() {
                     })
                   : ""
               }
-            />
-          </div>
-        </div>
-
-        {/* Card 7: Requirement */}
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 sm:col-span-1 lg:col-span-2">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Requirement
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <InfoCard
-              icon={<FiBriefcase className="size-4" />}
-              label="Project Category"
-              value={lead.projectCategory}
-            />
-            <InfoCard
-              icon={<FiBriefcase className="size-4" />}
-              label="Technology"
-              value={
-                lead.technologies && lead.technologies.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {lead.technologies.map((tech) => (
-                      <span
-                        key={tech}
-                        className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-800 dark:text-gray-300"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  ""
-                )
-              }
-            />
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
-                Requirement Summary
-              </label>
-              <div className="p-4 rounded-xl border border-gray-100 bg-gray-50 dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <p className="text-sm text-gray-650 dark:text-gray-305 leading-relaxed whitespace-pre-line">
-                  {lead.requirementSummary || lead.notes || "No requirement summary provided."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 8: Communication */}
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Communication
-          </h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <InfoCard
-              icon={<FiMail className="size-4" />}
-              label="Preferred Contact Method"
-              value={lead.preferredContactMethod}
-            />
-            <InfoCard
-              icon={<FiCalendar className="size-4" />}
-              label="Preferred Contact Time"
-              value={formatTime12hr(lead.preferredContactTime || "")}
             />
           </div>
         </div>
