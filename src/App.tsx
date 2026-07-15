@@ -81,8 +81,8 @@ export default function App() {
     setStorage("saiflow_meetings", updated);
   };
 
-  const handleUpdateMeetingStatus = (id: number, status: Meeting["status"]) => {
-    const updated = meetings.map((m) => m.id === id ? { ...m, status } : m);
+  const handleUpdateMeetingStatus = (id: number, status: Meeting["status"], extra?: Partial<Meeting>) => {
+    const updated = meetings.map((m) => m.id === id ? { ...m, status, ...extra } : m);
     setMeetings(updated);
     setStorage("saiflow_meetings", updated);
   };

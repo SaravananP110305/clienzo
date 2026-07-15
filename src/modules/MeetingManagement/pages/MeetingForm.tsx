@@ -7,7 +7,7 @@ import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import DatePicker from "../../../components/form/date-picker";
-import { MeetingStatus, initialMeetings, Meeting } from "../data/meetingsData";
+import { initialMeetings, Meeting } from "../data/meetingsData";
 import { useToast } from "../../../hooks/useToast";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
@@ -22,7 +22,6 @@ interface MeetingFormValues {
   time: string;
   type: string;
   linkOrLocation: string;
-  status: MeetingStatus;
   notes: string;
 
   relatedToType: "Lead" | "Client";
@@ -36,11 +35,7 @@ interface MeetingFormValues {
   meetingOwner: string[];
   clientContactPerson: string;
   attendees: string;
-  agenda: string;
-  discussionPoints: string;
-  requirements: string;
-  remarks: string;
-  nextAction: string;
+  summary: string;
 }
 
 const EMPLOYEES = ["John Doe", "Jane Smith", "Alice Johnson", "Robert Lee"];
@@ -95,7 +90,6 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       time: "",
       type: "Google Meet",
       linkOrLocation: "",
-      status: "Scheduled",
       notes: "",
       relatedToType: "Lead",
       relatedToId: 0,
@@ -108,11 +102,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       meetingOwner: [],
       clientContactPerson: "",
       attendees: "",
-      agenda: "",
-      discussionPoints: "",
-      requirements: "",
-      remarks: "",
-      nextAction: "Create Follow-up",
+      summary: "",
     },
   });
 
@@ -149,7 +139,6 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           time: meeting.time,
           type: meeting.type || meeting.meetingPlatform || "Google Meet",
           linkOrLocation: meeting.linkOrLocation,
-          status: meeting.status,
           notes: meeting.notes,
           relatedToType: meeting.relatedToType || "Lead",
           relatedToId: meeting.relatedToId || 0,
@@ -162,11 +151,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           meetingOwner: meeting.meetingOwner || [],
           clientContactPerson: meeting.clientContactPerson || meeting.contactPerson || "",
           attendees: meeting.attendees || "",
-          agenda: meeting.agenda || meeting.notes || "",
-          discussionPoints: meeting.discussionPoints || "",
-          requirements: meeting.requirements || "",
-          remarks: meeting.remarks || "",
-          nextAction: meeting.nextAction || "Create Follow-up",
+          summary: meeting.summary || meeting.agenda || "",
         });
       }
     } else {
@@ -241,8 +226,8 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       time: data.startTime || data.time,
       type: data.meetingPlatform,
       linkOrLocation: data.linkOrLocation,
-      status: data.status,
-      notes: data.agenda || data.notes || "",
+      status: "Scheduled",
+      notes: data.summary || data.notes || "",
       relatedToType: data.relatedToType,
       relatedToId: data.relatedToId,
       meetingType: data.meetingType,
@@ -254,11 +239,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       meetingOwner: data.meetingOwner,
       clientContactPerson: data.clientContactPerson,
       attendees: data.attendees,
-      agenda: data.agenda,
-      discussionPoints: data.discussionPoints,
-      requirements: data.requirements,
-      remarks: data.remarks,
-      nextAction: data.nextAction,
+      summary: data.summary,
     };
 
     if (isEditMode) {
@@ -386,47 +367,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Related Module
-              </label>
-              <div className="flex items-center gap-4 py-2">
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                  <input
-                    type="radio"
-                    disabled={!!isLockRelated}
-                    checked={relatedToType === "Lead"}
-                    onChange={() => {
-                      setValue("relatedToType", "Lead");
-                      setValue("relatedToId", 0);
-                      setValue("company", "");
-                      setValue("contactPerson", "");
-                      setValue("clientContactPerson", "");
-                    }}
-                    className="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500"
-                  />
-                  Lead
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                  <input
-                    type="radio"
-                    disabled={!!isLockRelated}
-                    checked={relatedToType === "Client"}
-                    onChange={() => {
-                      setValue("relatedToType", "Client");
-                      setValue("relatedToId", 0);
-                      setValue("company", "");
-                      setValue("contactPerson", "");
-                      setValue("clientContactPerson", "");
-                    }}
-                    className="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500"
-                  />
-                  Client
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Select {relatedToType} <span className="text-error-500">*</span>
+                Related {relatedToType}
               </label>
               <Controller
                 name="relatedToId"
@@ -733,74 +674,20 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
             Meeting Details
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Agenda
+                Summary
               </label>
               <Controller
-                name="agenda"
+                name="summary"
                 control={control}
                 render={({ field }) => (
                   <textarea
                     {...field}
-                    placeholder="Enter meeting agenda / purpose"
+                    placeholder="Enter meeting summary, agenda, discussion points, and outcomes..."
                     className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-805 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    rows={3}
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Discussion Points
-              </label>
-              <Controller
-                name="discussionPoints"
-                control={control}
-                render={({ field }) => (
-                  <textarea
-                    {...field}
-                    placeholder="Enter discussion notes"
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-805 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    rows={3}
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Requirements
-              </label>
-              <Controller
-                name="requirements"
-                control={control}
-                render={({ field }) => (
-                  <textarea
-                    {...field}
-                    placeholder="Client requirements detailed during meeting"
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-805 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    rows={3}
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Remarks
-              </label>
-              <Controller
-                name="remarks"
-                control={control}
-                render={({ field }) => (
-                  <textarea
-                    {...field}
-                    placeholder="General remarks"
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-805 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    rows={3}
+                    rows={5}
                   />
                 )}
               />
@@ -808,59 +695,6 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           </div>
         </div>
 
-        {/* Section 7: Outcome & Next Action */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Outcome & Actions
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Meeting Status <span className="text-error-500">*</span>
-              </label>
-              <Controller
-                name="status"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={[
-                      { value: "Scheduled", label: "Scheduled" },
-                      { value: "Completed", label: "Completed" },
-                      { value: "Cancelled", label: "Cancelled" },
-                      { value: "Rescheduled", label: "Rescheduled" },
-                    ]}
-                    placeholder="Select status"
-                    defaultValue={value}
-                    onChange={onChange}
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Next Action
-              </label>
-              <Controller
-                name="nextAction"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={[
-                      { value: "Create Follow-up", label: "Create Follow-up" },
-                      { value: "Create Quotation", label: "Create Quotation" },
-                      { value: "Convert Lead", label: "Convert Lead" },
-                      { value: "Schedule Next Meeting", label: "Schedule Next Meeting" },
-                    ]}
-                    placeholder="Select next action"
-                    defaultValue={value}
-                    onChange={onChange}
-                  />
-                )}
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">

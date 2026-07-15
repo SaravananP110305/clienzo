@@ -12,6 +12,13 @@ export interface Meeting {
   status: MeetingStatus;
   notes: string;
 
+  // Workflow fields
+  summary?: string;
+  rescheduledDate?: string;
+  rescheduledTime?: string;
+  completedDate?: string;
+  cancelledDate?: string;
+
   // New Upgrade Fields
   relatedToType?: "Lead" | "Client";
   relatedToId?: number;
@@ -54,12 +61,12 @@ export const initialMeetings: Meeting[] = [
     subject: "Discovery Call & Product Intro",
     company: "Tech solutions",
     contactPerson: "Alice Smith",
-    date: "2026-07-09", // Today
+    date: "2026-07-09",
     time: "10:30",
     type: "Google Meet",
     linkOrLocation: "https://meet.google.com/abc-defg-hij",
     status: "Scheduled",
-    notes: "Go through company presentation slides and introduce standard modules.",
+    notes: "Go through company presentation slides and introduce standard modules. Client showed interest in the CRM dashboard and reporting features.",
     relatedToType: "Lead",
     relatedToId: 1,
     meetingType: "Discovery Call",
@@ -70,11 +77,11 @@ export const initialMeetings: Meeting[] = [
     timezone: "IST",
     meetingOwner: ["John Doe"],
     clientContactPerson: "Alice Smith",
-    attendees: "John Doe, Alice Smith",
+    attendees: "John Doe, Alice Smith, Michael Chen",
     agenda: "Gather initial scope and demo core templates.",
-    discussionPoints: "Introduced SaiFlow CRM components.",
-    requirements: "Requires leads and meetings dashboard.",
-    remarks: "Good initial response.",
+    discussionPoints: "Introduced SaiFlow CRM components. Client interested in lead management and meeting scheduling modules.",
+    requirements: "Requires leads and meetings dashboard with custom role permissions.",
+    remarks: "Good initial response. Alice is the decision maker.",
     nextAction: "Create Follow-up"
   },
   {
@@ -82,12 +89,12 @@ export const initialMeetings: Meeting[] = [
     subject: "Pricing & License Discussion",
     company: "Innovate LLC",
     contactPerson: "Bob Jones",
-    date: "2026-07-09", // Today
+    date: "2026-07-09",
     time: "14:00",
     type: "Google Meet",
     linkOrLocation: "https://meet.google.com/xyz-pqrs-tuv",
     status: "Rescheduled",
-    notes: "Postponed by client from morning to afternoon.",
+    notes: "Postponed by client from morning to afternoon. Need to present pricing tiers.",
     relatedToType: "Lead",
     relatedToId: 2,
     meetingType: "Demo Meeting",
@@ -98,24 +105,27 @@ export const initialMeetings: Meeting[] = [
     timezone: "IST",
     meetingOwner: ["Jane Smith"],
     clientContactPerson: "Bob Jones",
-    attendees: "Jane Smith, Bob Jones",
+    attendees: "Jane Smith, Bob Jones, Sarah Lee",
     agenda: "Go over price cards and workspace limits.",
-    discussionPoints: "Discussed custom roles configuration requirements.",
-    requirements: "Client needs 10 user licenses.",
-    remarks: "Client requested follow-up proposal.",
-    nextAction: "Schedule Next Meeting"
+    discussionPoints: "Discussed custom roles configuration requirements. Bob requested a detailed proposal for 10 users.",
+    requirements: "Client needs 10 user licenses with custom role-based access control.",
+    remarks: "Client requested follow-up proposal. Budget seems approved.",
+    nextAction: "Schedule Next Meeting",
+    summary: "Client was not available in the morning, rescheduled to afternoon. Discussed pricing tiers for enterprise plan.",
+    rescheduledDate: "2026-07-09",
+    rescheduledTime: "14:00"
   },
   {
     id: 3,
     subject: "Detailed Technical Demo",
     company: "Apex digital",
     contactPerson: "Charlie Brown",
-    date: "2026-07-10", // Upcoming
+    date: "2026-07-10",
     time: "11:00",
     type: "Google Meet",
     linkOrLocation: "https://meet.google.com/mno-lkiu-asd",
     status: "Scheduled",
-    notes: "Present API integration flow and database schemas.",
+    notes: "Present API integration flow and database schemas. Technical team will attend.",
     relatedToType: "Lead",
     relatedToId: 3,
     meetingType: "Requirement Discussion",
@@ -126,11 +136,39 @@ export const initialMeetings: Meeting[] = [
     timezone: "IST",
     meetingOwner: ["John Doe"],
     clientContactPerson: "Charlie Brown",
-    attendees: "John Doe, Charlie Brown",
+    attendees: "John Doe, Charlie Brown, David Kim, Priya Sharma",
     agenda: "Detailed technical architecture walkthrough.",
-    discussionPoints: "Demonstrated custom role permission matrix.",
-    requirements: "Needs robust API for connecting standard databases.",
-    remarks: "Highly technical team.",
+    discussionPoints: "Demonstrated custom role permission matrix. Discussed API integration patterns and webhook support.",
+    requirements: "Needs robust API for connecting standard databases and third-party integrations.",
+    remarks: "Highly technical team. They want to see the API documentation.",
+    nextAction: "Create Quotation"
+  },
+  {
+    id: 4,
+    subject: "Project Kickoff & Timeline Planning",
+    company: "Nextgen software",
+    contactPerson: "Diana Prince",
+    date: "2026-07-18",
+    time: "10:30",
+    type: "Microsoft Teams",
+    linkOrLocation: "https://teams.microsoft.com/meet/nextgen-abc123",
+    status: "Scheduled",
+    notes: "Kickoff meeting to finalize project roadmap and assign team responsibilities.",
+    relatedToType: "Lead",
+    relatedToId: 4,
+    meetingType: "Review Meeting",
+    meetingPlatform: "Microsoft Teams",
+    startTime: "10:30",
+    endTime: "11:30",
+    duration: "60 mins",
+    timezone: "IST",
+    meetingOwner: ["Jane Smith", "John Doe"],
+    clientContactPerson: "Diana Prince",
+    attendees: "Jane Smith, John Doe, Diana Prince, Bruce Wayne",
+    agenda: "Finalize project scope, milestones, and resource allocation.",
+    discussionPoints: "Reviewed project requirements. Diana wants bi-weekly sprint reviews.",
+    requirements: "Requires dedicated development team with QA support. Timeline: 4 months.",
+    remarks: "Diana is very organized. She shared a detailed BRD document.",
     nextAction: "Create Quotation"
   }
 ];

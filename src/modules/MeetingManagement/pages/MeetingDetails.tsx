@@ -24,6 +24,10 @@ import {
   FiActivity,
   FiExternalLink,
   FiLink,
+  FiRefreshCw,
+  FiCheckCircle,
+  FiXCircle,
+
 } from "react-icons/fi";
 
 interface MeetingActivityLog {
@@ -291,11 +295,6 @@ export default function MeetingDetails() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {meeting.relatedToType && meeting.relatedToId && (
-            <Badge size="md" color="info">
-              Related: {meeting.relatedToType}
-            </Badge>
-          )}
           <Badge size="md" color={getMeetingStatusColor(meeting.status)}>
             {meeting.status}
           </Badge>
@@ -369,11 +368,6 @@ export default function MeetingDetails() {
               icon={<FiClock className="size-4" />}
               label="Duration & Timezone"
               value={`${meeting.duration || "—"} (${meeting.timezone || "IST"})`}
-            />
-            <InfoCard
-              icon={<FiActivity className="size-4" />}
-              label="Next Action Status"
-              value={meeting.nextAction || "—"}
             />
           </div>
         </div>
@@ -469,100 +463,134 @@ export default function MeetingDetails() {
           </div>
         </div>
 
-        {/* Notes & Agenda Details */}
+        {/* Meeting Summary */}
         <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Agenda & Discussion details
+            Meeting Summary
           </h3>
           <div className="space-y-4">
             <div>
               <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
-                Agenda Purpose
+                Summary
               </label>
               <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-                  {meeting.agenda || meeting.notes || "No agenda provided."}
+                  {meeting.summary || meeting.notes || "No summary provided."}
                 </p>
               </div>
             </div>
-            {meeting.discussionPoints && (
-              <div>
-                <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
-                  Discussion Points
-                </label>
-                <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-                    {meeting.discussionPoints}
-                  </p>
-                </div>
-              </div>
-            )}
-            {meeting.requirements && (
-              <div>
-                <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
-                  Client Requirements
-                </label>
-                <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
-                  <p className="text-sm text-gray-650 dark:text-gray-350 leading-relaxed whitespace-pre-wrap">
-                    {meeting.requirements}
-                  </p>
-                </div>
-              </div>
-            )}
-            {meeting.remarks && (
-              <div>
-                <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
-                  Remarks / Comments
-                </label>
-                <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-                    {meeting.remarks}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Workflow Status */}
+        {(meeting.rescheduledDate || meeting.completedDate || meeting.cancelledDate) && (
+          <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+              Workflow Status
+            </h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Rescheduled Details */}
+              {meeting.rescheduledDate && (
+                <InfoCard
+                  icon={<FiRefreshCw className="size-4 text-blue-500" />}
+                  label="Rescheduled To"
+                  value={
+                    <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                      {formatDate(meeting.rescheduledDate)}{meeting.rescheduledTime ? ` at ${formatTime12hr(meeting.rescheduledTime)}` : ""}
+                    </span>
+                  }
+                />
+              )}
+
+              {/* Original Meeting Info (shown when rescheduled) */}
+              {meeting.rescheduledDate && (
+                <InfoCard
+                  icon={<FiCalendar className="size-4 text-gray-400" />}
+                  label="Originally Scheduled"
+                  value={`${formatDate(meeting.date)} at ${formatTime12hr(meeting.time)}`}
+                />
+              )}
+
+              {/* Completed Date */}
+              {meeting.completedDate && (
+                <InfoCard
+                  icon={<FiCheckCircle className="size-4 text-success-500" />}
+                  label="Completed On"
+                  value={<span className="text-success-600 dark:text-success-400 font-semibold">{formatDate(meeting.completedDate)}</span>}
+                />
+              )}
+
+              {/* Cancelled Date */}
+              {meeting.cancelledDate && (
+                <InfoCard
+                  icon={<FiXCircle className="size-4 text-error-500" />}
+                  label="Cancelled On"
+                  value={<span className="text-error-600 dark:text-error-400 font-semibold">{formatDate(meeting.cancelledDate)}</span>}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Activity Log */}
         <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
             <FiActivity className="size-4 text-brand-500" />
             Activity Log
+            {activityLogs.length > 0 && (
+              <span className="ml-auto text-xs font-normal text-gray-400 dark:text-gray-500">
+                {activityLogs.length} event{activityLogs.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </h3>
           {activityLogs.length > 0 ? (
-            <div className="relative border-l-2 border-gray-100 dark:border-gray-850 ml-4 pl-6 space-y-6">
-              {activityLogs.map((log) => (
-                <div key={log.id} className="relative">
-                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
-                  </span>
-                  <div>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 block mb-0.5">
-                      {new Date(log.timestamp).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      • by {log.operator}
+            <div className="relative border-l-2 border-gray-100 dark:border-gray-700 ml-4 pl-6 space-y-6">
+              {activityLogs.map((log) => {
+                // Determine color theme per action type
+                const actionTheme = (() => {
+                  const action = log.action.toLowerCase();
+                  if (action.includes("rescheduled")) return { dot: "bg-blue-500", ring: "ring-blue-100 dark:ring-gray-800", text: "text-blue-700 dark:text-blue-400" };
+                  if (action.includes("completed")) return { dot: "bg-success-500", ring: "ring-success-100 dark:ring-gray-800", text: "text-success-700 dark:text-success-400" };
+                  if (action.includes("cancelled")) return { dot: "bg-error-500", ring: "ring-error-100 dark:ring-gray-800", text: "text-error-700 dark:text-error-400" };
+                  if (action.includes("converted")) return { dot: "bg-purple-500", ring: "ring-purple-100 dark:ring-gray-800", text: "text-purple-700 dark:text-purple-400" };
+                  return { dot: "bg-brand-500", ring: "ring-brand-100 dark:ring-gray-800", text: "text-brand-700 dark:text-brand-400" };
+                })();
+
+                return (
+                  <div key={log.id} className="relative group">
+                    <span className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ${actionTheme.dot} ${actionTheme.ring} ring-4`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
                     </span>
-                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                      {log.action}
-                    </p>
-                    {log.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {log.description}
+                    <div className="transition-all duration-200 group-hover:translate-x-0.5">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 block mb-0.5">
+                        {new Date(log.timestamp).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        • by {log.operator}
+                      </span>
+                      <p className={`text-sm font-semibold ${actionTheme.text}`}>
+                        {log.action}
                       </p>
-                    )}
+                      {log.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                          {log.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-6">
-              <p className="text-sm text-gray-400">No logs found.</p>
+              <div className="mb-2 flex justify-center">
+                <FiActivity className="size-8 text-gray-200 dark:text-gray-700" />
+              </div>
+              <p className="text-sm text-gray-400">No activity recorded yet.</p>
             </div>
           )}
         </div>
