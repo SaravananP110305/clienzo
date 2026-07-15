@@ -4,6 +4,10 @@ export type LeadStatus =
   | "New"
   | "Contacted"
   | "Qualified"
+  | "Scheduled"
+  | "Completed"
+  | "Missed"
+  | "Rescheduled"
   | "Proposal sent"
   | "Won"
   | "Lost";
@@ -38,15 +42,22 @@ export interface Lead {
   pincode?: string;
   assignedDate?: string;
   nextFollowUpDate?: string;
+  followUpTime?: string;
   followUpType?: string;
   followUpNotes?: string;
+  summary?: string;
   remarks?: string;
+  lastContactResult?: string;
 }
 
 export const LEAD_STATUSES: LeadStatus[] = [
   "New",
   "Contacted",
   "Qualified",
+  "Scheduled",
+  "Completed",
+  "Missed",
+  "Rescheduled",
   "Proposal sent",
   "Won",
   "Lost",
@@ -85,6 +96,14 @@ export const getStatusColor = (
     case "Contacted":
       return "info";
     case "Qualified":
+      return "warning";
+    case "Scheduled":
+      return "info";
+    case "Completed":
+      return "success";
+    case "Missed":
+      return "error";
+    case "Rescheduled":
       return "warning";
     case "Proposal sent":
       return "warning";

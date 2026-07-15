@@ -21,11 +21,11 @@ import {
   getFollowUpStatusColor,
   type FollowUp,
 } from "../data/contactData";
-import { ASSIGNEES } from "../../LeadManagement/data/leadsData";
+import { ASSIGNEES, initialLeads, type Lead } from "../../LeadManagement/data/leadsData";
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
-import { FiCheckCircle, FiEye } from "react-icons/fi";
+import { FiCheckCircle, FiEye, FiXCircle, FiCalendar } from "react-icons/fi";
 
 const FOLLOW_UP_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -141,9 +141,31 @@ export default function FollowUps() {
   const [selectedItemForComplete, setSelectedItemForComplete] = useState<FollowUp | null>(null);
   const [completeSummary, setCompleteSummary] = useState("");
 
+  // Modal state for missed / reschedule
+  const [selectedItemForMissed, setSelectedItemForMissed] = useState<FollowUp | null>(null);
+  const [missedSummary, setMissedSummary] = useState("");
+  const [missedDate, setMissedDate] = useState("");
+  const [missedTime, setMissedTime] = useState("");
+
   const handleOpenCompleteModal = (item: FollowUp) => {
     setSelectedItemForComplete(item);
     setCompleteSummary("");
+  };
+
+  const handleOpenMissedModal = (item: FollowUp) => {
+    setSelectedItemForMissed(item);
+    setMissedSummary("");
+    setMissedDate("");
+    setMissedTime("");
+
+    // Per workflow: Missed → Change status to Rescheduled
+    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    const updatedLeads = leadsList.map((l) =>
+      l.id === item.leadId
+        ? { ...l, status: "Rescheduled" as const, notes: l.notes ? `${l.notes}\n[Follow-up Missed] Call was missed.` : `[Follow-up Missed] Call was missed.` }
+        : l
+    );
+    setStorage("saiflow_leads", updatedLeads);
   };
 
   const handleConfirmComplete = () => {
@@ -158,9 +180,72 @@ export default function FollowUps() {
     );
     setFollowupsList(updatedList);
     setStorage("saiflow_followups", updatedList);
-    showToast(`Follow-up for ${selectedItemForComplete.company} marked as Completed.`, "success");
+
+    // Update the lead's status to Qualified
+    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    const updatedLeads = leadsList.map((l) =>
+      l.id === selectedItemForComplete.leadId
+        ? { ...l, status: "Qualified" as const, notes: l.notes ? `${l.notes}\n[Follow-up Completed] ${summary}` : `[Follow-up Completed] ${summary}` }
+        : l
+    );
+    setStorage("saiflow_leads", updatedLeads);
+
+    showToast(`Follow-up completed! Lead moved to Qualified.`, "success");
     setSelectedItemForComplete(null);
     setCompleteSummary("");
+  };
+
+  const handleConfirmMissedReschedule = () => {
+    if (!selectedItemForMissed) return;
+
+    if (!missedSummary.trim()) {
+      showToast("Please enter a summary for the missed follow-up.", "error");
+      return;
+    }
+    if (!missedDate) {
+      showToast("Please select a new follow-up date.", "error");
+      return;
+    }
+    if (!missedTime) {
+      showToast("Please select a new follow-up time.", "error");
+      return;
+    }
+
+    const updatedList = followupsList.map((f) =>
+      f.id === selectedItemForMissed.id
+        ? {
+            ...f,
+            status: "Scheduled" as const,
+            date: missedDate,
+            time: missedTime,
+            reason: missedSummary.trim(),
+          }
+        : f
+    );
+    setFollowupsList(updatedList);
+    setStorage("saiflow_followups", updatedList);
+
+    // Per workflow: Rescheduled → Summary + Date/Time → Return to Scheduled
+    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    const updatedLeads = leadsList.map((l) =>
+      l.id === selectedItemForMissed.leadId
+        ? {
+            ...l,
+            status: "Scheduled" as const,
+            nextFollowUpDate: missedDate,
+            followUpTime: missedTime,
+            summary: missedSummary.trim(),
+            notes: l.notes ? `${l.notes}\n[Follow-up Rescheduled] ${missedSummary.trim()}` : `[Follow-up Rescheduled] ${missedSummary.trim()}`,
+          }
+        : l
+    );
+    setStorage("saiflow_leads", updatedLeads);
+
+    showToast(`Follow-up rescheduled to ${missedDate} at ${missedTime}.`, "success");
+    setSelectedItemForMissed(null);
+    setMissedSummary("");
+    setMissedDate("");
+    setMissedTime("");
   };
 
   return (
@@ -350,14 +435,41 @@ export default function FollowUps() {
                         >
                           <FiEye className="size-4" />
                         </button>
-                        {(item.status === "Scheduled" || item.status === "Missed") && (
-                          <button
-                            onClick={() => handleOpenCompleteModal(item)}
-                            title="Mark as Completed"
-                            className="flex items-center justify-center h-8 w-8 rounded-lg bg-success-500 text-white hover:bg-success-600 transition cursor-pointer"
-                          >
-                            <FiCheckCircle className="size-4" />
-                          </button>
+                        {item.status === "Scheduled" && (
+                          <>
+                            <button
+                              onClick={() => handleOpenCompleteModal(item)}
+                              title="Mark as Completed"
+                              className="flex items-center justify-center h-8 w-8 rounded-lg bg-success-500 text-white hover:bg-success-600 transition cursor-pointer"
+                            >
+                              <FiCheckCircle className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenMissedModal(item)}
+                              title="Mark as Missed & Reschedule"
+                              className="flex items-center justify-center h-8 w-8 rounded-lg bg-error-500 text-white hover:bg-error-600 transition cursor-pointer"
+                            >
+                              <FiXCircle className="size-4" />
+                            </button>
+                          </>
+                        )}
+                        {item.status === "Missed" && (
+                          <>
+                            <button
+                              onClick={() => handleOpenCompleteModal(item)}
+                              title="Mark as Completed"
+                              className="flex items-center justify-center h-8 w-8 rounded-lg bg-success-500 text-white hover:bg-success-600 transition cursor-pointer"
+                            >
+                              <FiCheckCircle className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenMissedModal(item)}
+                              title="Reschedule"
+                              className="flex items-center justify-center h-8 w-8 rounded-lg bg-warning-500 text-white hover:bg-warning-600 transition cursor-pointer"
+                            >
+                              <FiXCircle className="size-4" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -402,14 +514,11 @@ export default function FollowUps() {
               </h4>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Log the outcome summary for{" "}
+              Completing this follow-up will move{' '}
               <span className="font-semibold text-gray-700 dark:text-gray-300">
                 {selectedItemForComplete?.company}
               </span>
-              {selectedItemForComplete?.contactPerson && (
-                <> ({selectedItemForComplete.contactPerson})</>
-              )}
-              .
+              {' '}to <strong>Qualified</strong> and allow proceeding to meetings.
             </p>
             {selectedItemForComplete && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -450,6 +559,100 @@ export default function FollowUps() {
               className="bg-success-600 hover:bg-success-700 text-white"
             >
               Confirm Completed
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Missed / Reschedule Modal */}
+      <Modal
+        isOpen={!!selectedItemForMissed}
+        onClose={() => { setSelectedItemForMissed(null); setMissedSummary(""); setMissedDate(""); setMissedTime(""); }}
+        className="max-w-[500px] m-4"
+      >
+        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <FiXCircle className="size-5 text-error-500" />
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                Follow-up missed — Reschedule
+              </h4>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Log the reason for the missed follow-up with{' '}
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                {selectedItemForMissed?.company}
+              </span>
+              {selectedItemForMissed?.contactPerson && (
+                <> ({selectedItemForMissed.contactPerson})</>
+              )}
+              , then set a new date and time.
+            </p>
+            {selectedItemForMissed && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Previous: {selectedItemForMissed.date} at {selectedItemForMissed.time}
+                </span>
+                <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Reason: {selectedItemForMissed.reason}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Summary of missed call <span className="text-error-500">*</span>
+              </label>
+              <textarea
+                value={missedSummary}
+                onChange={(e) => setMissedSummary(e.target.value)}
+                placeholder="E.g., Client was unavailable, will try again..."
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  New follow-up date <span className="text-error-500">*</span>
+                </label>
+                <Input
+                  type="date"
+                  value={missedDate}
+                  onChange={(e) => setMissedDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  New follow-up time <span className="text-error-500">*</span>
+                </label>
+                <Input
+                  type="time"
+                  value={missedTime}
+                  onChange={(e) => setMissedTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-white/[0.05]">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setSelectedItemForMissed(null); setMissedSummary(""); setMissedDate(""); setMissedTime(""); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmMissedReschedule}
+              className="bg-warning-600 hover:bg-warning-700 text-white"
+            >
+              Reschedule
             </Button>
           </div>
         </div>

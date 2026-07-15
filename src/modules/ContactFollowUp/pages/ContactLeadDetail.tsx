@@ -223,7 +223,10 @@ export default function ContactLeadDetail() {
 
   const activities = useMemo(() => {
     if (!lead) return [];
-    return getActivitiesForLead(lead.id, lead);
+    // Only show My Lead related activities: contact outcomes & follow-ups
+    return getActivitiesForLead(lead.id, lead).filter(
+      (a) => a.type === "contact_outcome" || a.type === "follow_up"
+    );
   }, [lead]);
 
   if (!lead) {
@@ -279,7 +282,10 @@ export default function ContactLeadDetail() {
             <span>{lead.contactPerson}</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center rounded-lg bg-gray-100 dark:bg-white/[0.05] px-3 py-1.5 text-xs font-mono tracking-wider text-gray-600 dark:text-gray-400">
+            SF-LEAD-{String(lead.id).padStart(4, "0")}
+          </span>
           <Badge size="md" color={getStatusColor(lead.status)}>
             {lead.status}
           </Badge>

@@ -74,18 +74,30 @@ export default function MyLeads() {
       return;
     }
 
+    // Validate Call Later fields
+    if (contactResult === "Call Later") {
+      if (!callLaterDate) {
+        showToast("Please select a follow-up date.", "error");
+        return;
+      }
+      if (!callLaterTime) {
+        showToast("Please select a follow-up time.", "error");
+        return;
+      }
+    }
+
     let newStatus: string;
     let outcomeMessage: string;
 
     if (contactResult === "Interested") {
       newStatus = "Qualified";
-      outcomeMessage = "Marked as Interested";
+      outcomeMessage = "Marked as Interested — lead moved to Qualified";
     } else if (contactResult === "Call Later") {
-      newStatus = "Contacted";
-      outcomeMessage = "Follow-up scheduled";
+      newStatus = "Scheduled";
+      outcomeMessage = "Follow-up scheduled — lead moved to Scheduled";
     } else if (contactResult === "Not Interested") {
       newStatus = "Lost";
-      outcomeMessage = "Marked as Not Interested";
+      outcomeMessage = "Marked as Not Interested — lead moved to Lost";
     } else {
       return;
     }
@@ -99,7 +111,13 @@ export default function MyLeads() {
         return {
           ...l,
           status: newStatus as any,
-          notes: l.notes ? `${l.notes}\n${summaryNote}` : summaryNote
+          notes: l.notes ? `${l.notes}\n${summaryNote}` : summaryNote,
+          summary: contactSummary,
+          lastContactResult: contactResult,
+          ...(contactResult === "Call Later" && {
+            nextFollowUpDate: callLaterDate,
+            followUpTime: callLaterTime,
+          }),
         };
       }
       return l;
@@ -107,25 +125,24 @@ export default function MyLeads() {
     setLeads(updatedLeads);
     setStorage("saiflow_leads", updatedLeads);
 
-    // If Call Later, create a follow-up meeting
+    // If Call Later, create a follow-up record in saiflow_followups
     if (contactResult === "Call Later" && callLaterDate) {
-      const meetingsList = getStorage<any[]>("saiflow_meetings", []);
-      const newMeetingId = meetingsList.length > 0 ? Math.max(...meetingsList.map(m => m.id)) + 1 : 1;
-      const newMeeting = {
-        id: newMeetingId,
+      const followupsList = getStorage<any[]>("saiflow_followups", []);
+      const newFollowUpId = followupsList.length > 0 ? Math.max(...followupsList.map((f: any) => f.id)) + 1 : 1;
+      const newFollowUp = {
+        id: newFollowUpId,
         leadId: selectedLeadForContact.id,
         company: selectedLeadForContact.company,
         contactPerson: selectedLeadForContact.contactPerson,
-        subject: "Follow-up Call",
+        phone: selectedLeadForContact.phone,
+        assignedTo: selectedLeadForContact.assignedTo,
         date: callLaterDate,
         time: callLaterTime || "12:00",
-        type: "Phone Call",
-        status: "Scheduled",
-        notes: contactSummary,
-        linkOrLocation: selectedLeadForContact.phone
+        reason: contactSummary,
+        status: "Scheduled" as const,
       };
-      const updatedMeetings = [...meetingsList, newMeeting];
-      setStorage("saiflow_meetings", updatedMeetings);
+      const updatedFollowUps = [...followupsList, newFollowUp];
+      setStorage("saiflow_followups", updatedFollowUps);
     }
 
     setSavedOutcome(outcomeMessage);
@@ -136,7 +153,8 @@ export default function MyLeads() {
 
   const statusOptions = [
     { value: "all", label: "All statuses" },
-    ...LEAD_STATUSES.map((s) => ({ value: s, label: s })),
+    { value: "Contacted", label: "Contacted" },
+    { value: "Qualified", label: "Qualified" },
   ];
 
   const handleSort = (field: keyof Lead) => {
@@ -150,7 +168,8 @@ export default function MyLeads() {
   };
 
   const processedLeads = useMemo(() => {
-    let result = [...leads];
+    // Only show Contacted or Qualified leads in this view
+    let result = leads.filter((l) => l.status === "Contacted" || l.status === "Qualified");
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -206,14 +225,12 @@ export default function MyLeads() {
         {label}
         <span className="flex flex-col">
           <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${
-              isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
           />
           <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${
-              isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
           />
         </span>
       </button>
@@ -267,11 +284,10 @@ export default function MyLeads() {
                         setCurrentPage(1);
                         setIsStatusOpen(false);
                       }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        statusFilter === opt.value
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
                           ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </DropdownItem>
@@ -308,11 +324,10 @@ export default function MyLeads() {
                         setCurrentPage(1);
                         setIsAssigneeOpen(false);
                       }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        assigneeFilter === opt.value
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
                           ? "bg-brand-500 text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </DropdownItem>
@@ -332,6 +347,9 @@ export default function MyLeads() {
               <TableRow>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("S.No", "id")}
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  Lead ID
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Company", "company")}
@@ -363,8 +381,13 @@ export default function MyLeads() {
                     key={lead.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
                       {lead.id}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                      <span className="font-mono text-xs tracking-wider">
+                        SF-LEAD-{String(lead.id).padStart(4, "0")}
+                      </span>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
                       {lead.company}
@@ -390,27 +413,27 @@ export default function MyLeads() {
                     </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => navigate(`/contacts/${lead.id}`)}
-                            title="View details"
-                            className="flex items-center justify-center h-8 w-8 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 transition cursor-pointer"
-                          >
-                            <FiEye className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenContactModal(lead)}
-                            title="Contact"
-                            className="flex items-center justify-center h-8 w-8 rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"
-                          >
-                            <FiPhone className="size-4" />
-                          </button>
+                        <button
+                          onClick={() => navigate(`/contacts/${lead.id}`)}
+                          title="View details"
+                          className="flex items-center justify-center h-8 w-8 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 transition cursor-pointer"
+                        >
+                          <FiEye className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenContactModal(lead)}
+                          title="Contact"
+                          className="flex items-center justify-center h-8 w-8 rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"
+                        >
+                          <FiPhone className="size-4" />
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell colSpan={9} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No leads found.
                   </TableCell>
                 </TableRow>
@@ -524,8 +547,8 @@ export default function MyLeads() {
                       contactResult === "Interested"
                         ? "Describe what the client was interested in..."
                         : contactResult === "Call Later"
-                        ? "Why does the client need more time?..."
-                        : "Provide reason details for declining..."
+                          ? "Why does the client need more time?..."
+                          : "Provide reason details for declining..."
                     }
                     className="w-full min-h-[100px] rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                   />
@@ -536,7 +559,7 @@ export default function MyLeads() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Follow-up date
+                        Follow-up date <span className="text-error-500">*</span>
                       </label>
                       <Input
                         type="date"
@@ -544,16 +567,22 @@ export default function MyLeads() {
                         onChange={(e) => setCallLaterDate(e.target.value)}
                         min={new Date().toISOString().split("T")[0]}
                       />
+                      {!callLaterDate && (
+                        <span className="mt-1 text-xs text-error-500 block">Required</span>
+                      )}
                     </div>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Follow-up time
+                        Follow-up time <span className="text-error-500">*</span>
                       </label>
                       <Input
                         type="time"
                         value={callLaterTime}
                         onChange={(e) => setCallLaterTime(e.target.value)}
                       />
+                      {!callLaterTime && (
+                        <span className="mt-1 text-xs text-error-500 block">Required</span>
+                      )}
                     </div>
                   </div>
                 )}
