@@ -185,7 +185,7 @@ export default function FollowUps() {
     const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
     const updatedLeads = leadsList.map((l) =>
       l.id === selectedItemForComplete.leadId
-        ? { ...l, status: "Qualified" as const, notes: l.notes ? `${l.notes}\n[Follow-up Completed] ${summary}` : `[Follow-up Completed] ${summary}` }
+        ? { ...l, status: "Qualified" as const, summary: summary, notes: l.notes ? `${l.notes}\n[Follow-up Completed] ${summary}` : `[Follow-up Completed] ${summary}` }
         : l
     );
     setStorage("saiflow_leads", updatedLeads);
@@ -374,9 +374,6 @@ export default function FollowUps() {
                   {renderSortHeader("Time", "time")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Reason", "reason")}
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Assigned to", "assignedTo")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -414,9 +411,6 @@ export default function FollowUps() {
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {item.time}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {item.reason}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {item.assignedTo}

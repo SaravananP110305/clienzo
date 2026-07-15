@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import { initialLeads, getStatusColor, getPriorityColor, Lead } from "../../LeadManagement/data/leadsData";
-import { getStorage } from "../../../utils/storage";
+import { getStorage, setStorage } from "../../../utils/storage";
+import { useToast } from "../../../hooks/useToast";
+import { getFollowUpStatusColor } from "../data/contactData";
 import {
   FiBriefcase,
   FiUser,
@@ -22,6 +24,7 @@ import {
   FiCalendar,
   FiMessageSquare,
   FiActivity,
+  FiEdit,
 } from "react-icons/fi";
 
 // ──────────────────────────────────────────────
@@ -81,8 +84,8 @@ function getActivitiesForLead(leadId: number, lead: Lead): Activity[] {
             outcome === "Interested"
               ? "bg-success-500"
               : outcome === "Call Later"
-              ? "bg-warning-500"
-              : "bg-error-500",
+                ? "bg-warning-500"
+                : "bg-error-500",
         });
       }
       noteIdx++;
@@ -167,12 +170,12 @@ function InfoCard({
 function ActivityItem({ activity, isLast }: { activity: Activity; isLast?: boolean }) {
   const formattedDate = activity.timestamp
     ? new Date(activity.timestamp).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : null;
 
   return (
@@ -217,9 +220,33 @@ function ActivityItem({ activity, isLast }: { activity: Activity; isLast?: boole
 export default function ContactLeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
-  const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
-  const lead = leads.find((l) => l.id === Number(id));
+  const [leadsList, setLeadsList] = useState<Lead[]>(() =>
+    getStorage<Lead[]>("saiflow_leads", initialLeads)
+  );
+  const lead = leadsList.find((l) => l.id === Number(id));
+
+  const [isEditingSummary, setIsEditingSummary] = useState(false);
+  const [editedSummary, setEditedSummary] = useState("");
+
+  const handleStartEditSummary = () => {
+    if (lead) {
+      setEditedSummary(lead.summary || "");
+      setIsEditingSummary(true);
+    }
+  };
+
+  const handleSaveSummary = () => {
+    if (!lead) return;
+    const updatedLeads = leadsList.map((l) =>
+      l.id === lead.id ? { ...l, summary: editedSummary } : l
+    );
+    setLeadsList(updatedLeads);
+    setStorage("saiflow_leads", updatedLeads);
+    showToast("Summary updated successfully.", "success");
+    setIsEditingSummary(false);
+  };
 
   const activities = useMemo(() => {
     if (!lead) return [];
@@ -227,6 +254,18 @@ export default function ContactLeadDetail() {
     return getActivitiesForLead(lead.id, lead).filter(
       (a) => a.type === "contact_outcome" || a.type === "follow_up"
     );
+  }, [lead]);
+
+  const latestFollowUp = useMemo(() => {
+    if (!lead) return null;
+    const followups = getStorage<any[]>("saiflow_followups", []);
+    const leadFollowups = followups.filter((f: any) => f.leadId === lead.id);
+    if (leadFollowups.length === 0) return null;
+    return [...leadFollowups].sort((a, b) => {
+      const dateTimeA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
+      const dateTimeB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
+      return dateTimeB - dateTimeA;
+    })[0];
   }, [lead]);
 
   if (!lead) {
@@ -492,15 +531,118 @@ export default function ContactLeadDetail() {
               value={
                 lead.assignedDate
                   ? new Date(lead.assignedDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
                   : ""
               }
             />
           </div>
         </div>
+
+        {/* Card 7: Follow-up Details */}
+        {latestFollowUp && (
+          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+              Follow-up details
+            </h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <InfoCard
+                icon={<FiCalendar className="size-4" />}
+                label="Follow-up Date & Time"
+                value={`${latestFollowUp.date} at ${latestFollowUp.time}`}
+              />
+              <InfoCard
+                icon={<FiTag className="size-4" />}
+                label="Status"
+                value={
+                  <Badge size="sm" color={getFollowUpStatusColor(latestFollowUp.status)}>
+                    {latestFollowUp.status}
+                  </Badge>
+                }
+              />
+              <div className="sm:col-span-2">
+                <InfoCard
+                  icon={<FiMessageSquare className="size-4" />}
+                  label="Reason"
+                  value={latestFollowUp.reason || "No reason provided"}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Card 8: Summary Details */}
+        {lead.summary !== undefined && lead.summary !== null && (
+          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Summary details
+              </h3>
+              {!isEditingSummary && (
+                <button
+                  onClick={handleStartEditSummary}
+                  className="text-gray-400 hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400 transition cursor-pointer"
+                  title="Edit summary"
+                >
+                  <FiEdit className="size-4" />
+                </button>
+              )}
+            </div>
+            {isEditingSummary ? (
+              <div className="space-y-3">
+                <textarea
+                  value={editedSummary}
+                  onChange={(e) => setEditedSummary(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setIsEditingSummary(false)}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveSummary}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="max-h-[150px] overflow-y-auto pr-2 custom-visible-scrollbar"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+                }}
+              >
+                <style>{`
+                  .custom-visible-scrollbar::-webkit-scrollbar {
+                    width: 5px;
+                  }
+                  .custom-visible-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                  }
+                  .custom-visible-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(156, 163, 175, 0.5);
+                    border-radius: 4px;
+                  }
+                  .custom-visible-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(156, 163, 175, 0.8);
+                  }
+                `}</style>
+                <p className="text-sm text-gray-800 dark:text-white/90 leading-relaxed whitespace-pre-wrap">
+                  {lead.summary}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
 

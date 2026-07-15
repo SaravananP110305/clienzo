@@ -45,6 +45,7 @@ export default function MyLeads() {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"new" | "contacted">("new");
 
   type ContactResult = "Interested" | "Call Later" | "Not Interested";
 
@@ -155,6 +156,7 @@ export default function MyLeads() {
     { value: "all", label: "All statuses" },
     { value: "Contacted", label: "Contacted" },
     { value: "Qualified", label: "Qualified" },
+    { value: "Lost", label: "Lost" },
   ];
 
   const handleSort = (field: keyof Lead) => {
@@ -168,8 +170,12 @@ export default function MyLeads() {
   };
 
   const processedLeads = useMemo(() => {
-    // Only show Contacted or Qualified leads in this view
-    let result = leads.filter((l) => l.status === "Contacted" || l.status === "Qualified");
+    let result = leads;
+    if (activeTab === "new") {
+      result = result.filter((l) => l.status === "New");
+    } else {
+      result = result.filter((l) => l.status === "Contacted" || l.status === "Qualified" || l.status === "Lost");
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -205,7 +211,7 @@ export default function MyLeads() {
     });
 
     return result;
-  }, [searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
+  }, [leads, activeTab, searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -245,6 +251,38 @@ export default function MyLeads() {
       />
       <PageBreadcrumb pageTitle="All Leads" />
 
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 dark:border-white/[0.05] mb-5">
+        <button
+          onClick={() => {
+            setActiveTab("new");
+            setCurrentPage(1);
+            setStatusFilter("all");
+          }}
+          className={`pb-3 text-sm font-semibold border-b-2 px-4 cursor-pointer transition-colors ${
+            activeTab === "new"
+              ? "border-brand-500 text-brand-500 dark:border-brand-400 dark:text-brand-400"
+              : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+          }`}
+        >
+          New Leads
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("contacted");
+            setCurrentPage(1);
+            setStatusFilter("all");
+          }}
+          className={`pb-3 text-sm font-semibold border-b-2 px-4 cursor-pointer transition-colors ${
+            activeTab === "contacted"
+              ? "border-brand-500 text-brand-500 dark:border-brand-400 dark:text-brand-400"
+              : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+          }`}
+        >
+          Contacted Leads
+        </button>
+      </div>
+
       {/* Control Panel */}
       <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full lg:w-auto">
@@ -257,19 +295,20 @@ export default function MyLeads() {
             />
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsStatusOpen(!isStatusOpen);
-                setIsAssigneeOpen(false);
-              }}
-              className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              <span className="truncate">
-                {statusOptions.find((o) => o.value === statusFilter)?.label}
-              </span>
-              <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
-            </button>
+          {activeTab === "contacted" && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsStatusOpen(!isStatusOpen);
+                  setIsAssigneeOpen(false);
+                }}
+                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <span className="truncate">
+                  {statusOptions.find((o) => o.value === statusFilter)?.label}
+                </span>
+                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+              </button>
             <Dropdown
               isOpen={isStatusOpen}
               onClose={() => setIsStatusOpen(false)}
@@ -285,8 +324,8 @@ export default function MyLeads() {
                         setIsStatusOpen(false);
                       }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
-                          ? "bg-brand-500 text-white font-medium"
-                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                        ? "bg-brand-500 text-white font-medium"
+                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                         }`}
                     >
                       {opt.label}
@@ -296,6 +335,7 @@ export default function MyLeads() {
               </ul>
             </Dropdown>
           </div>
+          )}
 
           <div className="relative">
             <button
@@ -325,8 +365,8 @@ export default function MyLeads() {
                         setIsAssigneeOpen(false);
                       }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
-                          ? "bg-brand-500 text-white font-medium"
-                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                        ? "bg-brand-500 text-white font-medium"
+                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                         }`}
                     >
                       {opt.label}
@@ -363,9 +403,11 @@ export default function MyLeads() {
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Status", "status")}
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {renderSortHeader("Priority", "priority")}
-                </TableCell>
+                {activeTab === "new" && (
+                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    {renderSortHeader("Priority", "priority")}
+                  </TableCell>
+                )}
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Assigned to", "assignedTo")}
                 </TableCell>
@@ -403,11 +445,13 @@ export default function MyLeads() {
                         {lead.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 whitespace-nowrap">
-                      <Badge size="sm" color={getPriorityColor(lead.priority)}>
-                        {lead.priority || "—"}
-                      </Badge>
-                    </TableCell>
+                    {activeTab === "new" && (
+                      <TableCell className="px-5 py-4 whitespace-nowrap">
+                        <Badge size="sm" color={getPriorityColor(lead.priority)}>
+                          {lead.priority || "—"}
+                        </Badge>
+                      </TableCell>
+                    )}
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {lead.assignedTo}
                     </TableCell>
@@ -420,20 +464,22 @@ export default function MyLeads() {
                         >
                           <FiEye className="size-4" />
                         </button>
-                        <button
-                          onClick={() => handleOpenContactModal(lead)}
-                          title="Contact"
-                          className="flex items-center justify-center h-8 w-8 rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"
-                        >
-                          <FiPhone className="size-4" />
-                        </button>
+                        {activeTab === "new" && (
+                          <button
+                            onClick={() => handleOpenContactModal(lead)}
+                            title="Contact"
+                            className="flex items-center justify-center h-8 w-8 rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer"
+                          >
+                            <FiPhone className="size-4" />
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell colSpan={activeTab === "new" ? 9 : 8} className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No leads found.
                   </TableCell>
                 </TableRow>
