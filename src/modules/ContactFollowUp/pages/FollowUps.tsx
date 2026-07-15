@@ -25,7 +25,7 @@ import { ASSIGNEES, initialLeads, type Lead } from "../../LeadManagement/data/le
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
-import { FiCheckCircle, FiEye, FiXCircle, FiCalendar } from "react-icons/fi";
+import { FiCheckCircle, FiEye, FiXCircle } from "react-icons/fi";
 
 const FOLLOW_UP_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },

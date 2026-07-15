@@ -22,7 +22,7 @@ import {
   FiClock,
   FiXCircle,
 } from "react-icons/fi";
-import { getStatusColor, getPriorityColor, LEAD_STATUSES, ASSIGNEES, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
+import { getStatusColor, getPriorityColor, ASSIGNEES, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
