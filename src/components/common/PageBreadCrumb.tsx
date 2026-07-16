@@ -24,6 +24,12 @@ const getMeetingTitle = (id: string | number): string => {
   return meeting ? meeting.subject : `Meeting #${id}`;
 };
 
+const getUserName = (id: string | number): string => {
+  const users = getStorage<any[]>("saiflow_users", []);
+  const user = users.find((u) => String(u.id) === String(id));
+  return user ? user.name : `User #${id}`;
+};
+
 const getProposalNo = (id: string | number): string => {
   const proposals = getStorage<any[]>("saiflow_proposals", []);
   const proposal = proposals.find((p) => String(p.id) === String(id));
@@ -138,6 +144,24 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
     } else if (pathname === "/users") {
       breadcrumbs.push({ label: "Manage Users", to: "/users" });
       breadcrumbs.push({ label: "Users" });
+    } else if (pathname === "/users/add") {
+      breadcrumbs.push({ label: "Manage Users", to: "/users" });
+      breadcrumbs.push({ label: "Users", to: "/users" });
+      breadcrumbs.push({ label: "Add user" });
+    } else if (pathname.startsWith("/users/")) {
+      const parts = pathname.split("/");
+      const userId = parts[2];
+      const isEdit = parts[3] === "edit";
+      const userName = getUserName(userId);
+
+      breadcrumbs.push({ label: "Manage Users", to: "/users" });
+      breadcrumbs.push({ label: "Users", to: "/users" });
+      if (isEdit) {
+        breadcrumbs.push({ label: userName, to: `/users/${userId}` });
+        breadcrumbs.push({ label: "Edit user" });
+      } else {
+        breadcrumbs.push({ label: userName });
+      }
     } else if (pathname === "/roles") {
       breadcrumbs.push({ label: "Manage Users", to: "/users" });
       breadcrumbs.push({ label: "User Roles" });

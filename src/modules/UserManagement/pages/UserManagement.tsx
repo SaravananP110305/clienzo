@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router";
 import { getStorage, setStorage } from "../../../utils/storage";
-import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
-import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
@@ -25,13 +24,6 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
-import {
-  COUNTRIES,
-  STATES,
-  CITIES,
-  DEPARTMENTS,
-  DESIGNATIONS,
-} from "../../Master/data/masterData";
 
 interface User {
   id: number;
@@ -41,19 +33,14 @@ interface User {
   role: string;
   status: "Active" | "Inactive";
   password?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  department?: string;
-  designation?: string;
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Sales", designation: "CEO & Founder" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Business Development", designation: "BD Manager" },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Business Development", designation: "BD Executive" },
-  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Presales", designation: "CEO & Founder" },
-  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Sales", designation: "CEO & Founder" }
+  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123" },
+  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123" },
+  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123" },
+  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123" },
+  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123" },
 ];
 
 const availableRoles = [
@@ -61,24 +48,11 @@ const availableRoles = [
   "Business Development Manager",
   "Business Development Executive",
   "Presales Consultant",
-  "Guest User"
+  "Guest User",
 ];
 
-interface UserFormValues {
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: "Active" | "Inactive";
-  password?: string;
-  country: string;
-  state: string;
-  city: string;
-  department: string;
-  designation: string;
-}
-
 export default function UserManagement() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>(() => getStorage("saiflow_users", initialUsers));
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,184 +67,26 @@ export default function UserManagement() {
   const [isRoleFilterOpen, setIsRoleFilterOpen] = useState(false);
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
-  // Modal states
-  const viewModal = useModal();
-  const formModal = useModal();
+  // Delete modal
   const deleteModal = useModal();
-
-  // Active items mapping
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [showPassword, setShowPassword] = useState(false);
-
-  // React Hook Form
-  const {
-    control,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<UserFormValues>({
-    mode: "onChange",
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      role: "",
-      status: "Active",
-      password: "",
-      country: "",
-      state: "",
-      city: "",
-      department: "",
-      designation: "",
-    },
-  });
-
-  const watchCountry = watch("country");
-  const watchState = watch("state");
-  const watchDepartment = watch("department");
-
-  const countryOptions = useMemo(() => {
-    return getStorage<any[]>("saiflow_master_countries", COUNTRIES)
-      .filter((c) => c.status === "Active")
-      .map((c) => ({ value: c.name, label: c.name }));
-  }, []);
-
-  const stateOptions = useMemo(() => {
-    const selectedCountryObj = getStorage<any[]>("saiflow_master_countries", COUNTRIES)
-      .find((c) => c.name === watchCountry);
-    if (!selectedCountryObj) return [];
-    return getStorage<any[]>("saiflow_master_states", STATES)
-      .filter((s) => s.countryId === selectedCountryObj.id && s.status === "Active")
-      .map((s) => ({ value: s.name, label: s.name }));
-  }, [watchCountry]);
-
-  const cityOptions = useMemo(() => {
-    const selectedStateObj = getStorage<any[]>("saiflow_master_states", STATES)
-      .find((s) => s.name === watchState);
-    if (!selectedStateObj) return [];
-    return getStorage<any[]>("saiflow_master_cities", CITIES)
-      .filter((c) => c.stateId === selectedStateObj.id && c.status === "Active")
-      .map((c) => ({ value: c.name, label: c.name }));
-  }, [watchState]);
-
-  const departmentOptions = useMemo(() => {
-    return getStorage<any[]>("saiflow_master_departments", DEPARTMENTS)
-      .filter((d) => d.status === "Active")
-      .map((d) => ({ value: d.name, label: d.name }));
-  }, []);
-
-  const designationOptions = useMemo(() => {
-    const selectedDeptObj = getStorage<any[]>("saiflow_master_departments", DEPARTMENTS)
-      .find((d) => d.name === watchDepartment);
-    if (!selectedDeptObj) return [];
-    return getStorage<any[]>("saiflow_master_designations", DESIGNATIONS)
-      .filter((d) => d.departmentId === selectedDeptObj.id && d.status === "Active")
-      .map((d) => ({ value: d.name, label: d.name }));
-  }, [watchDepartment]);
 
   // Handlers
   const handleOpenView = (user: User) => {
-    setSelectedUser(user);
-    viewModal.openModal();
+    navigate(`/users/${user.id}`);
   };
 
   const handleOpenCreate = () => {
-    setModalMode("create");
-    setSelectedUser(null);
-    setShowPassword(false);
-    reset({
-      name: "",
-      email: "",
-      phone: "",
-      role: "",
-      status: "Active",
-      password: "",
-      country: "",
-      state: "",
-      city: "",
-      department: "",
-      designation: "",
-    });
-    formModal.openModal();
+    navigate("/users/add");
   };
 
   const handleOpenEdit = (user: User) => {
-    setModalMode("edit");
-    setSelectedUser(user);
-    setShowPassword(false);
-    reset({
-      name: user.name,
-      email: user.email,
-      phone: user.phone.replace(/\D/g, "").slice(-10),
-      role: user.role,
-      status: user.status,
-      password: user.password || "",
-      country: user.country || "",
-      state: user.state || "",
-      city: user.city || "",
-      department: user.department || "",
-      designation: user.designation || "",
-    });
-    formModal.openModal();
+    navigate(`/users/${user.id}/edit`);
   };
 
   const handleOpenDelete = (user: User) => {
     setSelectedUser(user);
     deleteModal.openModal();
-  };
-
-  const handleSaveUser = (data: UserFormValues) => {
-    if (modalMode === "create") {
-      const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
-      const newUser: User = {
-        id: newId,
-        name: data.name.trim(),
-        email: data.email.trim(),
-        phone: data.phone.trim(),
-        role: data.role,
-        status: data.status,
-        password: data.password?.trim() || "Password@123",
-        country: data.country,
-        state: data.state,
-        city: data.city,
-        department: data.department,
-        designation: data.designation,
-      };
-      const updated = [...users, newUser];
-      setUsers(updated);
-      setStorage("saiflow_users", updated);
-      showToast("User created successfully.", "success");
-    } else if (modalMode === "edit" && selectedUser) {
-      const updated = users.map((u) =>
-        u.id === selectedUser.id
-          ? {
-            ...u,
-            name: data.name.trim(),
-            email: data.email.trim(),
-            phone: data.phone.trim(),
-            role: data.role,
-            status: data.status,
-            password: data.password?.trim() || u.password,
-            country: data.country,
-            state: data.state,
-            city: data.city,
-            department: data.department,
-            designation: data.designation,
-          }
-          : u
-      );
-      setUsers(updated);
-      setStorage("saiflow_users", updated);
-      showToast("User updated successfully.", "success");
-    }
-    formModal.closeModal();
-  };
-
-  const handleFormError = () => {
-    showToast("Please fill all required fields.", "error");
   };
 
   const handleDeleteConfirm = () => {
@@ -636,403 +452,6 @@ export default function UserManagement() {
           />
         )}
       </div>
-
-      {/* View User Modal (Read-Only details) */}
-      <Modal isOpen={viewModal.isOpen} onClose={viewModal.closeModal} className="max-w-[500px] m-4">
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">User details</h4>
-          </div>
-          {selectedUser && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-gray-400 block">S.No</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.id}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Status</span>
-                  <div className="mt-1">
-                    <Badge
-                      size="sm"
-                      color={selectedUser.status === "Active" ? "success" : "error"}
-                    >
-                      {selectedUser.status}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block">Employee name</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.name}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Role</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.role}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Email</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.email}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Phone</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.phone}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Department</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.department || "—"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Designation</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedUser.designation || "—"}
-                  </span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block">Location</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {[selectedUser.city, selectedUser.state, selectedUser.country].filter(Boolean).join(", ") || "—"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="flex items-center justify-end mt-6">
-            <Button size="sm" onClick={viewModal.closeModal}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Create / Edit Form Modal */}
-      <Modal isOpen={formModal.isOpen} onClose={formModal.closeModal} className="max-w-[650px] m-4">
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              {modalMode === "create" ? "Add user" : "Edit user"}
-            </h4>
-          </div>
-          <form onSubmit={handleSubmit(handleSaveUser, handleFormError)} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Employee name <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="name"
-                  control={control}
-                  rules={{
-                    required: "Name is required",
-                    pattern: {
-                      value: /^[a-zA-Z\s]+$/,
-                      message: "Letters and spaces only",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="Enter employee name"
-                      className={errors.name ? "border-error-500" : ""}
-                    />
-                  )}
-                />
-                {errors.name && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.name.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Role <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="role"
-                  control={control}
-                  rules={{ required: "Role is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={availableRoles.map((r) => ({ value: r, label: r }))}
-                      placeholder="Select role"
-                      defaultValue={value}
-                      onChange={onChange}
-                    />
-                  )}
-                />
-                {errors.role && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.role.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email address <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="email"
-                  control={control}
-                  rules={{
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                      message: "Please enter a valid email address.",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="email"
-                      placeholder="Enter email address"
-                      className={errors.email ? "border-error-500" : ""}
-                    />
-                  )}
-                />
-                {errors.email && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.email.message}</span>
-                )}
-              </div>
-
-              {modalMode === "create" && (
-                <div>
-                  <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Password <span className="text-error-500">*</span>
-                  </label>
-                  <Controller
-                    name="password"
-                    control={control}
-                    rules={{
-                      required: "Password is required",
-                      minLength: {
-                        value: 6,
-                        message: "Password must be at least 6 characters long",
-                      },
-                    }}
-                    render={({ field }) => (
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Enter password"
-                          className={errors.password ? "border-error-500 pr-10" : "pr-10"}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none cursor-pointer"
-                        >
-                          {showPassword ? <FiEye className="size-5" /> : <FiEye className="size-5 opacity-60" />}
-                        </button>
-                      </div>
-                    )}
-                  />
-                  {errors.password && (
-                    <span className="mt-1.5 text-xs text-error-600 block">{errors.password.message}</span>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Phone number <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="phone"
-                  control={control}
-                  rules={{
-                    required: "Phone number is required",
-                    pattern: {
-                      value: /^[6-9]\d{9}$/,
-                      message: "Please enter a valid 10-digit mobile number starting with 6-9.",
-                    },
-                  }}
-                  render={({ field: { value, onChange, ...rest } }) => (
-                    <Input
-                      {...rest}
-                      value={value}
-                      type="text"
-                      placeholder="Enter 10-digit phone number"
-                      maxLength={10}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "");
-                        onChange(digits);
-                      }}
-                      className={errors.phone ? "border-error-500" : ""}
-                    />
-                  )}
-                />
-                {errors.phone && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.phone.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Status <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="status"
-                  control={control}
-                  rules={{ required: "Status is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={[
-                        { value: "Active", label: "Active" },
-                        { value: "Inactive", label: "Inactive" },
-                      ]}
-                      placeholder="Select status"
-                      defaultValue={value}
-                      onChange={onChange}
-                    />
-                  )}
-                />
-                {errors.status && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.status.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Department <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="department"
-                  control={control}
-                  rules={{ required: "Department is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={departmentOptions}
-                      placeholder="Select department"
-                      defaultValue={value}
-                      onChange={(val) => {
-                        onChange(val);
-                        setValue("designation", "");
-                      }}
-                    />
-                  )}
-                />
-                {errors.department && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.department.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Designation <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="designation"
-                  control={control}
-                  rules={{ required: "Designation is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={designationOptions}
-                      placeholder="Select designation"
-                      defaultValue={value}
-                      onChange={onChange}
-                    />
-                  )}
-                />
-                {errors.designation && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.designation.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Country <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="country"
-                  control={control}
-                  rules={{ required: "Country is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={countryOptions}
-                      placeholder="Select country"
-                      defaultValue={value}
-                      onChange={(val) => {
-                        onChange(val);
-                        setValue("state", "");
-                        setValue("city", "");
-                      }}
-                    />
-                  )}
-                />
-                {errors.country && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.country.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  State <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="state"
-                  control={control}
-                  rules={{ required: "State is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={stateOptions}
-                      placeholder="Select state"
-                      defaultValue={value}
-                      onChange={(val) => {
-                        onChange(val);
-                        setValue("city", "");
-                      }}
-                    />
-                  )}
-                />
-                {errors.state && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.state.message}</span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  City <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="city"
-                  control={control}
-                  rules={{ required: "City is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={cityOptions}
-                      placeholder="Select city"
-                      defaultValue={value}
-                      onChange={onChange}
-                    />
-                  )}
-                />
-                {errors.city && (
-                  <span className="mt-1.5 text-xs text-error-600 block">{errors.city.message}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
-              <Button size="sm" variant="outline" onClick={formModal.closeModal}>
-                Cancel
-              </Button>
-              <Button size="sm" type="submit">
-                Save
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.closeModal} className="max-w-[450px] m-4">
