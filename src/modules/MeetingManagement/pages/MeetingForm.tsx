@@ -15,39 +15,24 @@ import { Client, initialClients } from "../../ClientManagement/data/clientsData"
 import { ChevronDownIcon } from "../../../icons";
 
 interface MeetingFormValues {
-  subject: string;
   company: string;
   contactPerson: string;
   date: string;
-  time: string;
   type: string;
   linkOrLocation: string;
   notes: string;
 
   relatedToType: "Lead" | "Client";
   relatedToId: number;
-  meetingType: string;
   meetingPlatform: string;
   startTime: string;
   endTime: string;
   duration: string;
-  timezone: string;
   meetingOwner: string[];
   clientContactPerson: string;
-  attendees: string;
 }
 
 const EMPLOYEES = ["John Doe", "Jane Smith", "Alice Johnson", "Robert Lee"];
-
-const MEETING_TYPES = [
-  "Online",
-  "Offline",
-  "Client Visit",
-  "Office Meeting",
-  "Demo Meeting",
-  "Requirement Discussion",
-  "Review Meeting"
-];
 
 const MEETING_PLATFORMS = [
   "Google Meet",
@@ -59,6 +44,21 @@ const MEETING_PLATFORMS = [
 
 interface MeetingFormProps {
   onSave?: (meeting: Meeting, isEdit: boolean) => void;
+}
+
+function calculateDuration(start: string, end: string): string {
+  if (!start || !end) return "";
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + em;
+  const diff = endMin - startMin;
+  if (diff <= 0) return "";
+  const hours = Math.floor(diff / 60);
+  const mins = diff % 60;
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""}`;
+  return `${mins} mins`;
 }
 
 export default function MeetingForm({ onSave }: MeetingFormProps) {
@@ -82,31 +82,34 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
     reset,
   } = useForm<MeetingFormValues>({
     defaultValues: {
-      subject: "",
       company: "",
       contactPerson: "",
       date: "",
-      time: "",
       type: "Google Meet",
       linkOrLocation: "",
       notes: "",
       relatedToType: "Lead",
       relatedToId: 0,
-      meetingType: "Requirement Discussion",
       meetingPlatform: "Google Meet",
       startTime: "",
       endTime: "",
-      duration: "30 mins",
-      timezone: "IST",
+      duration: "",
       meetingOwner: [],
       clientContactPerson: "",
-      attendees: "",
     },
   });
 
   const relatedToType = watch("relatedToType");
   const meetingPlatform = watch("meetingPlatform");
+  const startTime = watch("startTime");
+  const endTime = watch("endTime");
   const currentMeetingOwner = watch("meetingOwner") || [];
+
+  // Auto-calculate duration when start or end time changes
+  useEffect(() => {
+    const calculated = calculateDuration(startTime, endTime);
+    setValue("duration", calculated);
+  }, [startTime, endTime, setValue]);
 
   // Employee Multi-Select Dropdown state
   const [isOwnerDropdownOpen, setIsOwnerDropdownOpen] = useState(false);
@@ -130,25 +133,20 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       const meeting = meetings.find((m) => m.id === Number(id));
       if (meeting) {
         reset({
-          subject: meeting.subject,
           company: meeting.company,
           contactPerson: meeting.contactPerson,
           date: meeting.date,
-          time: meeting.time,
           type: meeting.type || meeting.meetingPlatform || "Google Meet",
           linkOrLocation: meeting.linkOrLocation,
           notes: meeting.notes,
           relatedToType: meeting.relatedToType || "Lead",
           relatedToId: meeting.relatedToId || 0,
-          meetingType: meeting.meetingType || "Requirement Discussion",
           meetingPlatform: meeting.meetingPlatform || meeting.type || "Google Meet",
           startTime: meeting.startTime || meeting.time || "",
           endTime: meeting.endTime || "",
-          duration: meeting.duration || "30 mins",
-          timezone: meeting.timezone || "IST",
+          duration: meeting.duration || "",
           meetingOwner: meeting.meetingOwner || [],
           clientContactPerson: meeting.clientContactPerson || meeting.contactPerson || "",
-          attendees: meeting.attendees || "",
         });
       }
     } else {
@@ -212,30 +210,26 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
   const handleSave = (data: MeetingFormValues) => {
     const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
     let updatedMeeting: Meeting;
-    
-    // Ensure 'type' matches 'meetingPlatform' for backwards compatibility
+
     const finalMeeting: Meeting = {
       id: isEditMode ? Number(id) : 0,
-      subject: data.subject,
+      subject: `${data.company} - ${data.meetingPlatform}`,
       company: data.company,
       contactPerson: data.contactPerson,
       date: data.date,
-      time: data.startTime || data.time,
+      time: data.startTime,
       type: data.meetingPlatform,
       linkOrLocation: data.linkOrLocation,
       status: "Scheduled",
       notes: data.notes || "",
       relatedToType: data.relatedToType,
       relatedToId: data.relatedToId,
-      meetingType: data.meetingType,
       meetingPlatform: data.meetingPlatform,
       startTime: data.startTime,
       endTime: data.endTime,
       duration: data.duration,
-      timezone: data.timezone,
       meetingOwner: data.meetingOwner,
       clientContactPerson: data.clientContactPerson,
-      attendees: data.attendees,
     };
 
     if (isEditMode) {
@@ -307,68 +301,20 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
         onSubmit={handleSubmit(handleSave, handleError)}
         className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6 space-y-6"
       >
-        {/* Section 1: Meeting Info */}
+        {/* Section 1: Lead */}
         <div>
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Meeting Information
+            Lead
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
+            <div className="sm:col-span-2">
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Meeting Title <span className="text-error-500">*</span>
-              </label>
-              <Controller
-                name="subject"
-                control={control}
-                rules={{ required: "Meeting title is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="text"
-                    placeholder="E.g., Requirement Discussion"
-                    error={!!errors.subject}
-                  />
-                )}
-              />
-              {errors.subject && (
-                <span className="mt-1.5 text-xs text-error-600 block">{errors.subject.message}</span>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Meeting Type <span className="text-error-500">*</span>
-              </label>
-              <Controller
-                name="meetingType"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={MEETING_TYPES.map((t) => ({ value: t, label: t }))}
-                    placeholder="Select meeting type"
-                    defaultValue={value}
-                    onChange={onChange}
-                  />
-                )}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Related To */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Related To
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Related {relatedToType}
+                Lead <span className="text-error-500">*</span>
               </label>
               <Controller
                 name="relatedToId"
                 control={control}
-                rules={{ required: true, min: { value: 1, message: `Please select a ${relatedToType}` } }}
+                rules={{ required: true, min: { value: 1, message: "Please select a lead" } }}
                 render={({ field: { value } }) => (
                   <Select
                     disabled={!!isLockRelated}
@@ -377,7 +323,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
                         ? leads.map((l) => ({ value: l.id.toString(), label: `${l.company} (${l.contactPerson})` }))
                         : clients.map((c) => ({ value: c.id.toString(), label: `${c.company} (${c.name})` }))
                     }
-                    placeholder={`Select related ${relatedToType}`}
+                    placeholder="Select lead"
                     defaultValue={value ? value.toString() : ""}
                     onChange={(val) => handleRelatedChange(relatedToType, Number(val))}
                   />
@@ -390,7 +336,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           </div>
         </div>
 
-        {/* Section 3: Schedule */}
+        {/* Section 2: Schedule */}
         <div>
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
             Schedule
@@ -459,7 +405,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
               )}
             </div>
 
-            <div>
+            <div className="sm:col-span-3">
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Duration
               </label>
@@ -470,24 +416,9 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
                   <Input
                     {...field}
                     type="text"
-                    placeholder="E.g., 45 mins"
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Timezone
-              </label>
-              <Controller
-                name="timezone"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="text"
-                    placeholder="E.g., IST / UTC"
+                    placeholder="Auto-calculated from start & end time"
+                    disabled
+                    className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   />
                 )}
               />
@@ -495,7 +426,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           </div>
         </div>
 
-        {/* Section 4: Participants */}
+        {/* Section 3: Participants */}
         <div>
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
             Participants
@@ -504,7 +435,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
             {/* Multi-select Meeting Owner */}
             <div className="relative" ref={dropdownRef}>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Meeting Owner (Multi Select)
+                Meeting Owner
               </label>
               <div
                 onClick={() => setIsOwnerDropdownOpen(!isOwnerDropdownOpen)}
@@ -576,27 +507,10 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
                 )}
               />
             </div>
-
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Attendees
-              </label>
-              <Controller
-                name="attendees"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="text"
-                    placeholder="E.g., John Doe, Alice Smith, Charlie Brown"
-                  />
-                )}
-              />
-            </div>
           </div>
         </div>
 
-        {/* Section 5: Meeting Platform */}
+        {/* Section 4: Meeting Platform */}
         <div>
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
             Meeting Platform
@@ -604,7 +518,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Meeting Platform <span className="text-error-500">*</span>
+                Platform <span className="text-error-500">*</span>
               </label>
               <Controller
                 name="meetingPlatform"
@@ -665,6 +579,26 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           </div>
         </div>
 
+        {/* Section 5: Notes */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
+            Notes
+          </h3>
+          <div>
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <textarea
+                  {...field}
+                  rows={3}
+                  placeholder="Add any meeting notes or agenda details..."
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+              )}
+            />
+          </div>
+        </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
