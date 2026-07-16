@@ -21,7 +21,6 @@ import {
   FiTag,
   FiUserCheck,
   FiCalendar,
-  FiFileText,
   FiEdit,
   FiArrowLeft,
   FiActivity,
@@ -61,6 +60,10 @@ export default function LeadDetails() {
   const { showToast } = useToast();
   const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
   const lead = leads.find((l) => l.id === Number(id));
+
+  // Activity Timeline pagination
+  const [timelinePage, setTimelinePage] = useState(1);
+  const TIMELINE_PER_PAGE = 5;
 
   // Convert Lead Modal state
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -239,6 +242,12 @@ export default function LeadDetails() {
     return events.sort((a, b) => b.timestamp - a.timestamp);
   }, [lead]);
 
+  const totalTimelinePages = Math.ceil(timelineEvents.length / TIMELINE_PER_PAGE);
+  const paginatedTimeline = timelineEvents.slice(
+    0,
+    timelinePage * TIMELINE_PER_PAGE
+  );
+
   return (
     <>
       <PageMeta
@@ -290,12 +299,12 @@ export default function LeadDetails() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-200 bg-white px-6 py-5 mb-5 dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div>
           <h2 className="text-xl font-semibold text-gray-850 dark:text-white/95">
-            {lead.leadTitle || `${lead.company} Expansion`}
+            {lead.company}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
-            <span className="font-medium text-gray-700 dark:text-gray-300">{lead.company}</span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">{lead.contactPerson}</span>
             <span className="text-gray-300 dark:text-gray-750">•</span>
-            <span>{lead.contactPerson}</span>
+            <span>{lead.designation || "—"}</span>
           </p>
         </div>
       </div>
@@ -313,11 +322,6 @@ export default function LeadDetails() {
               icon={<FiTag className="size-4" />}
               label="Lead ID"
               value={`SF-LEAD-${String(lead.id).padStart(4, "0")}`}
-            />
-            <InfoCard
-              icon={<FiFileText className="size-4" />}
-              label="Lead Title"
-              value={lead.leadTitle || `${lead.company} Expansion`}
             />
             <InfoCard
               icon={<FiBriefcase className="size-4" />}
@@ -406,9 +410,9 @@ export default function LeadDetails() {
               value={lead.industry}
             />
             <InfoCard
-              icon={<FiFileText className="size-4" />}
-              label="GST Number"
-              value={lead.gstNumber}
+              icon={<FiBriefcase className="size-4" />}
+              label="Company Type"
+              value={lead.companyType}
             />
           </div>
         </div>
@@ -460,6 +464,11 @@ export default function LeadDetails() {
               label="Lead Source"
               value={lead.source}
             />
+            <InfoCard
+              icon={<FiTag className="size-4" />}
+              label="Priority"
+              value={lead.priority}
+            />
           </div>
         </div>
 
@@ -497,8 +506,9 @@ export default function LeadDetails() {
             Activity Timeline
           </h3>
           {timelineEvents.length > 0 ? (
+            <>
             <div className="pl-1">
-              {timelineEvents.map((event, idx) => (
+              {paginatedTimeline.map((event, idx) => (
                 <div key={event.id} className="relative flex gap-4 pb-6 last:pb-0">
                   {/* Timeline dot & line */}
                   <div className="flex flex-col items-center">
@@ -532,6 +542,36 @@ export default function LeadDetails() {
                 </div>
               ))}
             </div>
+
+            {/* Show More / Pagination */}
+            {timelineEvents.length > TIMELINE_PER_PAGE && (
+              <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+                <button
+                  onClick={() => setTimelinePage((p) => Math.max(1, p - 1))}
+                  disabled={timelinePage === 1}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Previous
+                </button>
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {Math.min(timelinePage * TIMELINE_PER_PAGE, timelineEvents.length)} of {timelineEvents.length}
+                </span>
+                <button
+                  onClick={() => setTimelinePage((p) => Math.min(totalTimelinePages, p + 1))}
+                  disabled={timelinePage >= totalTimelinePages}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                >
+                  Next
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </>
           ) : (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <FiActivity className="size-8 text-gray-300 dark:text-gray-600 mb-3" />

@@ -15,51 +15,42 @@ import {
   COUNTRIES,
   STATES,
   CITIES,
-  LEAD_STATUSES as MASTER_LEAD_STATUSES,
   PRIORITIES as MASTER_PRIORITIES,
+  COMPANY_TYPES,
+  DESIGNATIONS,
 } from "../../Master/data/masterData";
 
 interface LeadFormValues {
-  // Card 1
-  leadTitle: string;
+  // Card 1: Lead Information
   company: string;
   contactPerson: string;
   designation: string;
 
-  // Card 2
+  // Card 2: Contact Details
   phone: string;
   alternatePhone: string;
   email: string;
   alternateEmail: string;
   website: string;
 
-  // Card 3
+  // Card 3: Company Details
   industry: string;
-  gstNumber: string;
+  companyType: string;
 
-  // Card 4
+  // Card 4: Address
   addressLine1: string;
   country: string;
   state: string;
   city: string;
   pincode: string;
 
-  // Card 5
+  // Card 5: Lead Details
   source: string;
-  status: string;
   priority: string;
 
-  // Card 6
+  // Card 6: Assignment
   assignedTo: string;
-  assignedDate: string;
 
-  // Card 7
-  nextFollowUpDate: string;
-  followUpType: string;
-  followUpNotes: string;
-
-  // Card 8
-  remarks: string;
 }
 
 export default function AddLead() {
@@ -79,7 +70,6 @@ export default function AddLead() {
   } = useForm<LeadFormValues>({
     mode: "onChange",
     defaultValues: {
-      leadTitle: "",
       company: "",
       contactPerson: "",
       designation: "",
@@ -89,21 +79,15 @@ export default function AddLead() {
       alternateEmail: "",
       website: "",
       industry: "",
-      gstNumber: "",
+      companyType: "",
       addressLine1: "",
       country: "",
       state: "",
       city: "",
       pincode: "",
       source: "",
-      status: "",
       priority: "",
       assignedTo: "",
-      assignedDate: "",
-      nextFollowUpDate: "",
-      followUpType: "",
-      followUpNotes: "",
-      remarks: "",
     },
   });
 
@@ -117,14 +101,14 @@ export default function AddLead() {
       .map((x: any) => ({ value: x.name, label: x.name }));
   }, []);
 
-  const statusOptions = useMemo(() => {
-    return getStorage("saiflow_master_lead_statuses", MASTER_LEAD_STATUSES)
+  const priorityOptions = useMemo(() => {
+    return getStorage("saiflow_master_priorities", MASTER_PRIORITIES)
       .filter((x: any) => x.status === "Active")
       .map((x: any) => ({ value: x.name, label: x.name }));
   }, []);
 
-  const priorityOptions = useMemo(() => {
-    return getStorage("saiflow_master_priorities", MASTER_PRIORITIES)
+  const companyTypeOptions = useMemo(() => {
+    return getStorage("saiflow_master_company_types", COMPANY_TYPES)
       .filter((x: any) => x.status === "Active")
       .map((x: any) => ({ value: x.name, label: x.name }));
   }, []);
@@ -159,6 +143,12 @@ export default function AddLead() {
       .map((x: any) => ({ value: x.name, label: x.name }));
   }, []);
 
+  const designationOptions = useMemo(() => {
+    return getStorage("saiflow_master_designations", DESIGNATIONS)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
   // Employee data from user management list
   const employeeOptions = useMemo(() => {
     return getStorage("saiflow_users", [
@@ -177,7 +167,6 @@ export default function AddLead() {
       const lead = currentLeads.find((l) => l.id === Number(id));
       if (lead) {
         reset({
-          leadTitle: lead.leadTitle || `${lead.company} Expansion`,
           company: lead.company,
           contactPerson: lead.contactPerson,
           designation: lead.designation || "",
@@ -187,21 +176,15 @@ export default function AddLead() {
           alternateEmail: lead.alternateEmail || "",
           website: lead.website || "",
           industry: lead.industry || "",
-          gstNumber: lead.gstNumber || "",
+          companyType: lead.companyType || "",
           addressLine1: lead.addressLine1 || lead.address || "",
           country: lead.country || "",
           state: lead.state || "",
           city: lead.city || "",
           pincode: lead.pincode || "",
           source: lead.source || "",
-          status: lead.status || "New",
           priority: lead.priority || "Medium",
           assignedTo: lead.assignedTo || "",
-          assignedDate: lead.assignedDate || "",
-          nextFollowUpDate: lead.nextFollowUpDate || "",
-          followUpType: lead.followUpType || "",
-          followUpNotes: lead.followUpNotes || "",
-          remarks: lead.remarks || "",
         });
       }
     }
@@ -211,37 +194,33 @@ export default function AddLead() {
   const handleSave = (data: LeadFormValues) => {
     const currentLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
     if (isEditMode) {
+      const existingLead = currentLeads.find((l) => l.id === Number(id));
       const updated = currentLeads.map((l) =>
         l.id === Number(id)
           ? {
-            ...l,
-            leadTitle: data.leadTitle.trim(),
-            company: data.company.trim(),
-            contactPerson: data.contactPerson.trim(),
-            designation: data.designation.trim(),
-            phone: data.phone,
-            alternatePhone: data.alternatePhone,
-            email: data.email.trim(),
-            alternateEmail: data.alternateEmail,
-            website: data.website.trim(),
-            industry: data.industry,
-            gstNumber: data.gstNumber,
-            addressLine1: data.addressLine1.trim(),
-            address: data.addressLine1.trim(),
-            country: data.country,
-            state: data.state,
-            city: data.city,
-            pincode: data.pincode,
-            source: data.source,
-            status: data.status as LeadStatus,
-            priority: data.priority as LeadPriority,
-            assignedTo: data.assignedTo,
-            assignedDate: data.assignedDate,
-            nextFollowUpDate: data.nextFollowUpDate,
-            followUpType: data.followUpType,
-            followUpNotes: data.followUpNotes,
-            remarks: data.remarks,
-          }
+              ...l,
+              company: data.company.trim(),
+              contactPerson: data.contactPerson.trim(),
+              designation: data.designation.trim(),
+              phone: data.phone,
+              alternatePhone: data.alternatePhone,
+              email: data.email.trim(),
+              alternateEmail: data.alternateEmail,
+              website: data.website.trim(),
+              industry: data.industry,
+              companyType: data.companyType,
+              addressLine1: data.addressLine1.trim(),
+              address: data.addressLine1.trim(),
+              country: data.country,
+              state: data.state,
+              city: data.city,
+              pincode: data.pincode,
+              source: data.source,
+              status: (l.status || "New") as LeadStatus,
+              priority: data.priority as LeadPriority,
+              assignedTo: data.assignedTo,
+              assignedDate: l.assignedDate || new Date().toISOString().split("T")[0],
+            }
           : l
       );
       setStorage("saiflow_leads", updated);
@@ -260,7 +239,6 @@ export default function AddLead() {
       const nextId = currentLeads.length > 0 ? Math.max(...currentLeads.map((l) => l.id)) + 1 : 1;
       const newLead: Lead = {
         id: nextId,
-        leadTitle: data.leadTitle.trim(),
         company: data.company.trim(),
         contactPerson: data.contactPerson.trim(),
         designation: data.designation.trim(),
@@ -270,7 +248,7 @@ export default function AddLead() {
         alternateEmail: data.alternateEmail,
         website: data.website.trim(),
         industry: data.industry,
-        gstNumber: data.gstNumber,
+        companyType: data.companyType,
         addressLine1: data.addressLine1.trim(),
         address: data.addressLine1.trim(),
         country: data.country,
@@ -278,14 +256,10 @@ export default function AddLead() {
         city: data.city,
         pincode: data.pincode,
         source: data.source,
-        status: (data.status || "New") as LeadStatus,
+        status: "New" as LeadStatus,
         priority: (data.priority || "Medium") as LeadPriority,
         assignedTo: data.assignedTo || "John Doe",
-        assignedDate: data.assignedDate,
-        nextFollowUpDate: data.nextFollowUpDate,
-        followUpType: data.followUpType,
-        followUpNotes: data.followUpNotes,
-        remarks: data.remarks,
+        assignedDate: new Date().toISOString().split("T")[0],
         notes: "",
         createdAt: new Date().toISOString().split("T")[0],
       };
@@ -325,37 +299,22 @@ export default function AddLead() {
       />
       <PageBreadcrumb pageTitle={isEditMode ? "Edit lead" : "Add lead"} />
 
-      <form onSubmit={handleSubmit(handleSave, handleFormError)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit(handleSave, handleFormError)} className="space-y-10">
+        {/* ═══════════════════ SECTION 1: Contact Information ═══════════════════ */}
+        <div>
+          <div className="flex items-center gap-4 mb-5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-400">
+              Contact Information
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-brand-500/30 to-transparent" />
+          </div>
+          <div className="grid grid-cols-1 gap-6">
           {/* Card 1: Lead Information */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
               Lead Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Lead Title <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="leadTitle"
-                  control={control}
-                  rules={{ required: "Lead title is required" }}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="e.g. ERP Implementation"
-                      error={!!errors.leadTitle}
-                    />
-                  )}
-                />
-                {errors.leadTitle && (
-                  <span className="mt-1 text-xs text-error-600 block">
-                    {errors.leadTitle.message}
-                  </span>
-                )}
-              </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Company Name <span className="text-error-500">*</span>
@@ -402,15 +361,20 @@ export default function AddLead() {
                   </span>
                 )}
               </div>
-              <div className="sm:col-span-2">
+              <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Designation
                 </label>
                 <Controller
                   name="designation"
                   control={control}
-                  render={({ field }) => (
-                    <Input {...field} type="text" placeholder="e.g. Chief Technology Officer" />
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={designationOptions}
+                      placeholder="Select designation"
+                      onChange={onChange}
+                      defaultValue={value}
+                    />
                   )}
                 />
               </div>
@@ -548,6 +512,18 @@ export default function AddLead() {
             </div>
           </div>
 
+          </div>
+        </div>
+
+        {/* ═══════════════════ SECTION 2: Company & Address ═══════════════════ */}
+        <div>
+          <div className="flex items-center gap-4 mb-5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-400">
+              Company & Address
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-brand-500/30 to-transparent" />
+          </div>
+          <div className="grid grid-cols-1 gap-6">
           {/* Card 3: Company Details */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
@@ -573,13 +549,18 @@ export default function AddLead() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  GST Number
+                  Company Type
                 </label>
                 <Controller
-                  name="gstNumber"
+                  name="companyType"
                   control={control}
-                  render={({ field }) => (
-                    <Input {...field} type="text" placeholder="22AAAAA0000A1Z5" />
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={companyTypeOptions}
+                      placeholder="Select company type"
+                      onChange={onChange}
+                      defaultValue={value}
+                    />
                   )}
                 />
               </div>
@@ -693,6 +674,18 @@ export default function AddLead() {
             </div>
           </div>
 
+          </div>
+        </div>
+
+        {/* ═══════════════════ SECTION 3: Lead & Assignment ═══════════════════ */}
+        <div>
+          <div className="flex items-center gap-4 mb-5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-400">
+              Lead & Assignment
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-brand-500/30 to-transparent" />
+          </div>
+          <div className="grid grid-cols-1 gap-6">
           {/* Card 5: Lead Details */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
@@ -718,27 +711,6 @@ export default function AddLead() {
                 />
                 {errors.source && (
                   <span className="mt-1 text-xs text-error-600 block">{errors.source.message}</span>
-                )}
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Lead Status <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="status"
-                  control={control}
-                  rules={{ required: "Lead status is required" }}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={statusOptions}
-                      placeholder="Select status"
-                      onChange={onChange}
-                      defaultValue={value}
-                    />
-                  )}
-                />
-                {errors.status && (
-                  <span className="mt-1 text-xs text-error-600 block">{errors.status.message}</span>
                 )}
               </div>
               <div>
@@ -792,18 +764,15 @@ export default function AddLead() {
                   <span className="mt-1 text-xs text-error-600 block">{errors.assignedTo.message}</span>
                 )}
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Assigned Date
-                </label>
-                <Controller
-                  name="assignedDate"
-                  control={control}
-                  render={({ field }) => <Input {...field} type="date" />}
-                />
-              </div>
             </div>
           </div>
+
+          </div>
+        </div>
+
+        {/* ═══════════════════ FORM DIVIDER ═══════════════════ */}
+        <div className="flex items-center gap-4">
+          <div className="h-px flex-1 bg-gradient-to-r from-brand-500/30 to-transparent" />
         </div>
 
         {/* Form Actions */}

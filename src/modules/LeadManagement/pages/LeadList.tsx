@@ -123,7 +123,6 @@ export default function LeadList() {
   const downloadSampleTemplate = () => {
     const sampleData = [
       {
-        "Lead Title": "Enterprise ERP Implementation",
         "Company Name": "Google LLC",
         "Contact Person": "Larry Page",
         "Designation": "Chief Executive Officer",
@@ -133,20 +132,17 @@ export default function LeadList() {
         "Alternate Email": "larry.page@google.com",
         "Website": "https://google.com",
         "Industry": "Information Technology",
-        "GST Number": "22AAAAA0000A1Z5",
+        "Company Type": "Private Limited",
         "Address Line 1": "1600 Amphitheatre Parkway",
         "Country": "United States",
         "State": "California",
         "City": "San Francisco",
         "Pincode": "94043",
         "Lead Source": "Website",
-        "Lead Status": "New",
         "Priority": "High",
-        "Lead Owner": ASSIGNEES[0] || "John Doe",
-        "Assigned Date": "2026-07-14"
+        "Lead Owner": ASSIGNEES[0] || "John Doe"
       },
       {
-        "Lead Title": "Cloud Migration Consultation",
         "Company Name": "Microsoft Corp",
         "Contact Person": "Satya Nadella",
         "Designation": "CEO",
@@ -156,17 +152,15 @@ export default function LeadList() {
         "Alternate Email": "",
         "Website": "https://microsoft.com",
         "Industry": "Information Technology",
-        "GST Number": "22AAAAA1111B2Y4",
+        "Company Type": "Public Limited",
         "Address Line 1": "One Microsoft Way",
         "Country": "United States",
         "State": "Washington",
         "City": "Seattle",
         "Pincode": "98052",
         "Lead Source": "Referral",
-        "Lead Status": "Contacted",
         "Priority": "Medium",
-        "Lead Owner": ASSIGNEES[1] || "Jane Smith",
-        "Assigned Date": "2026-07-13"
+        "Lead Owner": ASSIGNEES[1] || "Jane Smith"
       }
     ];
 
@@ -822,6 +816,7 @@ export default function LeadList() {
                     const altEmailIdx = headers.findIndex(h => h.includes("alternate email") || h.includes("alt email"));
                     const websiteIdx = headers.findIndex(h => h.includes("website"));
                     const industryIdx = headers.findIndex(h => h.includes("industry"));
+                    const companyTypeIdx = headers.findIndex(h => h.includes("company type"));
                     const gstIdx = headers.findIndex(h => h.includes("gst"));
                     const address1Idx = headers.findIndex(h => h.includes("address line 1") || h.includes("street"));
                     const countryIdx = headers.findIndex(h => h.includes("country"));
@@ -876,6 +871,7 @@ export default function LeadList() {
                         alternateEmail: altEmailIdx !== -1 ? String(row[altEmailIdx] || "").trim() : "",
                         website: websiteIdx !== -1 ? String(row[websiteIdx] || "").trim() : `https://${company.toLowerCase().replace(/\s+/g, "") || "example"}.com`,
                         industry: industryIdx !== -1 ? String(row[industryIdx] || "").trim() : "Information Technology",
+                        companyType: companyTypeIdx !== -1 ? String(row[companyTypeIdx] || "").trim() : "",
                         gstNumber: gstIdx !== -1 ? String(row[gstIdx] || "").trim() : "",
                         addressLine1: address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1",
                         address: address1Idx !== -1 ? String(row[address1Idx] || "").trim() : "Imported Address Line 1",

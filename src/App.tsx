@@ -14,6 +14,7 @@ import UserManagement from "./modules/UserManagement/pages/UserManagement";
 import UserRoleManagement from "./modules/UserManagement/pages/UserRoleManagement";
 import AddEditRolePage from "./modules/UserManagement/pages/AddEditRolePage";
 import AddEditUserPage from "./modules/UserManagement/pages/AddEditUserPage";
+import UserDetailsPage from "./modules/UserManagement/pages/UserDetailsPage";
 import MasterConfigPage from "./modules/Master/pages/MasterConfigPage";
 import AddEditMasterPage from "./modules/Master/pages/AddEditMasterPage";
 import LeadList from "./modules/LeadManagement/pages/LeadList";
@@ -284,7 +285,7 @@ export default function App() {
               path="/users/:id"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <AddEditUserPage mode="view" />
+                  <UserDetailsPage />
                 </ProtectedRoute>
               }
             />

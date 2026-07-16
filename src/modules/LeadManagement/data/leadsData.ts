@@ -35,6 +35,7 @@ export interface Lead {
   alternatePhone?: string;
   alternateEmail?: string;
   gstNumber?: string;
+  companyType?: string;
   addressLine1?: string;
   country?: string;
   state?: string;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
@@ -8,25 +8,31 @@ import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
+import { DEPARTMENTS } from "../../Master/data/masterData";
 
 
 interface User {
   id: number;
+  employeeId: string;
   name: string;
   email: string;
   phone: string;
   role: string;
+  department: string;
   status: "Active" | "Inactive";
   password?: string;
 }
 
 interface UserFormValues {
+  employeeId: string;
   name: string;
   email: string;
   phone: string;
   role: string;
+  department: string;
   status: "Active" | "Inactive";
   password?: string;
+  confirmPassword?: string;
 }
 
 const availableRoles = [
@@ -48,22 +54,38 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
+  const departmentOptions = useMemo(() => {
+    return getStorage("saiflow_master_departments", DEPARTMENTS)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const generateEmployeeId = (id: number): string => {
+    return `EMP-${String(id).padStart(3, "0")}`;
+  };
+
   const {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<UserFormValues>({
     mode: "onChange",
     defaultValues: {
+      employeeId: "",
       name: "",
       email: "",
       phone: "",
       role: "",
+      department: "",
       status: "Active",
       password: "",
+      confirmPassword: "",
     },
   });
+
+  const watchPassword = watch("password");
 
   useEffect(() => {
     const users = getStorage<User[]>("saiflow_users", []);
@@ -72,12 +94,13 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
       if (found) {
         setUser(found);
         reset({
+          employeeId: found.employeeId,
           name: found.name,
           email: found.email,
           phone: found.phone.replace(/\D/g, "").slice(-10),
           role: found.role,
+          department: found.department || "",
           status: found.status,
-
         });
       } else {
         showToast("User not found.", "error");
@@ -85,13 +108,17 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
         return;
       }
     } else {
+      const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
       reset({
+        employeeId: generateEmployeeId(nextId),
         name: "",
         email: "",
         phone: "",
         role: "",
+        department: "",
         status: "Active",
         password: "",
+        confirmPassword: "",
       });
     }
     setLoading(false);
@@ -105,10 +132,12 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
       const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
       const newUser: User = {
         id: newId,
+        employeeId: generateEmployeeId(newId),
         name: data.name.trim(),
         email: data.email.trim(),
         phone: data.phone.trim(),
         role: data.role,
+        department: data.department,
         status: data.status,
         password: data.password?.trim() || "Password@123",
       };
@@ -124,6 +153,7 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
               email: data.email.trim(),
               phone: data.phone.trim(),
               role: data.role,
+              department: data.department,
               status: data.status,
             }
           : u
@@ -165,7 +195,27 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
               User details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Name */}
+              {/* Employee ID */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Employee ID <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="employeeId"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Auto-generated"
+                      disabled={true}
+                      className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                    />
+                  )}
+                />
+              </div>
+
+              {/* Employee name */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Employee name <span className="text-error-500">*</span>
@@ -195,15 +245,35 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
                 )}
               </div>
 
-              {/* Role */}
+              {/* Department */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Role <span className="text-error-500">*</span>
+                  Department
+                </label>
+                <Controller
+                  name="department"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={departmentOptions}
+                      placeholder="Select department"
+                      defaultValue={value}
+                      disabled={mode === "view"}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </div>
+
+              {/* User role */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  User role <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="role"
                   control={control}
-                  rules={{ required: "Role is required" }}
+                  rules={{ required: "User role is required" }}
                   render={({ field: { value, onChange } }) => (
                     <Select
                       options={availableRoles.map((r) => ({ value: r, label: r }))}
@@ -276,6 +346,35 @@ export default function AddEditUserPage({ mode }: AddEditUserPageProps) {
                   />
                   {errors.password && (
                     <span className="mt-1.5 text-xs text-error-600 block">{errors.password.message}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Confirm Password (only for create mode) */}
+              {mode === "create" && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Confirm password <span className="text-error-500">*</span>
+                  </label>
+                  <Controller
+                    name="confirmPassword"
+                    control={control}
+                    rules={{
+                      required: "Please confirm your password",
+                      validate: (value) =>
+                        value === watchPassword || "Passwords do not match",
+                    }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="Re-enter password"
+                        className={errors.confirmPassword ? "border-error-500" : ""}
+                      />
+                    )}
+                  />
+                  {errors.confirmPassword && (
+                    <span className="mt-1.5 text-xs text-error-600 block">{errors.confirmPassword.message}</span>
                   )}
                 </div>
               )}

@@ -24,23 +24,38 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { DEPARTMENTS } from "../../Master/data/masterData";
 
 interface User {
   id: number;
+  employeeId: string;
   name: string;
   email: string;
   phone: string;
   role: string;
+  department: string;
   status: "Active" | "Inactive";
   password?: string;
 }
 
+const generateEmployeeId = (id: number): string => {
+  return `EMP-${String(id).padStart(3, "0")}`;
+};
+
+const roleToDepartment: Record<string, string> = {
+  Administrator: "",
+  "Business Development Manager": "Business Development",
+  "Business Development Executive": "Business Development",
+  "Presales Consultant": "Presales",
+  "Guest User": "",
+};
+
 const initialUsers: User[] = [
-  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123" },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123" },
-  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123" },
-  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123" },
+  { id: 1, employeeId: "EMP-001", name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", department: "Sales", status: "Active", password: "Password@123" },
+  { id: 2, employeeId: "EMP-002", name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", department: "Business Development", status: "Active", password: "Password@123" },
+  { id: 3, employeeId: "EMP-003", name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", department: "Business Development", status: "Active", password: "Password@123" },
+  { id: 4, employeeId: "EMP-004", name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", department: "Presales", status: "Active", password: "Password@123" },
+  { id: 5, employeeId: "EMP-005", name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", department: "Sales", status: "Inactive", password: "Password@123" },
 ];
 
 const availableRoles = [
@@ -54,7 +69,21 @@ const availableRoles = [
 export default function UserManagement() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [users, setUsers] = useState<User[]>(() => getStorage("saiflow_users", initialUsers));
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = getStorage<User[]>("saiflow_users", initialUsers);
+    // Migrate old data: add employeeId and department if missing
+    const needsMigration = stored.some((u) => !u.employeeId || u.department === undefined);
+    if (needsMigration) {
+      const migrated = stored.map((u) => ({
+        ...u,
+        employeeId: u.employeeId || generateEmployeeId(u.id),
+        department: u.department ?? roleToDepartment[u.role] ?? "",
+      }));
+      setStorage("saiflow_users", migrated);
+      return migrated;
+    }
+    return stored;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -334,6 +363,12 @@ export default function UserManagement() {
                   isHeader
                   className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
                 >
+                  {renderSortHeader("Employee ID", "employeeId")}
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
                   {renderSortHeader("Employee name", "name")}
                 </TableCell>
                 <TableCell
@@ -352,7 +387,13 @@ export default function UserManagement() {
                   isHeader
                   className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
                 >
-                  {renderSortHeader("Role", "role")}
+                  {renderSortHeader("User role", "role")}
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {renderSortHeader("Department", "department")}
                 </TableCell>
                 <TableCell
                   isHeader
@@ -375,8 +416,11 @@ export default function UserManagement() {
                     key={user.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
                       {user.id}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-mono text-xs tracking-wider">
+                      {user.employeeId}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 font-medium">
                       {user.name}
@@ -389,6 +433,9 @@ export default function UserManagement() {
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
                       {user.role}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
+                      {user.department}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
                       <Badge size="sm" color={user.status === "Active" ? "success" : "error"}>
@@ -425,7 +472,7 @@ export default function UserManagement() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={9}
                     className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No users match your search criteria.
