@@ -33,8 +33,8 @@ import { getStorage, setStorage } from "./utils/storage";
 import ClientList from "./modules/ClientManagement/pages/ClientList";
 import AddClient from "./modules/ClientManagement/pages/AddClient";
 import ClientDetails from "./modules/ClientManagement/pages/ClientDetails";
-import RequirementList from "./modules/RequirementManagement/pages/RequirementList";
 import QuotationList from "./modules/Quotation/pages/QuotationList";
+import AddProposal from "./modules/Quotation/pages/AddProposal";
 import SettingsPage from "./modules/Settings/pages/SettingsPage";
 
 
@@ -488,19 +488,29 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/requirements"
-              element={
-                <ProtectedRoute allowedRoles={allowedRoles}>
-                  <RequirementList />
-                </ProtectedRoute>
-              }
-            />
+            {/* Requirements are now part of Business Proposals */}
+            <Route path="/requirements" element={<Navigate to="/quotations" replace />} />
             <Route
               path="/quotations"
               element={
                 <ProtectedRoute allowedRoles={allowedRoles}>
                   <QuotationList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/add"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <AddProposal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <AddProposal />
                 </ProtectedRoute>
               }
             />

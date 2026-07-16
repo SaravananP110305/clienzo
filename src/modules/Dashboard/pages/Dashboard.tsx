@@ -24,7 +24,7 @@ import {
 import { getStorage } from "../../../utils/storage";
 import { initialLeads as sourceLeads, Lead as SourceLead } from "../../LeadManagement/data/leadsData";
 import { initialClients } from "../../ClientManagement/data/clientsData";
-import { initialQuotations, Quotation } from "../../Quotation/data/quotationsData";
+import { initialProposals, Proposal } from "../../Quotation/data/quotationsData";
 
 interface Lead {
   sNo: number;
@@ -53,7 +53,7 @@ export default function Dashboard() {
   }, [rawLeads]);
 
   const clients = getStorage("saiflow_clients", initialClients);
-  const quotations = getStorage<Quotation[]>("saiflow_quotations", initialQuotations);
+  const proposals = getStorage<Proposal[]>("saiflow_proposals", initialProposals);
 
   // ── Dropdown states ─────────────────────────────────────────
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -190,9 +190,12 @@ export default function Dashboard() {
 
   // ── 4 KPI METRICS ──────────────────────────────────────────
   const kpiMetrics = useMemo(() => {
-    const pipelineValue = quotations
-      .filter((q) => q.status === "Sent" || q.status === "Approved")
-      .reduce((sum, q) => sum + q.amount, 0);
+    const pipelineValue = proposals
+      .filter((p) => p.status === "Sent" || p.status === "Approved" || p.status === "Under Review")
+      .reduce((sum, p) => {
+        const latest = p.versions[p.versions.length - 1];
+        return sum + (latest?.estimation.total || 0);
+      }, 0);
 
     return [
       {
@@ -216,7 +219,7 @@ export default function Dashboard() {
         icon: <FiDollarSign className="text-warning-500 w-5 h-5" />,
       },
     ];
-  }, [rawLeads, clients, quotations]);
+  }, [rawLeads, clients, proposals]);
 
   // ── CHARTS ──────────────────────────────────────────────────
   const leadTrendOptions: ApexOptions = {

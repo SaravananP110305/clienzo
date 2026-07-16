@@ -1,3 +1,24 @@
+export interface HandoverRecord {
+  id: number;
+  handoverDate: string;
+  handoverBy: string;
+  handoverTo: string;
+  proposalId: number;
+  proposalNo: string;
+  status: "Pending" | "In Progress" | "Completed";
+  notes: string;
+  transferredData: {
+    clientDetails: boolean;
+    leadDetails: boolean;
+    requirement: boolean;
+    estimation: boolean;
+    quotation: boolean;
+    approvedProposalPdf: boolean;
+    summary: boolean;
+    notes: boolean;
+  };
+}
+
 export interface Client {
   id: number;
   name: string; // Contact Name
@@ -30,12 +51,21 @@ export interface Client {
   // Relationship
   relationshipManager?: string;
   accountManager?: string;
+  assignedEmployee?: string;
 
   // Business Details
   clientSince?: string;
   paymentTerms?: string;
   preferredCommunication?: string;
   creditLimit?: string;
+
+  // Proposal / Conversion Fields
+  conversionDate?: string;
+  latestProposalId?: number;
+  latestProposalNo?: string;
+  proposalStatus?: string;
+  handoverStatus: "Pending" | "In Progress" | "Completed";
+  handoverHistory: HandoverRecord[];
 }
 
 export const initialClients: Client[] = [
@@ -63,10 +93,17 @@ export const initialClients: Client[] = [
     mobile: "9445212056",
     relationshipManager: "John Doe",
     accountManager: "Jane Smith",
+    assignedEmployee: "Jane Smith",
     clientSince: "2024-01-10",
     paymentTerms: "Net 30",
     preferredCommunication: "Email",
-    creditLimit: "500000"
+    creditLimit: "500000",
+    conversionDate: "2024-01-10",
+    latestProposalId: 1,
+    latestProposalNo: "BP-2026-001",
+    proposalStatus: "Negotiation",
+    handoverStatus: "Pending",
+    handoverHistory: [],
   },
   {
     id: 2,
@@ -92,10 +129,38 @@ export const initialClients: Client[] = [
     mobile: "5550192831",
     relationshipManager: "Alice Johnson",
     accountManager: "Robert Lee",
+    assignedEmployee: "Robert Lee",
     clientSince: "2024-03-15",
     paymentTerms: "Net 15",
     preferredCommunication: "Phone",
-    creditLimit: "1000000"
+    creditLimit: "1000000",
+    conversionDate: "2024-03-15",
+    latestProposalId: 2,
+    latestProposalNo: "BP-2026-002",
+    proposalStatus: "Approved",
+    handoverStatus: "Completed",
+    handoverHistory: [
+      {
+        id: 1,
+        handoverDate: "2024-03-20",
+        handoverBy: "Robert Lee",
+        handoverTo: "Dev Team Alpha",
+        proposalId: 2,
+        proposalNo: "BP-2026-002",
+        status: "Completed",
+        notes: "Full handover completed. All documents transferred.",
+        transferredData: {
+          clientDetails: true,
+          leadDetails: true,
+          requirement: true,
+          estimation: true,
+          quotation: true,
+          approvedProposalPdf: true,
+          summary: true,
+          notes: true,
+        },
+      },
+    ],
   },
   {
     id: 3,
@@ -121,9 +186,16 @@ export const initialClients: Client[] = [
     mobile: "9884088200",
     relationshipManager: "Robert Lee",
     accountManager: "John Doe",
+    assignedEmployee: "John Doe",
     clientSince: "2023-11-20",
     paymentTerms: "Immediate",
     preferredCommunication: "WhatsApp",
-    creditLimit: "0"
-  }
+    creditLimit: "0",
+    conversionDate: "2023-11-20",
+    latestProposalId: 5,
+    latestProposalNo: "BP-2026-005",
+    proposalStatus: "Rejected",
+    handoverStatus: "Pending",
+    handoverHistory: [],
+  },
 ];

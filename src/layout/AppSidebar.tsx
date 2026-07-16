@@ -15,7 +15,6 @@ import {
   MdCloudUpload,
   MdSupportAgent,
   MdReceiptLong,
-  MdFolderSpecial,
   MdBusiness,
 } from "react-icons/md";
 import { ChevronDownIcon } from "../icons";
@@ -85,19 +84,14 @@ const navItems: NavItem[] = [
     path: "/meetings",
   },
   {
+    name: "Proposals",
+    icon: <MdReceiptLong className="size-5" />,
+    path: "/quotations",
+  },
+  {
     name: "Clients",
     icon: <MdBusiness className="size-5" />,
     path: "/clients",
-  },
-  {
-    name: "Requirements",
-    icon: <MdFolderSpecial className="size-5" />,
-    path: "/requirements",
-  },
-  {
-    name: "Quotations",
-    icon: <MdReceiptLong className="size-5" />,
-    path: "/quotations",
   },
   {
     name: "Projects",
@@ -169,7 +163,7 @@ const AppSidebar: React.FC = () => {
   });
 
   const isMasterPath = location.pathname.startsWith("/master/");
-  const isUserMgmtPath = location.pathname === "/users" || location.pathname === "/roles";
+  const isUserMgmtPath = location.pathname.startsWith("/users") || location.pathname.startsWith("/roles");
   const isLeadMgmtPath = location.pathname.startsWith("/leads");
   const isConnectPath = location.pathname.startsWith("/contacts");
   const isReportsPath = location.pathname.startsWith("/reports");
@@ -185,7 +179,7 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     if (location.pathname.startsWith("/master/")) {
       setOpenSubMenus({ "Master": true });
-    } else if (location.pathname === "/users" || location.pathname === "/roles") {
+    } else if (location.pathname.startsWith("/users") || location.pathname.startsWith("/roles")) {
       setOpenSubMenus({ "Manage Users": true });
     } else if (location.pathname.startsWith("/leads")) {
       setOpenSubMenus({ "Leads": true });
@@ -203,14 +197,23 @@ const AppSidebar: React.FC = () => {
       if (path === "/dashboard") {
         return location.pathname === "/" || location.pathname === "/dashboard";
       }
-      return location.pathname === path;
+      return location.pathname.startsWith(path);
     },
     [location.pathname]
   );
 
   const isSubActive = useCallback(
     (subItems?: { path: string }[]) => {
-      return subItems?.some((sub) => location.pathname === sub.path) || false;
+      if (!subItems) return false;
+      return subItems.some((sub) => {
+        if (sub.path === "/contacts/my-leads") {
+          return location.pathname.startsWith("/contacts") && !location.pathname.startsWith("/contacts/follow-ups");
+        }
+        if (sub.path === "/contacts/follow-ups") {
+          return location.pathname.startsWith("/contacts/follow-ups");
+        }
+        return location.pathname.startsWith(sub.path);
+      });
     },
     [location.pathname]
   );
@@ -298,7 +301,12 @@ const AppSidebar: React.FC = () => {
                       >
                         <ul className="pl-9 flex flex-col gap-1 pb-1">
                           {subItems.map((sub) => {
-                            const subActive = location.pathname === sub.path;
+                            const subActive =
+                              sub.path === "/contacts/my-leads"
+                                ? location.pathname.startsWith("/contacts") && !location.pathname.startsWith("/contacts/follow-ups")
+                                : sub.path === "/contacts/follow-ups"
+                                ? location.pathname.startsWith("/contacts/follow-ups")
+                                : location.pathname.startsWith(sub.path);
                             return (
                               <li key={sub.name}>
                                 <Link
