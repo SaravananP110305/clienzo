@@ -362,10 +362,8 @@ export default function MeetingDetails() {
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
             {meeting.subject}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
-            <span>Type: {meeting.meetingType || "Discussion"}</span>
-            <span>•</span>
-            <span>Platform: {meeting.meetingPlatform || meeting.type || "Online"}</span>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            {meeting.meetingPlatform || meeting.type || "Online"}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -411,8 +409,18 @@ export default function MeetingDetails() {
             />
             <InfoCard
               icon={<FiClock className="size-4" />}
-              label="Start / End Time"
-              value={`${formatTime12hr(meeting.startTime || meeting.time)} - ${formatTime12hr(meeting.endTime || "")}`}
+              label="Start time"
+              value={formatTime12hr(meeting.startTime || meeting.time)}
+            />
+            <InfoCard
+              icon={<FiClock className="size-4" />}
+              label="End time"
+              value={formatTime12hr(meeting.endTime || "")}
+            />
+            <InfoCard
+              icon={<FiClock className="size-4" />}
+              label="Duration"
+              value={meeting.duration || "—"}
             />
             <InfoCard
               icon={<FiBriefcase className="size-4" />}
@@ -435,13 +443,8 @@ export default function MeetingDetails() {
             />
             <InfoCard
               icon={<FiUser className="size-4" />}
-              label="Contact Person"
+              label="Contact person"
               value={meeting.contactPerson}
-            />
-            <InfoCard
-              icon={<FiClock className="size-4" />}
-              label="Duration & Timezone"
-              value={`${meeting.duration || "—"} (${meeting.timezone || "IST"})`}
             />
           </div>
         </div>
@@ -496,10 +499,10 @@ export default function MeetingDetails() {
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
             Participants
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <span className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
-                Meeting Owners (Employees)
+                Meeting owner
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {meeting.meetingOwner && meeting.meetingOwner.length > 0 ? (
@@ -512,26 +515,17 @@ export default function MeetingDetails() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-400">John Doe</span>
+                  <span className="text-sm text-gray-400">—</span>
                 )}
               </div>
             </div>
 
             <div>
               <span className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
-                Client Contact Person
+                Client contact person
               </span>
               <span className="text-sm font-medium text-gray-800 dark:text-white/95">
-                {meeting.clientContactPerson || meeting.contactPerson}
-              </span>
-            </div>
-
-            <div>
-              <span className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
-                Attendees
-              </span>
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                {meeting.attendees || "—"}
+                {meeting.clientContactPerson || meeting.contactPerson || "—"}
               </span>
             </div>
           </div>
@@ -634,7 +628,6 @@ export default function MeetingDetails() {
 
                 <div className="space-y-3">
                   {historicalEntries.map((entry, idx) => {
-                    const isRescheduled = entry.action.toLowerCase().includes('rescheduled');
                     const isCompleted = entry.action.toLowerCase().includes('completed');
                     const isCancelled = entry.action.toLowerCase().includes('cancelled');
                     
