@@ -27,7 +27,7 @@ import {
   FiRefreshCw,
   FiCheckCircle,
   FiXCircle,
-
+  FiFileText,
 } from "react-icons/fi";
 
 interface MeetingActivityLog {
@@ -36,6 +36,13 @@ interface MeetingActivityLog {
   action: string;
   description: string;
   timestamp: string;
+  operator: string;
+}
+
+interface SummaryEntry {
+  action: string;
+  summary: string;
+  date: string;
   operator: string;
 }
 
@@ -81,6 +88,11 @@ export default function MeetingDetails() {
   const [accManager, setAccManager] = useState("Jane Smith");
 
   const [activityLogs, setActivityLogs] = useState<MeetingActivityLog[]>([]);
+  const [summaryEntries, setSummaryEntries] = useState<SummaryEntry[]>([]);
+
+  // Edit Summary Modal
+  const [editSummaryModal, setEditSummaryModal] = useState(false);
+  const [editSummaryText, setEditSummaryText] = useState("");
 
   const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
     name: "Admin User",
@@ -120,6 +132,43 @@ export default function MeetingDetails() {
       }
       setMatchingLead(lead || null);
     }
+  };
+
+  // Extract summary text from activity log descriptions
+  const extractSummaryFromLog = (log: MeetingActivityLog): string | null => {
+    const action = log.action.toLowerCase();
+    const desc = log.description;
+    if (action.includes('completed')) {
+      // "Meeting completed. Summary: <text>"
+      const match = desc.match(/Summary:\s*(.+)/is);
+      return match ? match[1].trim() : desc.replace(/^Meeting completed\.\s*/i, '').trim();
+    }
+    if (action.includes('rescheduled')) {
+      // "Meeting rescheduled to <date> at <time>. Summary: <text>"
+      const match = desc.match(/Summary:\s*(.+)/is);
+      return match ? match[1].trim() : null;
+    }
+    if (action.includes('cancelled')) {
+      // "Meeting cancelled. Reason: <summary> (Lost reason: <reason>)"
+      const match = desc.match(/Reason:\s*([^(\.]+)/is);
+      return match ? match[1].trim() : desc.replace(/^Meeting cancelled\.\s*/i, '').trim();
+    }
+    return null;
+  };
+
+  // Derive status-wise summary entries
+  const buildSummaryEntries = (logs: MeetingActivityLog[]): SummaryEntry[] => {
+    return logs
+      .filter((l) => {
+        const action = l.action.toLowerCase();
+        return action.includes('completed') || action.includes('cancelled') || action.includes('rescheduled');
+      })
+      .map((l) => ({
+        action: l.action,
+        summary: extractSummaryFromLog(l) || l.description,
+        date: l.timestamp,
+        operator: l.operator,
+      }));
   };
 
   const formatDate = (dateStr: string) => {
@@ -172,8 +221,31 @@ export default function MeetingDetails() {
       
       meetingLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setActivityLogs(meetingLogs);
+      setSummaryEntries(buildSummaryEntries(meetingLogs));
     }
   }, [meeting]);
+
+  // ─── Edit Summary Handlers ─────────────────────────────────────────────
+  const openEditSummary = () => {
+    if (!meeting) return;
+    setEditSummaryText(meeting.summary || "");
+    setEditSummaryModal(true);
+  };
+
+  const handleSaveEditSummary = () => {
+    if (!meeting || !editSummaryText.trim()) return;
+
+    const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
+    const updated = meetings.map((m) =>
+      m.id === meeting.id ? { ...m, summary: editSummaryText.trim() } : m
+    );
+    setStorage("saiflow_meetings", updated);
+    setMeeting({ ...meeting, summary: editSummaryText.trim() });
+
+    logActivity("Summary Updated", `Meeting summary was updated: ${editSummaryText.trim()}`);
+    showToast("Summary updated successfully.", "success");
+    setEditSummaryModal(false);
+  };
 
   const handleConvertLeadConfirm = () => {
     if (!meeting || !matchingLead) return;
@@ -463,24 +535,228 @@ export default function MeetingDetails() {
           </div>
         </div>
 
-        {/* Meeting Summary */}
+        {/* Status-Wise Summary Section */}
         <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Meeting Summary
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
+            <FiFileText className="size-4 text-brand-500" />
+            Status-wise Summary
           </h3>
+
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">
-                Summary
-              </label>
-              <div className="p-3.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+            {/* Current status summary */}
+            {meeting.summary ? (
+              <div className={`rounded-xl border p-4 ${
+                meeting.status === "Completed"
+                  ? "border-success-200 bg-success-50/40 dark:border-success-500/20 dark:bg-success-500/5"
+                  : meeting.status === "Cancelled"
+                  ? "border-error-200 bg-error-50/40 dark:border-error-500/20 dark:bg-error-500/5"
+                  : meeting.status === "Rescheduled"
+                  ? "border-blue-200 bg-blue-50/40 dark:border-blue-500/20 dark:bg-blue-500/5"
+                  : "border-gray-200 bg-gray-50/40 dark:border-gray-600/20 dark:bg-gray-500/5"
+              }`}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    {meeting.status === "Completed" && <FiCheckCircle className="size-4 text-success-500" />}
+                    {meeting.status === "Cancelled" && <FiXCircle className="size-4 text-error-500" />}
+                    {meeting.status === "Rescheduled" && <FiRefreshCw className="size-4 text-blue-500" />}
+                    {meeting.status === "Scheduled" && <FiCalendar className="size-4 text-gray-400" />}
+                    <span className={`text-xs font-semibold ${
+                      meeting.status === "Completed"
+                        ? "text-success-700 dark:text-success-400"
+                        : meeting.status === "Cancelled"
+                        ? "text-error-700 dark:text-error-400"
+                        : meeting.status === "Rescheduled"
+                        ? "text-blue-700 dark:text-blue-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}>
+                      {meeting.status === "Scheduled" ? "Notes / Agenda" : `${meeting.status} Summary`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={openEditSummary}
+                      className="p-1 text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-md transition cursor-pointer"
+                      title="Edit summary"
+                    >
+                      <FiEdit className="size-3.5" />
+                    </button>
+                    <Badge size="sm" color={getMeetingStatusColor(meeting.status)}>
+                      {meeting.status}
+                    </Badge>
+                  </div>
+                </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-                  {meeting.summary || meeting.notes || "No summary provided."}
+                  {meeting.summary}
+                </p>
+              </div>
+            ) : meeting.notes ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50/40 dark:border-gray-600/20 dark:bg-gray-500/5 p-4">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <FiCalendar className="size-4 text-gray-400" />
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Notes</span>
+                  </div>
+                  <button
+                    onClick={openEditSummary}
+                    className="p-1 text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1"
+                    title="Add summary"
+                  >
+                    <FiEdit className="size-3" />
+                    Add Summary
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                  {meeting.notes}
+                </p>
+              </div>
+            ) : null}
+
+            {/* Historical summary entries from activity logs (filter out current summary to avoid duplication) */}
+            {(() => {
+              const historicalEntries = summaryEntries.filter(
+                (entry) => entry.summary !== meeting.summary
+              );
+              if (historicalEntries.length === 0) return null;
+              return (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-100 dark:border-white/[0.05]"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white dark:bg-gray-900 px-3 text-xs text-gray-400 dark:text-gray-500">
+                      History
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {historicalEntries.map((entry, idx) => {
+                    const isRescheduled = entry.action.toLowerCase().includes('rescheduled');
+                    const isCompleted = entry.action.toLowerCase().includes('completed');
+                    const isCancelled = entry.action.toLowerCase().includes('cancelled');
+                    
+                    let borderColor, bgColor, icon, labelColor;
+                    if (isCompleted) {
+                      borderColor = 'border-success-200 dark:border-success-500/20';
+                      bgColor = 'bg-success-50/30 dark:bg-success-500/[0.04]';
+                      icon = <FiCheckCircle className="size-3.5 text-success-500" />;
+                      labelColor = 'text-success-700 dark:text-success-400';
+                    } else if (isCancelled) {
+                      borderColor = 'border-error-200 dark:border-error-500/20';
+                      bgColor = 'bg-error-50/30 dark:bg-error-500/[0.04]';
+                      icon = <FiXCircle className="size-3.5 text-error-500" />;
+                      labelColor = 'text-error-700 dark:text-error-400';
+                    } else {
+                      borderColor = 'border-blue-200 dark:border-blue-500/20';
+                      bgColor = 'bg-blue-50/30 dark:bg-blue-500/[0.04]';
+                      icon = <FiRefreshCw className="size-3.5 text-blue-500" />;
+                      labelColor = 'text-blue-700 dark:text-blue-400';
+                    }
+
+                    return (
+                      <div key={idx} className={`rounded-lg border ${borderColor} ${bgColor} p-3.5`}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {icon}
+                            <span className={`text-xs font-semibold ${labelColor}`}>
+                              {entry.action.replace('Meeting ', '')}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                            {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {' • '}{entry.operator}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                          {entry.summary}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+              );
+            })()}
+
+            {/* Empty state */}
+            {!meeting.summary && !meeting.notes && summaryEntries.length === 0 && (
+              <div className="text-center py-6">
+                <div className="mb-2 flex justify-center">
+                  <FiCalendar className="size-8 text-gray-200 dark:text-gray-700" />
+                </div>
+                <p className="text-sm text-gray-400 mb-3">No summary recorded yet.</p>
+                <button
+                  onClick={openEditSummary}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                >
+                  <FiEdit className="size-3" />
+                  Add Summary
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Edit Summary Modal */}
+        <Modal
+          isOpen={editSummaryModal}
+          onClose={() => setEditSummaryModal(false)}
+          className="max-w-[500px] m-4"
+        >
+          <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
+            <div className="mb-6 space-y-4">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-1">
+                  {meeting.summary ? "Edit Summary" : "Add Summary"}
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Update the meeting summary for <span className="font-semibold text-gray-700 dark:text-gray-300">{meeting.subject}</span>.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                  Summary <span className="text-error-500">*</span>
+                </label>
+                <textarea
+                  value={editSummaryText}
+                  onChange={(e) => setEditSummaryText(e.target.value)}
+                  placeholder="Describe the meeting outcome, decisions made, and next steps..."
+                  rows={5}
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+                {!editSummaryText.trim() && (
+                  <p className="text-xs text-error-500 mt-1.5">Summary is required</p>
+                )}
+              </div>
+
+              <div className="rounded-lg bg-gray-50 dark:bg-white/[0.03] p-3.5 border border-gray-100 dark:border-white/[0.05]">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="font-semibold">Note:</span> Updating the summary will also log this change in the Activity Log.
                 </p>
               </div>
             </div>
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditSummaryModal(false)}
+                className="w-1/2"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEditSummary}
+                className="w-1/2"
+                disabled={!editSummaryText.trim()}
+              >
+                {meeting.summary ? "Save Changes" : "Add Summary"}
+              </Button>
+            </div>
           </div>
-        </div>
+        </Modal>
 
         {/* Workflow Status */}
         {(meeting.rescheduledDate || meeting.completedDate || meeting.cancelledDate) && (

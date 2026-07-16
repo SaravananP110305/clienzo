@@ -35,7 +35,6 @@ interface MeetingFormValues {
   meetingOwner: string[];
   clientContactPerson: string;
   attendees: string;
-  summary: string;
 }
 
 const EMPLOYEES = ["John Doe", "Jane Smith", "Alice Johnson", "Robert Lee"];
@@ -102,7 +101,6 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       meetingOwner: [],
       clientContactPerson: "",
       attendees: "",
-      summary: "",
     },
   });
 
@@ -151,7 +149,6 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           meetingOwner: meeting.meetingOwner || [],
           clientContactPerson: meeting.clientContactPerson || meeting.contactPerson || "",
           attendees: meeting.attendees || "",
-          summary: meeting.summary || meeting.agenda || "",
         });
       }
     } else {
@@ -227,7 +224,7 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       type: data.meetingPlatform,
       linkOrLocation: data.linkOrLocation,
       status: "Scheduled",
-      notes: data.summary || data.notes || "",
+      notes: data.notes || "",
       relatedToType: data.relatedToType,
       relatedToId: data.relatedToId,
       meetingType: data.meetingType,
@@ -239,12 +236,11 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
       meetingOwner: data.meetingOwner,
       clientContactPerson: data.clientContactPerson,
       attendees: data.attendees,
-      summary: data.summary,
     };
 
     if (isEditMode) {
-      finalMeeting.id = Number(id);
-      updatedMeeting = finalMeeting;
+      const existing = meetings.find((m) => m.id === Number(id));
+      updatedMeeting = existing ? { ...existing, ...finalMeeting, id: Number(id) } : finalMeeting;
     } else {
       const newId = meetings.length > 0 ? Math.max(...meetings.map((m) => m.id)) + 1 : 1;
       finalMeeting.id = newId;
@@ -665,32 +661,6 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
               {errors.linkOrLocation && (
                 <span className="mt-1.5 text-xs text-error-600 block">{errors.linkOrLocation.message}</span>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 6: Meeting Details */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
-            Meeting Details
-          </h3>
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Summary
-              </label>
-              <Controller
-                name="summary"
-                control={control}
-                render={({ field }) => (
-                  <textarea
-                    {...field}
-                    placeholder="Enter meeting summary, agenda, discussion points, and outcomes..."
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-805 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    rows={5}
-                  />
-                )}
-              />
             </div>
           </div>
         </div>
