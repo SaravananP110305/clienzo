@@ -12,7 +12,9 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Dashboard from "./modules/Dashboard/pages/Dashboard";
 import UserManagement from "./modules/UserManagement/pages/UserManagement";
 import UserRoleManagement from "./modules/UserManagement/pages/UserRoleManagement";
+import AddEditRolePage from "./modules/UserManagement/pages/AddEditRolePage";
 import MasterConfigPage from "./modules/Master/pages/MasterConfigPage";
+import AddEditMasterPage from "./modules/Master/pages/AddEditMasterPage";
 import LeadList from "./modules/LeadManagement/pages/LeadList";
 import AddLead from "./modules/LeadManagement/pages/AddLead";
 import LeadDetails from "./modules/LeadManagement/pages/LeadDetails";
@@ -41,17 +43,16 @@ import SettingsPage from "./modules/Settings/pages/SettingsPage";
 import {
   LEAD_SOURCES,
   INDUSTRIES,
-  MEETING_TYPES,
-  FOLLOWUP_REASONS,
-  LOST_REASONS,
   COUNTRIES,
   STATES,
   CITIES,
   DEPARTMENTS,
   DESIGNATIONS,
   PRIORITIES,
-  FOLLOWUP_TYPES,
-  PAYMENT_TERMS,
+  TECHNOLOGIES,
+  PROJECT_CATEGORIES,
+  COMPANY_TYPES,
+  PAYMENT_TYPES,
 } from "./modules/Master/data/masterData";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -270,14 +271,38 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/roles/add"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <AddEditRolePage mode="create" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/roles/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <AddEditRolePage mode="edit" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/roles/:id/view"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <AddEditRolePage mode="view" />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Master Routes */}
-            <Route
+             <Route
               path="/master/countries"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Countries"
+                    pageTitle="Country"
                     itemNameSingular="country"
                     itemNamePlural="countries"
                     initialData={COUNTRIES}
@@ -291,10 +316,10 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="States"
+                    pageTitle="State"
                     itemNameSingular="state"
                     itemNamePlural="states"
-                    initialData={STATES}
+                    initialData={STATES as any}
                     storageKey="saiflow_master_states"
                   />
                 </ProtectedRoute>
@@ -305,10 +330,10 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Cities"
+                    pageTitle="City"
                     itemNameSingular="city"
                     itemNamePlural="cities"
-                    initialData={CITIES}
+                    initialData={CITIES as any}
                     storageKey="saiflow_master_cities"
                   />
                 </ProtectedRoute>
@@ -319,7 +344,7 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Departments"
+                    pageTitle="Department"
                     itemNameSingular="department"
                     itemNamePlural="departments"
                     initialData={DEPARTMENTS}
@@ -333,10 +358,10 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Designations"
+                    pageTitle="Designation"
                     itemNameSingular="designation"
                     itemNamePlural="designations"
-                    initialData={DESIGNATIONS}
+                    initialData={DESIGNATIONS as any}
                     storageKey="saiflow_master_designations"
                   />
                 </ProtectedRoute>
@@ -347,7 +372,7 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Lead sources"
+                    pageTitle="Lead source"
                     itemNameSingular="lead source"
                     itemNamePlural="lead sources"
                     initialData={LEAD_SOURCES}
@@ -361,7 +386,7 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Industries"
+                    pageTitle="Industry"
                     itemNameSingular="industry"
                     itemNamePlural="industries"
                     initialData={INDUSTRIES}
@@ -371,43 +396,15 @@ export default function App() {
               }
             />
             <Route
-              path="/master/meeting-types"
+              path="/master/tech-stack"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Meeting types"
-                    itemNameSingular="meeting type"
-                    itemNamePlural="meeting types"
-                    initialData={MEETING_TYPES}
-                    storageKey="saiflow_master_meeting_types"
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/master/follow-up-reasons"
-              element={
-                <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <MasterConfigPage
-                    pageTitle="Follow-up reasons"
-                    itemNameSingular="follow-up reason"
-                    itemNamePlural="follow-up reasons"
-                    initialData={FOLLOWUP_REASONS}
-                    storageKey="saiflow_master_followup_reasons"
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/master/lost-reasons"
-              element={
-                <ProtectedRoute allowedRoles={["Administrator"]}>
-                  <MasterConfigPage
-                    pageTitle="Lost reasons"
-                    itemNameSingular="lost reason"
-                    itemNamePlural="lost reasons"
-                    initialData={LOST_REASONS}
-                    storageKey="saiflow_master_lost_reasons"
+                    pageTitle="Tech stack"
+                    itemNameSingular="tech"
+                    itemNamePlural="tech stack"
+                    initialData={TECHNOLOGIES}
+                    storageKey="saiflow_master_technologies"
                   />
                 </ProtectedRoute>
               }
@@ -417,7 +414,7 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Priorities"
+                    pageTitle="Priority"
                     itemNameSingular="priority"
                     itemNamePlural="priorities"
                     initialData={PRIORITIES}
@@ -427,30 +424,60 @@ export default function App() {
               }
             />
             <Route
-              path="/master/followup-types"
+              path="/master/services"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Follow-up types"
-                    itemNameSingular="follow-up type"
-                    itemNamePlural="follow-up types"
-                    initialData={FOLLOWUP_TYPES}
-                    storageKey="saiflow_master_followup_types"
+                    pageTitle="Service"
+                    itemNameSingular="service"
+                    itemNamePlural="services"
+                    initialData={PROJECT_CATEGORIES}
+                    storageKey="saiflow_master_services"
                   />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/master/payment-terms"
+              path="/master/company-types"
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <MasterConfigPage
-                    pageTitle="Payment terms"
-                    itemNameSingular="payment term"
-                    itemNamePlural="payment terms"
-                    initialData={PAYMENT_TERMS}
-                    storageKey="saiflow_master_payment_terms"
+                    pageTitle="Company type"
+                    itemNameSingular="company type"
+                    itemNamePlural="company types"
+                    initialData={COMPANY_TYPES}
+                    storageKey="saiflow_master_company_types"
                   />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/payment-types"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <MasterConfigPage
+                    pageTitle="Payment type"
+                    itemNameSingular="payment type"
+                    itemNamePlural="payment types"
+                    initialData={PAYMENT_TYPES}
+                    storageKey="saiflow_master_payment_types"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/:type/add"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <AddEditMasterPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/:type/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <AddEditMasterPage />
                 </ProtectedRoute>
               }
             />

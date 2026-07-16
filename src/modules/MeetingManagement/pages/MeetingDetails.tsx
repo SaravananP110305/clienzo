@@ -289,6 +289,8 @@ export default function MeetingDetails() {
       paymentTerms: paymentTerms,
       preferredCommunication: "Email",
       creditLimit: creditLimit,
+      handoverStatus: "Pending",
+      handoverHistory: [],
     };
 
     const updatedClients = [...clientsList, newClient];

@@ -109,6 +109,8 @@ export default function LeadDetails() {
       paymentTerms: paymentTerms,
       preferredCommunication: "Email",
       creditLimit: creditLimit,
+      handoverStatus: "Pending",
+      handoverHistory: [],
     };
 
     const updatedClients = [...clientsList, newClient];

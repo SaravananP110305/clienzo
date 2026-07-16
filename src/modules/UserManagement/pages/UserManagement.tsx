@@ -25,6 +25,13 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import {
+  COUNTRIES,
+  STATES,
+  CITIES,
+  DEPARTMENTS,
+  DESIGNATIONS,
+} from "../../Master/data/masterData";
 
 interface User {
   id: number;
@@ -34,14 +41,19 @@ interface User {
   role: string;
   status: "Active" | "Inactive";
   password?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  department?: string;
+  designation?: string;
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123" },
-  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123" },
-  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123" },
-  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123" }
+  { id: 1, name: "John Doe", email: "john.doe@saiflow.com", phone: "+91 98765 43210", role: "Administrator", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Sales", designation: "CEO & Founder" },
+  { id: 2, name: "Jane Smith", email: "jane.smith@saiflow.com", phone: "+91 98765 43211", role: "Business Development Manager", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Business Development", designation: "BD Manager" },
+  { id: 3, name: "Alice Johnson", email: "alice.johnson@saiflow.com", phone: "+91 98765 43212", role: "Business Development Executive", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Business Development", designation: "BD Executive" },
+  { id: 4, name: "Robert Lee", email: "robert.lee@saiflow.com", phone: "+91 98765 43213", role: "Presales Consultant", status: "Active", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Presales", designation: "CEO & Founder" },
+  { id: 5, name: "Emma Watson", email: "emma.watson@saiflow.com", phone: "+91 98765 43214", role: "Guest User", status: "Inactive", password: "Password@123", country: "India", state: "Karnataka", city: "Bangalore", department: "Sales", designation: "CEO & Founder" }
 ];
 
 const availableRoles = [
@@ -59,6 +71,11 @@ interface UserFormValues {
   role: string;
   status: "Active" | "Inactive";
   password?: string;
+  country: string;
+  state: string;
+  city: string;
+  department: string;
+  designation: string;
 }
 
 export default function UserManagement() {
@@ -91,6 +108,8 @@ export default function UserManagement() {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<UserFormValues>({
     mode: "onChange",
@@ -101,8 +120,56 @@ export default function UserManagement() {
       role: "",
       status: "Active",
       password: "",
+      country: "",
+      state: "",
+      city: "",
+      department: "",
+      designation: "",
     },
   });
+
+  const watchCountry = watch("country");
+  const watchState = watch("state");
+  const watchDepartment = watch("department");
+
+  const countryOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+      .filter((c) => c.status === "Active")
+      .map((c) => ({ value: c.name, label: c.name }));
+  }, []);
+
+  const stateOptions = useMemo(() => {
+    const selectedCountryObj = getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+      .find((c) => c.name === watchCountry);
+    if (!selectedCountryObj) return [];
+    return getStorage<any[]>("saiflow_master_states", STATES)
+      .filter((s) => s.countryId === selectedCountryObj.id && s.status === "Active")
+      .map((s) => ({ value: s.name, label: s.name }));
+  }, [watchCountry]);
+
+  const cityOptions = useMemo(() => {
+    const selectedStateObj = getStorage<any[]>("saiflow_master_states", STATES)
+      .find((s) => s.name === watchState);
+    if (!selectedStateObj) return [];
+    return getStorage<any[]>("saiflow_master_cities", CITIES)
+      .filter((c) => c.stateId === selectedStateObj.id && c.status === "Active")
+      .map((c) => ({ value: c.name, label: c.name }));
+  }, [watchState]);
+
+  const departmentOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_departments", DEPARTMENTS)
+      .filter((d) => d.status === "Active")
+      .map((d) => ({ value: d.name, label: d.name }));
+  }, []);
+
+  const designationOptions = useMemo(() => {
+    const selectedDeptObj = getStorage<any[]>("saiflow_master_departments", DEPARTMENTS)
+      .find((d) => d.name === watchDepartment);
+    if (!selectedDeptObj) return [];
+    return getStorage<any[]>("saiflow_master_designations", DESIGNATIONS)
+      .filter((d) => d.departmentId === selectedDeptObj.id && d.status === "Active")
+      .map((d) => ({ value: d.name, label: d.name }));
+  }, [watchDepartment]);
 
   // Handlers
   const handleOpenView = (user: User) => {
@@ -121,6 +188,11 @@ export default function UserManagement() {
       role: "",
       status: "Active",
       password: "",
+      country: "",
+      state: "",
+      city: "",
+      department: "",
+      designation: "",
     });
     formModal.openModal();
   };
@@ -136,6 +208,11 @@ export default function UserManagement() {
       role: user.role,
       status: user.status,
       password: user.password || "",
+      country: user.country || "",
+      state: user.state || "",
+      city: user.city || "",
+      department: user.department || "",
+      designation: user.designation || "",
     });
     formModal.openModal();
   };
@@ -156,6 +233,11 @@ export default function UserManagement() {
         role: data.role,
         status: data.status,
         password: data.password?.trim() || "Password@123",
+        country: data.country,
+        state: data.state,
+        city: data.city,
+        department: data.department,
+        designation: data.designation,
       };
       const updated = [...users, newUser];
       setUsers(updated);
@@ -172,6 +254,11 @@ export default function UserManagement() {
             role: data.role,
             status: data.status,
             password: data.password?.trim() || u.password,
+            country: data.country,
+            state: data.state,
+            city: data.city,
+            department: data.department,
+            designation: data.designation,
           }
           : u
       );
@@ -600,6 +687,24 @@ export default function UserManagement() {
                     {selectedUser.phone}
                   </span>
                 </div>
+                <div>
+                  <span className="text-xs text-gray-400 block">Department</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {selectedUser.department || "—"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 block">Designation</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {selectedUser.designation || "—"}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-xs text-gray-400 block">Location</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {[selectedUser.city, selectedUser.state, selectedUser.country].filter(Boolean).join(", ") || "—"}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -794,6 +899,126 @@ export default function UserManagement() {
                 />
                 {errors.status && (
                   <span className="mt-1.5 text-xs text-error-600 block">{errors.status.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Department <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="department"
+                  control={control}
+                  rules={{ required: "Department is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={departmentOptions}
+                      placeholder="Select department"
+                      defaultValue={value}
+                      onChange={(val) => {
+                        onChange(val);
+                        setValue("designation", "");
+                      }}
+                    />
+                  )}
+                />
+                {errors.department && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.department.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Designation <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="designation"
+                  control={control}
+                  rules={{ required: "Designation is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={designationOptions}
+                      placeholder="Select designation"
+                      defaultValue={value}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+                {errors.designation && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.designation.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Country <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="country"
+                  control={control}
+                  rules={{ required: "Country is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={countryOptions}
+                      placeholder="Select country"
+                      defaultValue={value}
+                      onChange={(val) => {
+                        onChange(val);
+                        setValue("state", "");
+                        setValue("city", "");
+                      }}
+                    />
+                  )}
+                />
+                {errors.country && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.country.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  State <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="state"
+                  control={control}
+                  rules={{ required: "State is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={stateOptions}
+                      placeholder="Select state"
+                      defaultValue={value}
+                      onChange={(val) => {
+                        onChange(val);
+                        setValue("city", "");
+                      }}
+                    />
+                  )}
+                />
+                {errors.state && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.state.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  City <span className="text-error-500">*</span>
+                </label>
+                <Controller
+                  name="city"
+                  control={control}
+                  rules={{ required: "City is required" }}
+                  render={({ field: { value, onChange } }) => (
+                    <Select
+                      options={cityOptions}
+                      placeholder="Select city"
+                      defaultValue={value}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+                {errors.city && (
+                  <span className="mt-1.5 text-xs text-error-600 block">{errors.city.message}</span>
                 )}
               </div>
             </div>

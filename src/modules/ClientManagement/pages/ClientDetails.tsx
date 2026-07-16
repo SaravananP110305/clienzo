@@ -97,11 +97,13 @@ export default function ClientDetails() {
   }, [client, meetings]);
 
   const proposals = getStorage<Proposal[]>("saiflow_proposals", initialProposals);
-  const clientProposal = client.latestProposalId
-    ? proposals.find((p) => p.id === client.latestProposalId)
-    : proposals.find((p) =>
+  const clientProposal = client?.latestProposalId
+    ? proposals.find((p) => p.id === client?.latestProposalId)
+    : client
+    ? proposals.find((p) =>
         p.companyName.toLowerCase() === client.company.toLowerCase()
-      );
+      )
+    : undefined;
 
   const [activeTab, setActiveTab] = useState("overview");
 

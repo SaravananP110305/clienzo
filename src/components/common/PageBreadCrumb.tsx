@@ -31,19 +31,56 @@ const getProposalNo = (id: string | number): string => {
 };
 
 const MASTER_LABELS: Record<string, string> = {
-  countries: "Countries",
-  states: "States",
-  cities: "Cities",
-  departments: "Departments",
-  designations: "Designations",
-  "lead-sources": "Lead sources",
-  industries: "Industries",
-  "meeting-types": "Meeting types",
-  "follow-up-reasons": "Follow-up reasons",
-  "lost-reasons": "Lost reasons",
-  priorities: "Priorities",
-  "followup-types": "Follow-up types",
-  "payment-terms": "Payment terms",
+  countries: "Country",
+  states: "State",
+  cities: "City",
+  departments: "Department",
+  designations: "Designation",
+  "lead-sources": "Lead source",
+  industries: "Industry",
+  "tech-stack": "Tech stack",
+  priorities: "Priority",
+  services: "Service",
+  "company-types": "Company type",
+  "payment-types": "Payment type",
+};
+
+const MASTER_SINGULARS: Record<string, string> = {
+  countries: "country",
+  states: "state",
+  cities: "city",
+  departments: "department",
+  designations: "designation",
+  "lead-sources": "lead source",
+  industries: "industry",
+  "tech-stack": "tech",
+  priorities: "priority",
+  services: "service",
+  "company-types": "company type",
+  "payment-types": "payment type",
+};
+
+const MASTER_KEYS: Record<string, string> = {
+  countries: "saiflow_master_countries",
+  states: "saiflow_master_states",
+  cities: "saiflow_master_cities",
+  departments: "saiflow_master_departments",
+  designations: "saiflow_master_designations",
+  "lead-sources": "saiflow_master_lead_sources",
+  industries: "saiflow_master_industries",
+  "tech-stack": "saiflow_master_technologies",
+  priorities: "saiflow_master_priorities",
+  services: "saiflow_master_services",
+  "company-types": "saiflow_master_company_types",
+  "payment-types": "saiflow_master_payment_types",
+};
+
+const getMasterItemName = (tab: string, id: string | number): string => {
+  const key = MASTER_KEYS[tab];
+  if (!key) return `Item #${id}`;
+  const items = getStorage<any[]>(key, []);
+  const item = items.find((i) => String(i.id) === String(id));
+  return item ? item.name : `Item #${id}`;
 };
 
 const REPORT_LABELS: Record<string, string> = {
@@ -76,15 +113,57 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
     breadcrumbs.push({ label: "Dashboard", to: "/dashboard" });
 
     if (pathname.startsWith("/master/")) {
-      const sub = pathname.replace("/master/", "");
+      const parts = pathname.split("/").filter(Boolean); // ['master', 'countries', 'add'] or ['master', 'countries', '1', 'edit']
+      const tab = parts[1];
+      const actionOrId = parts[2];
+      const isAdd = actionOrId === "add";
+      const id = isAdd ? null : actionOrId;
+      const isEdit = parts[3] === "edit";
+
+      const pluralLabel = MASTER_LABELS[tab] || tab;
+      const singularLabel = MASTER_SINGULARS[tab] || "item";
+
       breadcrumbs.push({ label: "Master", to: "/master/countries" });
-      breadcrumbs.push({ label: MASTER_LABELS[sub] || sub });
+
+      if (isAdd) {
+        breadcrumbs.push({ label: pluralLabel, to: `/master/${tab}` });
+        breadcrumbs.push({ label: `Add ${singularLabel}` });
+      } else if (id && isEdit) {
+        const itemName = getMasterItemName(tab, id);
+        breadcrumbs.push({ label: pluralLabel, to: `/master/${tab}` });
+        breadcrumbs.push({ label: `Edit ${itemName}` });
+      } else {
+        breadcrumbs.push({ label: pluralLabel });
+      }
     } else if (pathname === "/users") {
       breadcrumbs.push({ label: "Manage Users", to: "/users" });
       breadcrumbs.push({ label: "Users" });
     } else if (pathname === "/roles") {
       breadcrumbs.push({ label: "Manage Users", to: "/users" });
       breadcrumbs.push({ label: "User Roles" });
+    } else if (pathname === "/roles/add") {
+      breadcrumbs.push({ label: "Manage Users", to: "/users" });
+      breadcrumbs.push({ label: "User Roles", to: "/roles" });
+      breadcrumbs.push({ label: "Add role" });
+    } else if (pathname.startsWith("/roles/")) {
+      const parts = pathname.split("/");
+      const id = parts[2];
+      const isEdit = parts[3] === "edit";
+      const isView = parts[3] === "view";
+      
+      const roles = getStorage<any[]>("saiflow_roles", []);
+      const role = roles.find((r) => String(r.id) === String(id));
+      const roleLabel = role ? role.roleName : `Role #${id}`;
+
+      breadcrumbs.push({ label: "Manage Users", to: "/users" });
+      breadcrumbs.push({ label: "User Roles", to: "/roles" });
+      if (isEdit) {
+        breadcrumbs.push({ label: `Edit ${roleLabel}` });
+      } else if (isView) {
+        breadcrumbs.push({ label: `View ${roleLabel}` });
+      } else {
+        breadcrumbs.push({ label: roleLabel });
+      }
     } else if (pathname === "/leads") {
       breadcrumbs.push({ label: "Leads" });
     } else if (pathname === "/leads/add") {

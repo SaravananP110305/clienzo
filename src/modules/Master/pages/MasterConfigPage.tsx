@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
-import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
@@ -22,7 +22,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "../../../icons";
-import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 
 export interface MasterItem {
@@ -47,6 +47,8 @@ export default function MasterConfigPage({
   initialData,
   storageKey,
 }: MasterConfigPageProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const [items, setItems] = useState<MasterItem[]>(() => getStorage(storageKey, initialData));
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,18 +62,10 @@ export default function MasterConfigPage({
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
   // Modal control states
-  const viewModal = useModal();
-  const formModal = useModal();
   const deleteModal = useModal();
 
   // Active items mappings
   const [selectedItem, setSelectedItem] = useState<MasterItem | null>(null);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-
-  // Form Fields states
-  const [name, setName] = useState("");
-  const [status, setStatus] = useState<"Active" | "Inactive">("Active");
-  const [errors, setErrors] = useState<{ name?: string }>({});
 
   // Reset list if configuration initialData or storageKey changes (routing changes)
   useEffect(() => {
@@ -84,27 +78,14 @@ export default function MasterConfigPage({
   }, [initialData, storageKey]);
 
   // Handlers
-  const handleOpenView = (item: MasterItem) => {
-    setSelectedItem(item);
-    viewModal.openModal();
-  };
-
   const handleOpenCreate = () => {
-    setModalMode("create");
-    setSelectedItem(null);
-    setName("");
-    setStatus("Active");
-    setErrors({});
-    formModal.openModal();
+    const type = location.pathname.split("/").pop() || "";
+    navigate(`/master/${type}/add`);
   };
 
   const handleOpenEdit = (item: MasterItem) => {
-    setModalMode("edit");
-    setSelectedItem(item);
-    setName(item.name);
-    setStatus(item.status);
-    setErrors({});
-    formModal.openModal();
+    const type = location.pathname.split("/").pop() || "";
+    navigate(`/master/${type}/${item.id}/edit`);
   };
 
   const handleOpenDelete = (item: MasterItem) => {
@@ -112,61 +93,48 @@ export default function MasterConfigPage({
     deleteModal.openModal();
   };
 
-  const validateForm = () => {
-    const newErrors: typeof errors = {};
-    if (!name.trim()) {
-      newErrors.name = `Name is required`;
-    } else if (name.trim().length < 3) {
-      newErrors.name = `Name must be at least 3 characters`;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveItem = () => {
-    if (!validateForm()) {
-      showToast(`Please fix the form errors before saving.`, "error");
-      return;
-    }
-
-    if (modalMode === "create") {
-      const newId = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1;
-      const newItem: MasterItem = {
-        id: newId,
-        name: name.trim(),
-        status,
-      };
-      const updated = [...items, newItem];
-      setItems(updated);
-      setStorage(storageKey, updated);
-      showToast(`"${name.trim()}" ${itemNameSingular} created successfully.`, "success");
-    } else if (modalMode === "edit" && selectedItem) {
-      const updated = items.map((i) =>
-        i.id === selectedItem.id
-          ? { ...i, name: name.trim(), status }
-          : i
-      );
-      setItems(updated);
-      setStorage(storageKey, updated);
-      showToast(`"${name.trim()}" ${itemNameSingular} updated successfully.`, "success");
-    }
-    formModal.closeModal();
-  };
-
   const handleDeleteConfirm = () => {
     if (selectedItem) {
       const currentLeads = getStorage<any[]>("saiflow_leads", []);
       let isUsed = false;
-      if (storageKey === "saiflow_master_lead_sources") {
+      if (storageKey === "saiflow_master_countries") {
+        const clients = getStorage<any[]>("saiflow_clients", []);
+        const users = getStorage<any[]>("saiflow_users", []);
+        isUsed = currentLeads.some((l) => l.country === selectedItem.name) ||
+                 clients.some((c) => c.country === selectedItem.name) ||
+                 users.some((u) => u.country === selectedItem.name);
+      } else if (storageKey === "saiflow_master_states") {
+        const clients = getStorage<any[]>("saiflow_clients", []);
+        const users = getStorage<any[]>("saiflow_users", []);
+        isUsed = currentLeads.some((l) => l.state === selectedItem.name) ||
+                 clients.some((c) => c.state === selectedItem.name) ||
+                 users.some((u) => u.state === selectedItem.name);
+      } else if (storageKey === "saiflow_master_cities") {
+        const clients = getStorage<any[]>("saiflow_clients", []);
+        const users = getStorage<any[]>("saiflow_users", []);
+        isUsed = currentLeads.some((l) => l.city === selectedItem.name) ||
+                 clients.some((c) => c.city === selectedItem.name) ||
+                 users.some((u) => u.city === selectedItem.name);
+      } else if (storageKey === "saiflow_master_departments") {
+        const users = getStorage<any[]>("saiflow_users", []);
+        isUsed = users.some((u) => u.department === selectedItem.name);
+      } else if (storageKey === "saiflow_master_designations") {
+        const users = getStorage<any[]>("saiflow_users", []);
+        const clients = getStorage<any[]>("saiflow_clients", []);
+        isUsed = users.some((u) => u.designation === selectedItem.name) ||
+                 clients.some((c) => c.designation === selectedItem.name) ||
+                 currentLeads.some((l) => l.designation === selectedItem.name);
+      } else if (storageKey === "saiflow_master_lead_sources") {
         isUsed = currentLeads.some((l) => l.source === selectedItem.name);
       } else if (storageKey === "saiflow_master_industries") {
-        isUsed = currentLeads.some((l) => l.industry === selectedItem.name);
-      } else if (storageKey === "saiflow_master_meeting_types") {
-        const meetings = getStorage<any[]>("saiflow_meetings", []);
-        isUsed = meetings.some((m) => m.type === selectedItem.name);
-      } else if (storageKey === "saiflow_master_followup_reasons") {
-        isUsed = currentLeads.some((l) => l.followUpReason === selectedItem.name);
+        const clients = getStorage<any[]>("saiflow_clients", []);
+        isUsed = currentLeads.some((l) => l.industry === selectedItem.name) ||
+                 clients.some((c) => c.industry === selectedItem.name);
+      } else if (storageKey === "saiflow_master_priorities") {
+        isUsed = currentLeads.some((l) => l.priority === selectedItem.name);
+      } else if (storageKey === "saiflow_master_payment_types") {
+        const clients = getStorage<any[]>("saiflow_clients", []);
+        isUsed = clients.some((c) => c.paymentTerms === selectedItem.name);
       }
 
       if (isUsed) {
@@ -397,13 +365,6 @@ export default function MasterConfigPage({
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => handleOpenView(item)}
-                          className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
-                          title="View"
-                        >
-                          <FiEye className="size-4" />
-                        </button>
-                        <button
                           onClick={() => handleOpenEdit(item)}
                           className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
                           title="Edit"
@@ -451,107 +412,6 @@ export default function MasterConfigPage({
           />
         )}
       </div>
-
-      {/* View Item Details Modal */}
-      <Modal isOpen={viewModal.isOpen} onClose={viewModal.closeModal} className="max-w-[500px] m-4">
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              {itemNameSingular} details
-            </h4>
-          </div>
-          {selectedItem && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-gray-400 block">S.No</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedItem.id}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Status</span>
-                  <div className="mt-1">
-                    <Badge
-                      size="sm"
-                      color={selectedItem.status === "Active" ? "success" : "error"}
-                    >
-                      {selectedItem.status}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block">Name</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedItem.name}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="flex items-center justify-end mt-6">
-            <Button size="sm" onClick={viewModal.closeModal}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Create / Edit Form Modal */}
-      <Modal isOpen={formModal.isOpen} onClose={formModal.closeModal} className="max-w-[500px] m-4">
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              {modalMode === "create" ? `Add ${itemNameSingular}` : `Edit ${itemNameSingular}`}
-            </h4>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Name <span className="text-error-500">*</span>
-              </label>
-              <Input
-                type="text"
-                placeholder={`Enter name`}
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (errors.name) setErrors({ ...errors, name: undefined });
-                }}
-                className={errors.name ? "border-error-500" : ""}
-              />
-              {errors.name && (
-                <span className="mt-1.5 text-xs text-error-600 block font-normal">
-                  {errors.name}
-                </span>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Status <span className="text-error-500">*</span>
-              </label>
-              <Select
-                options={[
-                  { value: "Active", label: "Active" },
-                  { value: "Inactive", label: "Inactive" },
-                ]}
-                placeholder="Select status"
-                defaultValue={status}
-                onChange={(val) => setStatus(val as "Active" | "Inactive")}
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3 mt-6">
-            <Button size="sm" variant="outline" onClick={formModal.closeModal}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSaveItem}>
-              Save
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.closeModal} className="max-w-[450px] m-4">

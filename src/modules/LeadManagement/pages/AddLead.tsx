@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
@@ -69,49 +69,12 @@ export default function AddLead() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
 
-  // Data sources setup from master configuration
-  const sourceOptions = getStorage("saiflow_master_lead_sources", LEAD_SOURCES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  const statusOptions = getStorage("saiflow_master_lead_statuses", MASTER_LEAD_STATUSES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  const priorityOptions = getStorage("saiflow_master_priorities", MASTER_PRIORITIES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  const countryOptions = getStorage("saiflow_master_countries", COUNTRIES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  const stateOptions = getStorage("saiflow_master_states", STATES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  const cityOptions = getStorage("saiflow_master_cities", CITIES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  const industryOptions = getStorage("saiflow_master_industries", INDUSTRIES)
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
-  // Employee data from user management list
-  const employeeOptions = getStorage("saiflow_users", [
-    { name: "John Doe", status: "Active" },
-    { name: "Jane Smith", status: "Active" },
-    { name: "Alice Johnson", status: "Active" },
-    { name: "Robert Lee", status: "Active" },
-  ])
-    .filter((x: any) => x.status === "Active")
-    .map((x: any) => ({ value: x.name, label: x.name }));
-
   const {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<LeadFormValues>({
     mode: "onChange",
@@ -143,6 +106,70 @@ export default function AddLead() {
       remarks: "",
     },
   });
+
+  const watchCountry = watch("country");
+  const watchState = watch("state");
+
+  // Data sources setup from master configuration
+  const sourceOptions = useMemo(() => {
+    return getStorage("saiflow_master_lead_sources", LEAD_SOURCES)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const statusOptions = useMemo(() => {
+    return getStorage("saiflow_master_lead_statuses", MASTER_LEAD_STATUSES)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const priorityOptions = useMemo(() => {
+    return getStorage("saiflow_master_priorities", MASTER_PRIORITIES)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const countryOptions = useMemo(() => {
+    return getStorage("saiflow_master_countries", COUNTRIES)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const stateOptions = useMemo(() => {
+    const selectedCountryObj = getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+      .find((c) => c.name === watchCountry);
+    if (!selectedCountryObj) return [];
+    return getStorage<any[]>("saiflow_master_states", STATES)
+      .filter((s) => s.countryId === selectedCountryObj.id && s.status === "Active")
+      .map((s) => ({ value: s.name, label: s.name }));
+  }, [watchCountry]);
+
+  const cityOptions = useMemo(() => {
+    const selectedStateObj = getStorage<any[]>("saiflow_master_states", STATES)
+      .find((s) => s.name === watchState);
+    if (!selectedStateObj) return [];
+    return getStorage<any[]>("saiflow_master_cities", CITIES)
+      .filter((c) => c.stateId === selectedStateObj.id && c.status === "Active")
+      .map((c) => ({ value: c.name, label: c.name }));
+  }, [watchState]);
+
+  const industryOptions = useMemo(() => {
+    return getStorage("saiflow_master_industries", INDUSTRIES)
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  // Employee data from user management list
+  const employeeOptions = useMemo(() => {
+    return getStorage("saiflow_users", [
+      { name: "John Doe", status: "Active" },
+      { name: "Jane Smith", status: "Active" },
+      { name: "Alice Johnson", status: "Active" },
+      { name: "Robert Lee", status: "Active" },
+    ])
+      .filter((x: any) => x.status === "Active")
+      .map((x: any) => ({ value: x.name, label: x.name }));
+  }, []);
 
   useEffect(() => {
     const currentLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
@@ -593,7 +620,11 @@ export default function AddLead() {
                     <Select
                       options={countryOptions}
                       placeholder="Select country"
-                      onChange={onChange}
+                      onChange={(val) => {
+                        onChange(val);
+                        setValue("state", "");
+                        setValue("city", "");
+                      }}
                       defaultValue={value}
                     />
                   )}
@@ -614,7 +645,10 @@ export default function AddLead() {
                     <Select
                       options={stateOptions}
                       placeholder="Select state"
-                      onChange={onChange}
+                      onChange={(val) => {
+                        onChange(val);
+                        setValue("city", "");
+                      }}
                       defaultValue={value}
                     />
                   )}

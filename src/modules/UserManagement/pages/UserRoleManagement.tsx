@@ -1,13 +1,11 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router";
 import { getStorage, setStorage } from "../../../utils/storage";
-import { useForm, Controller } from "react-hook-form";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
-import Select from "../../../components/form/Select";
-import Checkbox from "../../../components/form/input/Checkbox";
 import { Modal } from "../../../components/ui/modal";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
@@ -27,7 +25,7 @@ import {
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 
-interface Permission {
+export interface Permission {
   menu: string;
   key: string;
   parentKey?: string;
@@ -38,7 +36,7 @@ interface Permission {
   delete: boolean;
 }
 
-interface Role {
+export interface Role {
   id: number;
   roleName: string;
   description?: string;
@@ -46,20 +44,19 @@ interface Role {
   permissions: Permission[];
 }
 
-const sidebarStructure = [
+export const sidebarStructure = [
   { name: "Dashboard", key: "dashboard" },
-  { name: "Master Config", key: "master", subItems: [
-    "Countries", "States", "Cities", "Departments", "Designations",
-    "Lead sources", "Industries", "Meeting types", "Follow-up reasons", "Lost reasons",
-    "Priorities", "Follow-up types", "Payment terms"
+  { name: "Master", key: "master", subItems: [
+    "Country", "State", "City", "Department", "Designation",
+    "Lead source", "Industry", "Tech stack", "Priority", "Service",
+    "Company type", "Payment type"
   ] },
   { name: "Manage Users", key: "users", subItems: ["User Roles", "Users"] },
   { name: "Leads", key: "leads" },
   { name: "Connect", key: "connect", subItems: ["All Leads", "Follow-ups"] },
   { name: "Meetings", key: "meetings" },
+  { name: "Proposals", key: "quotations" },
   { name: "Clients", key: "clients" },
-  { name: "Requirements", key: "requirements" },
-  { name: "Quotations", key: "quotations" },
   { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report"] },
   { name: "Settings", key: "settings" }
 ];
@@ -194,7 +191,7 @@ const initialRoles: Role[] = [
   },
 ];
 
-const syncPermissions = (savedPermissions: Permission[]): Permission[] => {
+export const syncPermissions = (savedPermissions: Permission[]): Permission[] => {
   if (!savedPermissions || !Array.isArray(savedPermissions)) {
     return defaultPermissionsList.map(p => ({ ...p }));
   }
@@ -214,14 +211,10 @@ const syncPermissions = (savedPermissions: Permission[]): Permission[] => {
   });
 };
 
-interface RoleFormValues {
-  roleName: string;
-  description?: string;
-  status: "Active" | "Inactive";
-  permissions: Permission[];
-}
+
 
 export default function UserRoleManagement() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [roles, setRoles] = useState<Role[]>(() => {
     const stored = getStorage<Role[]>("saiflow_roles", initialRoles);
@@ -241,114 +234,27 @@ export default function UserRoleManagement() {
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
   // Modal states
-  const viewModal = useModal();
-  const formModal = useModal();
   const deleteModal = useModal();
 
   // Active items mapping
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-
-  // React Hook Form
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<RoleFormValues>({
-    defaultValues: {
-      roleName: "",
-      description: "",
-      status: "Active",
-      permissions: defaultPermissionsList,
-    },
-  });
-
-  const currentPermissions = watch("permissions") || defaultPermissionsList;
-
-  const handlePermissionChange = (
-    index: number,
-    field: "view" | "create" | "edit" | "delete",
-    checked: boolean
-  ) => {
-    const updated = [...currentPermissions];
-    updated[index] = {
-      ...updated[index],
-      [field]: checked,
-    };
-    setValue("permissions", updated);
-  };
 
   // Handlers
   const handleOpenView = (role: Role) => {
-    setSelectedRole(role);
-    viewModal.openModal();
+    navigate(`/roles/${role.id}/view`);
   };
 
   const handleOpenCreate = () => {
-    setModalMode("create");
-    setSelectedRole(null);
-    reset({
-      roleName: "",
-      description: "",
-      status: "Active",
-      permissions: defaultPermissionsList.map((p) => ({ ...p })),
-    });
-    formModal.openModal();
+    navigate("/roles/add");
   };
 
   const handleOpenEdit = (role: Role) => {
-    setModalMode("edit");
-    setSelectedRole(role);
-    reset({
-      roleName: role.roleName,
-      description: role.description,
-      status: role.status,
-      permissions: syncPermissions(role.permissions),
-    });
-    formModal.openModal();
+    navigate(`/roles/${role.id}/edit`);
   };
 
   const handleOpenDelete = (role: Role) => {
     setSelectedRole(role);
     deleteModal.openModal();
-  };
-
-  const handleSaveRole = (data: RoleFormValues) => {
-    if (modalMode === "create") {
-      const newId = roles.length > 0 ? Math.max(...roles.map((r) => r.id)) + 1 : 1;
-      const newRole: Role = {
-        id: newId,
-        roleName: data.roleName.trim(),
-        status: data.status,
-        permissions: data.permissions,
-      };
-      const updated = [...roles, newRole];
-      setRoles(updated);
-      setStorage("saiflow_roles", updated);
-      showToast("Role created successfully.", "success");
-    } else if (modalMode === "edit" && selectedRole) {
-      const updated = roles.map((r) =>
-        r.id === selectedRole.id
-          ? {
-            ...r,
-            roleName: data.roleName.trim(),
-            status: data.status,
-            permissions: data.permissions,
-          }
-          : r
-      );
-      setRoles(updated);
-      setStorage("saiflow_roles", updated);
-      showToast("Role updated successfully.", "success");
-    }
-    formModal.closeModal();
-  };
-
-  const handleFormError = () => {
-    showToast("Please fill all required fields.", "error");
   };
 
   const handleDeleteConfirm = () => {
@@ -630,251 +536,7 @@ export default function UserRoleManagement() {
         )}
       </div>
 
-      {/* View Role Modal (Read-Only details) */}
-      <Modal isOpen={viewModal.isOpen} onClose={viewModal.closeModal} className="max-w-[500px] m-4">
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">Role details</h4>
-          </div>
-          {selectedRole && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-gray-400 block">S.No</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedRole.id}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Status</span>
-                  <div className="mt-1">
-                    <Badge
-                      size="sm"
-                      color={selectedRole.status === "Active" ? "success" : "error"}
-                    >
-                      {selectedRole.status}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block">Role name</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {selectedRole.roleName}
-                  </span>
-                </div>
 
-                {/* View Role Menu Privileges Matrix */}
-                <div className="col-span-2 mt-4">
-                  <span className="text-xs text-gray-400 block mb-2 font-medium">
-                    Menu privileges
-                  </span>
-                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 max-h-[250px] overflow-y-auto custom-scrollbar">
-                    <table className="w-full text-left text-xs text-gray-500 dark:text-gray-400 border-collapse">
-                      <thead className="bg-gray-100/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 font-semibold uppercase sticky top-0">
-                        <tr>
-                          <th className="px-3 py-2">Menu</th>
-                          <th className="px-3 py-2 text-center">View</th>
-                          <th className="px-3 py-2 text-center">Create</th>
-                          <th className="px-3 py-2 text-center">Edit</th>
-                          <th className="px-3 py-2 text-center">Delete</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-150 dark:divide-gray-800 text-gray-800 dark:text-white/80">
-                        {(selectedRole.permissions || defaultPermissionsList).map((perm) => {
-                          const isSub = perm.isSubMenu;
-                          const hasSub = sidebarStructure.find(item => item.key === perm.key)?.subItems !== undefined;
-                          return (
-                            <tr key={perm.key} className={`${isSub ? "bg-white dark:bg-transparent" : "bg-gray-50/40 dark:bg-white/[0.01] font-semibold"} hover:bg-gray-50 dark:hover:bg-white/[0.01]`}>
-                              <td className={`px-3 py-2 ${isSub ? "pl-6 text-gray-500 dark:text-gray-400 text-xs" : "text-xs text-gray-800 dark:text-white/90"}`}>
-                                {isSub ? `└─ ${perm.menu}` : perm.menu}
-                              </td>
-                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.view ? "✅" : "❌")}</td>
-                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.create ? "✅" : "❌")}</td>
-                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.edit ? "✅" : "❌")}</td>
-                              <td className="px-3 py-2 text-center">{hasSub ? <span className="text-gray-400 dark:text-gray-600">—</span> : (perm.delete ? "✅" : "❌")}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="flex items-center justify-end mt-6">
-            <Button size="sm" onClick={viewModal.closeModal}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Create/Edit Form Modal */}
-      <Modal isOpen={formModal.isOpen} onClose={formModal.closeModal} className="max-w-[650px] m-4">
-        <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="pr-10 border-b border-gray-150 pb-4 mb-4 dark:border-gray-800">
-            <h4 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              {modalMode === "create" ? "Add role" : "Edit role"}
-            </h4>
-          </div>
-          <form onSubmit={handleSubmit(handleSaveRole, handleFormError)} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Role name <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="roleName"
-                  control={control}
-                  rules={{
-                    required: "Role name is required",
-                    minLength: { value: 3, message: "Role name must be at least 3 characters" },
-                  }}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="Enter role name"
-                      className={errors.roleName ? "border-error-500" : ""}
-                    />
-                  )}
-                />
-                {errors.roleName && (
-                  <span className="mt-1.5 text-xs text-error-600 block">
-                    {errors.roleName.message}
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Status <span className="text-error-500">*</span>
-                </label>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field: { value, onChange } }) => (
-                    <Select
-                      options={[
-                        { value: "Active", label: "Active" },
-                        { value: "Inactive", label: "Inactive" },
-                      ]}
-                      placeholder="Select status"
-                      defaultValue={value}
-                      onChange={onChange}
-                    />
-                  )}
-                />
-              </div>
-
-              {/* Menu Privileges Table with Toggles */}
-              <div className="sm:col-span-2 mt-2">
-                <label className="mb-2.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Menu privileges
-                </label>
-                <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 max-h-[280px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-left text-xs text-gray-500 dark:text-gray-400 border-collapse">
-                    <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold uppercase sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800">
-                      <tr>
-                        <th className="px-4 py-2.5">Menu</th>
-                        <th className="px-4 py-2.5 text-center">View</th>
-                        <th className="px-4 py-2.5 text-center">Create</th>
-                        <th className="px-4 py-2.5 text-center">Edit</th>
-                        <th className="px-4 py-2.5 text-center">Delete</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-150 dark:divide-gray-800 text-gray-800 dark:text-white/90">
-                      {currentPermissions.map((perm, idx) => {
-                        const isSub = perm.isSubMenu;
-                        const hasSub = sidebarStructure.find(item => item.key === perm.key)?.subItems !== undefined;
-                        return (
-                          <tr
-                            key={perm.key}
-                            className={`${isSub ? "bg-white dark:bg-transparent" : "bg-gray-50/40 dark:bg-white/[0.01] font-semibold"} hover:bg-gray-100/50 dark:hover:bg-white/[0.01]`}
-                          >
-                            <td className={`px-4 py-2.5 ${isSub ? "pl-8 text-gray-600 dark:text-gray-400 text-xs" : "text-sm text-gray-800 dark:text-white/90"}`}>
-                              {isSub ? (
-                                <span className="flex items-center gap-1.5">
-                                  <span className="text-gray-300 dark:text-gray-700">└─</span>
-                                  {perm.menu}
-                                </span>
-                              ) : (
-                                perm.menu
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <div className="flex justify-center">
-                                {!hasSub ? (
-                                  <Checkbox
-                                    checked={perm.view}
-                                    onChange={(checked) => handlePermissionChange(idx, "view", checked)}
-                                  />
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-600">—</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <div className="flex justify-center">
-                                {!hasSub ? (
-                                  <Checkbox
-                                    checked={perm.create}
-                                    onChange={(checked) =>
-                                      handlePermissionChange(idx, "create", checked)
-                                    }
-                                  />
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-600">—</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <div className="flex justify-center">
-                                {!hasSub ? (
-                                  <Checkbox
-                                    checked={perm.edit}
-                                    onChange={(checked) => handlePermissionChange(idx, "edit", checked)}
-                                  />
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-600">—</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <div className="flex justify-center">
-                                {!hasSub ? (
-                                  <Checkbox
-                                    checked={perm.delete}
-                                    onChange={(checked) =>
-                                      handlePermissionChange(idx, "delete", checked)
-                                    }
-                                  />
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-600">—</span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
-              <Button size="sm" variant="outline" onClick={formModal.closeModal}>
-                Cancel
-              </Button>
-              <Button size="sm" type="submit">
-                Save
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.closeModal} className="max-w-[450px] m-4">

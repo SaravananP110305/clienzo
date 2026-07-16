@@ -1,5 +1,12 @@
 import { MasterItem } from "../pages/MasterConfigPage";
 
+// Extend MasterItem to include parent foreign key support
+export interface MasterItemMapped extends MasterItem {
+  countryId?: number;
+  stateId?: number;
+  departmentId?: number;
+}
+
 export const LEAD_SOURCES: MasterItem[] = [
   { id: 1, name: "Website", status: "Active" },
   { id: 2, name: "Referral", status: "Active" },
@@ -18,33 +25,6 @@ export const INDUSTRIES: MasterItem[] = [
   { id: 6, name: "Education", status: "Inactive" },
 ];
 
-export const MEETING_TYPES: MasterItem[] = [
-  { id: 1, name: "Discovery Call", status: "Active" },
-  { id: 2, name: "Product Demo", status: "Active" },
-  { id: 3, name: "Proposal Review", status: "Active" },
-  { id: 4, name: "Negotiation", status: "Active" },
-  { id: 5, name: "Onboarding", status: "Active" },
-  { id: 6, name: "Follow-up Call", status: "Inactive" },
-];
-
-export const FOLLOWUP_REASONS: MasterItem[] = [
-  { id: 1, name: "Pending Decision", status: "Active" },
-  { id: 2, name: "Budget Review", status: "Active" },
-  { id: 3, name: "Technical Evaluation", status: "Active" },
-  { id: 4, name: "Stakeholder Approval", status: "Active" },
-  { id: 5, name: "Proposal Sent", status: "Active" },
-  { id: 6, name: "No Response", status: "Inactive" },
-];
-
-export const LOST_REASONS: MasterItem[] = [
-  { id: 1, name: "Budget Constraints", status: "Active" },
-  { id: 2, name: "Chose Competitor", status: "Active" },
-  { id: 3, name: "No Decision Made", status: "Active" },
-  { id: 4, name: "Poor Fit", status: "Active" },
-  { id: 5, name: "Timeline Mismatch", status: "Active" },
-  { id: 6, name: "Lost Contact", status: "Inactive" },
-];
-
 export const COUNTRIES: MasterItem[] = [
   { id: 1, name: "India", status: "Active" },
   { id: 2, name: "United States", status: "Active" },
@@ -53,20 +33,20 @@ export const COUNTRIES: MasterItem[] = [
   { id: 5, name: "Australia", status: "Active" }
 ];
 
-export const STATES: MasterItem[] = [
-  { id: 1, name: "Karnataka", status: "Active" },
-  { id: 2, name: "New York", status: "Active" },
-  { id: 3, name: "California", status: "Active" },
-  { id: 4, name: "Maharashtra", status: "Active" },
-  { id: 5, name: "Ontario", status: "Active" }
+export const STATES: MasterItemMapped[] = [
+  { id: 1, name: "Karnataka", countryId: 1, status: "Active" },
+  { id: 2, name: "New York", countryId: 2, status: "Active" },
+  { id: 3, name: "California", countryId: 2, status: "Active" },
+  { id: 4, name: "Maharashtra", countryId: 1, status: "Active" },
+  { id: 5, name: "Ontario", countryId: 4, status: "Active" }
 ];
 
-export const CITIES: MasterItem[] = [
-  { id: 1, name: "Bangalore", status: "Active" },
-  { id: 2, name: "Mumbai", status: "Active" },
-  { id: 3, name: "New York City", status: "Active" },
-  { id: 4, name: "San Francisco", status: "Active" },
-  { id: 5, name: "Toronto", status: "Active" }
+export const CITIES: MasterItemMapped[] = [
+  { id: 1, name: "Bangalore", stateId: 1, status: "Active" },
+  { id: 2, name: "Mumbai", stateId: 4, status: "Active" },
+  { id: 3, name: "New York City", stateId: 2, status: "Active" },
+  { id: 4, name: "San Francisco", stateId: 3, status: "Active" },
+  { id: 5, name: "Toronto", stateId: 5, status: "Active" }
 ];
 
 export const DEPARTMENTS: MasterItem[] = [
@@ -78,14 +58,14 @@ export const DEPARTMENTS: MasterItem[] = [
   { id: 6, name: "DevOps", status: "Active" }
 ];
 
-export const DESIGNATIONS: MasterItem[] = [
-  { id: 1, name: "CEO & Founder", status: "Active" },
-  { id: 2, name: "BD Manager", status: "Active" },
-  { id: 3, name: "BD Executive", status: "Active" },
-  { id: 4, name: "Tech Lead", status: "Active" },
-  { id: 5, name: "Senior Developer", status: "Active" },
-  { id: 6, name: "QA Lead", status: "Active" },
-  { id: 7, name: "DevOps Engineer", status: "Active" }
+export const DESIGNATIONS: MasterItemMapped[] = [
+  { id: 1, name: "CEO & Founder", departmentId: 1, status: "Active" },
+  { id: 2, name: "BD Manager", departmentId: 2, status: "Active" },
+  { id: 3, name: "BD Executive", departmentId: 2, status: "Active" },
+  { id: 4, name: "Tech Lead", departmentId: 3, status: "Active" },
+  { id: 5, name: "Senior Developer", departmentId: 3, status: "Active" },
+  { id: 6, name: "QA Lead", departmentId: 5, status: "Active" },
+  { id: 7, name: "DevOps Engineer", departmentId: 6, status: "Active" }
 ];
 
 export const TECHNOLOGIES: MasterItem[] = [
@@ -98,37 +78,11 @@ export const TECHNOLOGIES: MasterItem[] = [
   { id: 7, name: "Docker & K8s", status: "Active" }
 ];
 
-export const LEAD_STATUSES: MasterItem[] = [
-  { id: 1, name: "New", status: "Active" },
-  { id: 2, name: "Contacted", status: "Active" },
-  { id: 3, name: "Qualified", status: "Active" },
-  { id: 4, name: "Proposal Sent", status: "Active" },
-  { id: 5, name: "Won", status: "Active" },
-  { id: 6, name: "Lost", status: "Active" }
-];
-
 export const PRIORITIES: MasterItem[] = [
   { id: 1, name: "Critical", status: "Active" },
   { id: 2, name: "High", status: "Active" },
   { id: 3, name: "Medium", status: "Active" },
   { id: 4, name: "Low", status: "Active" }
-];
-
-export const PAYMENT_TERMS: MasterItem[] = [
-  { id: 1, name: "Net 15", status: "Active" },
-  { id: 2, name: "Net 30", status: "Active" },
-  { id: 3, name: "Net 45", status: "Active" },
-  { id: 4, name: "Net 60", status: "Active" },
-  { id: 5, name: "Immediate", status: "Active" },
-  { id: 6, name: "Advance Payment", status: "Inactive" },
-];
-
-export const FOLLOWUP_TYPES: MasterItem[] = [
-  { id: 1, name: "Email Outreach", status: "Active" },
-  { id: 2, name: "Phone Call", status: "Active" },
-  { id: 3, name: "Video Meeting", status: "Active" },
-  { id: 4, name: "In-Person Meeting", status: "Active" },
-  { id: 5, name: "WhatsApp Chat", status: "Active" }
 ];
 
 export const PROJECT_CATEGORIES: MasterItem[] = [
@@ -139,4 +93,36 @@ export const PROJECT_CATEGORIES: MasterItem[] = [
   { id: 5, name: "UI/UX Consultation", status: "Active" }
 ];
 
+export const COMPANY_TYPES: MasterItem[] = [
+  { id: 1, name: "Proprietorship", status: "Active" },
+  { id: 2, name: "Partnership", status: "Active" },
+  { id: 3, name: "Private Limited", status: "Active" },
+  { id: 4, name: "Public Limited", status: "Active" },
+  { id: 5, name: "LLP", status: "Active" }
+];
 
+export const PAYMENT_TYPES: MasterItem[] = [
+  { id: 1, name: "Cash", status: "Active" },
+  { id: 2, name: "Bank Transfer", status: "Active" },
+  { id: 3, name: "Credit Card", status: "Active" },
+  { id: 4, name: "UPI", status: "Active" },
+  { id: 5, name: "Cheque", status: "Active" }
+];
+
+export const LEAD_STATUSES: MasterItem[] = [
+  { id: 1, name: "New", status: "Active" },
+  { id: 2, name: "Contacted", status: "Active" },
+  { id: 3, name: "Qualified", status: "Active" },
+  { id: 4, name: "Proposal Sent", status: "Active" },
+  { id: 5, name: "Won", status: "Active" },
+  { id: 6, name: "Lost", status: "Active" }
+];
+
+export const LOST_REASONS: MasterItem[] = [
+  { id: 1, name: "Budget Constraints", status: "Active" },
+  { id: 2, name: "Chose Competitor", status: "Active" },
+  { id: 3, name: "No Decision Made", status: "Active" },
+  { id: 4, name: "Poor Fit", status: "Active" },
+  { id: 5, name: "Timeline Mismatch", status: "Active" },
+  { id: 6, name: "Lost Contact", status: "Inactive" },
+];

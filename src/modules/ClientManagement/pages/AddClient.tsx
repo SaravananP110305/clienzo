@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -8,22 +8,17 @@ import Select from "../../../components/form/Select";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
 import { initialClients, Client } from "../data/clientsData";
+import {
+  COUNTRIES,
+  STATES,
+  CITIES,
+  INDUSTRIES,
+  DESIGNATIONS,
+  PAYMENT_TYPES,
+} from "../../Master/data/masterData";
 
-const PAYMENT_TERMS = ["Net 15", "Net 30", "Net 45", "Immediate"];
 const COMMUNICATION_OPTS = ["Email", "Phone", "WhatsApp"];
 const ASSIGNEES = ["John Doe", "Jane Smith", "Alice Johnson", "Robert Lee"];
-const INDUSTRIES = [
-  "Information Technology",
-  "Finance",
-  "Healthcare",
-  "Manufacturing",
-  "Retail",
-  "Education",
-  "Real Estate",
-  "Logistics",
-  "Energy",
-  "Telecom",
-];
 
 export default function AddClient() {
   const navigate = useNavigate();
@@ -61,9 +56,52 @@ export default function AddClient() {
   const [accountManager, setAccountManager] = useState("");
 
   const [clientSince, setClientSince] = useState("");
-  const [paymentTerms, setPaymentTerms] = useState("Net 30");
+  const [paymentTerms, setPaymentTerms] = useState("Immediate");
   const [preferredCommunication, setPreferredCommunication] = useState("Email");
   const [creditLimit, setCreditLimit] = useState("");
+
+  // Master lists
+  const industryOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_industries", INDUSTRIES)
+      .filter((x) => x.status === "Active")
+      .map((x) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const designationOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_designations", DESIGNATIONS)
+      .filter((x) => x.status === "Active")
+      .map((x) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const paymentTypeOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_payment_types", PAYMENT_TYPES)
+      .filter((x) => x.status === "Active")
+      .map((x) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const countryOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+      .filter((x) => x.status === "Active")
+      .map((x) => ({ value: x.name, label: x.name }));
+  }, []);
+
+  const stateOptions = useMemo(() => {
+    const selectedCountryObj = getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+      .find((c) => c.name === country);
+    if (!selectedCountryObj) return [];
+    return getStorage<any[]>("saiflow_master_states", STATES)
+      .filter((s) => s.countryId === selectedCountryObj.id && s.status === "Active")
+      .map((s) => ({ value: s.name, label: s.name }));
+  }, [country]);
+
+  const cityOptions = useMemo(() => {
+    const selectedStateObj = getStorage<any[]>("saiflow_master_states", STATES)
+      .find((s) => s.name === state);
+    if (!selectedStateObj) return [];
+    return getStorage<any[]>("saiflow_master_cities", CITIES)
+      .filter((c) => c.stateId === selectedStateObj.id && c.status === "Active")
+      .map((c) => ({ value: c.name, label: c.name }));
+  }, [state]);
 
   // ── Load data ──────────────────────────────
 
@@ -185,6 +223,8 @@ export default function AddClient() {
         paymentTerms: paymentTerms || undefined,
         preferredCommunication: preferredCommunication || undefined,
         creditLimit: creditLimit || undefined,
+        handoverStatus: "Pending",
+        handoverHistory: [],
       };
       setStorage("saiflow_clients", [...clients, newClient]);
       showToast("Client added successfully.", "success");
@@ -259,7 +299,7 @@ export default function AddClient() {
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Industry</label>
               <Select
-                options={INDUSTRIES.map((i) => ({ value: i, label: i }))}
+                options={industryOptions}
                 placeholder="Select industry"
                 defaultValue={industry}
                 onChange={(val) => setIndustry(val)}
@@ -277,9 +317,40 @@ export default function AddClient() {
             <div className="sm:col-span-2">
               {renderField("Office Address", address, setAddress, { placeholder: "45 Tech Corridor, ITPL Road" })}
             </div>
-            {renderField("City", city, setCity, { placeholder: "Bangalore" })}
-            {renderField("State", state, setState, { placeholder: "Karnataka" })}
-            {renderField("Country", country, setCountry, { placeholder: "India" })}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Country</label>
+              <Select
+                options={countryOptions}
+                placeholder="Select country"
+                defaultValue={country}
+                onChange={(val) => {
+                  setCountry(val);
+                  setState("");
+                  setCity("");
+                }}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">State</label>
+              <Select
+                options={stateOptions}
+                placeholder="Select state"
+                defaultValue={state}
+                onChange={(val) => {
+                  setState(val);
+                  setCity("");
+                }}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">City</label>
+              <Select
+                options={cityOptions}
+                placeholder="Select city"
+                defaultValue={city}
+                onChange={(val) => setCity(val)}
+              />
+            </div>
             {renderField("Pincode", pincode, setPincode, { placeholder: "560066" })}
           </div>
         </div>
@@ -289,7 +360,15 @@ export default function AddClient() {
           {sectionHeader("Contact Person")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {renderField("Contact Name", contactName, setContactName, { placeholder: "Johnathan Doe" })}
-            {renderField("Designation", designation, setDesignation, { placeholder: "BD Director" })}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Designation</label>
+              <Select
+                options={designationOptions}
+                placeholder="Select designation"
+                defaultValue={designation}
+                onChange={(val) => setDesignation(val)}
+              />
+            </div>
             {renderField("Mobile", mobile, setMobile, { placeholder: "+1 (555) 019-2831" })}
           </div>
         </div>
@@ -325,10 +404,10 @@ export default function AddClient() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {renderField("Client Since", clientSince, setClientSince, { type: "date" })}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Payment Terms</label>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Payment Type</label>
               <Select
-                options={PAYMENT_TERMS.map((t) => ({ value: t, label: t }))}
-                placeholder="Select terms"
+                options={paymentTypeOptions}
+                placeholder="Select payment type"
                 defaultValue={paymentTerms}
                 onChange={(val) => setPaymentTerms(val)}
               />
