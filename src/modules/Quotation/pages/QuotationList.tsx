@@ -202,6 +202,10 @@ export default function QuotationList() {
         // Non-destructive: one-click
         updateStatus(proposal.id, "Sent", "Proposal sent to client for review.");
         break;
+      case "review":
+        // Non-destructive: one-click
+        updateStatus(proposal.id, "Under Review", "Client acknowledged receipt and is reviewing the proposal.");
+        break;
       case "convert":
         // Significant action: keep confirmation
         setConfirmAction({
@@ -599,6 +603,16 @@ export default function QuotationList() {
                 Send Proposal
               </Button>
             )}
+            {selectedProposal.status === "Sent" && (
+              <>
+                <Button onClick={() => handleStatusAction("review", selectedProposal)} size="sm" variant="outline" startIcon={<FiClock />}>
+                  Mark as Reviewed
+                </Button>
+                <Button onClick={() => handleStatusAction("reject", selectedProposal)} size="sm" variant="outline" startIcon={<FiXCircle />}>
+                  Reject
+                </Button>
+              </>
+            )}
             {selectedProposal.status === "Under Review" && (
               <>
                 <Button onClick={() => handleStatusAction("negotiate", selectedProposal)} size="sm" variant="outline" startIcon={<FiRefreshCw />}>
@@ -607,12 +621,10 @@ export default function QuotationList() {
                 <Button onClick={() => handleStatusAction("approved", selectedProposal)} size="sm" variant="primary" startIcon={<FiCheckCircle />}>
                   Approve
                 </Button>
+                <Button onClick={() => handleStatusAction("reject", selectedProposal)} size="sm" variant="outline" startIcon={<FiXCircle />}>
+                  Reject
+                </Button>
               </>
-            )}
-            {(selectedProposal.status === "Sent" || selectedProposal.status === "Under Review") && (
-              <Button onClick={() => handleStatusAction("reject", selectedProposal)} size="sm" variant="outline" startIcon={<FiXCircle />}>
-                Reject
-              </Button>
             )}
             {selectedProposal.status === "Negotiation" && (
               <Button onClick={() => handleRevise(selectedProposal)} size="sm" variant="primary" startIcon={<FiRefreshCw />}>

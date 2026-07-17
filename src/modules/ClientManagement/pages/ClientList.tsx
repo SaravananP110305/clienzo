@@ -33,16 +33,6 @@ import { exportProposalToPDF } from "../../Quotation/pages/QuotationList";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const PROPOSAL_STATUS_COLORS: Record<string, "primary" | "success" | "error" | "warning" | "info" | "light" | "dark"> = {
-  Draft: "light",
-  Sent: "info",
-  "Under Review": "warning",
-  Negotiation: "warning",
-  Approved: "success",
-  Rejected: "error",
-  Converted: "primary",
-};
-
 const HANDOVER_STATUS_COLORS: Record<string, "warning" | "success"> = {
   Pending: "warning",
   Onboarded: "success",
@@ -87,8 +77,6 @@ export default function ClientList() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
-
-
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -132,6 +120,9 @@ export default function ClientList() {
 
   const processedClients = useMemo(() => {
     let result = [...clients];
+
+    // Only show converted clients (those with a conversionDate)
+    result = result.filter((c) => c.conversionDate);
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -288,8 +279,6 @@ export default function ClientList() {
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Company</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Contact Number</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Email</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Proposal Status</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Latest Proposal</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Conversion Date</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Assigned Employee</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Handover Status</TableCell>
@@ -298,9 +287,7 @@ export default function ClientList() {
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {paginatedClients.length > 0 ? (
-                paginatedClients.map((client) => {
-                  const proposal = getProposalForClient(client);
-                  return (
+                paginatedClients.map((client) => (
                     <TableRow key={client.id}
                       className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                     >
@@ -336,31 +323,6 @@ export default function ClientList() {
                       {/* Email */}
                       <TableCell className="px-5 py-4 whitespace-nowrap text-theme-sm text-gray-700 dark:text-gray-400">
                         {client.email}
-                      </TableCell>
-                      {/* Proposal Status */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap text-center">
-                        {proposal ? (
-                          <Badge size="sm" color={PROPOSAL_STATUS_COLORS[proposal.status] || "light"}>
-                            {proposal.status}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
-                      </TableCell>
-                      {/* Latest Proposal PDF */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap text-center">
-                        {proposal ? (
-                          <button
-                            onClick={() => exportClientProposalPDF(client)}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 cursor-pointer bg-brand-50 dark:bg-brand-900/20 px-2.5 py-1 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors"
-                            title="Download Proposal PDF"
-                          >
-                            <FiDownload className="size-3" />
-                            {proposal.proposalNo}
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
                       </TableCell>
                       {/* Conversion Date */}
                       <TableCell className="px-5 py-4 whitespace-nowrap">
@@ -420,11 +382,10 @@ export default function ClientList() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  );
-                })
+                ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={11} className="px-5 py-12 text-center">
+                  <TableCell colSpan={9} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <FiUsers className="size-10 text-gray-300 dark:text-gray-600" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">No clients found.</p>

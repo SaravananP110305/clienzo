@@ -5,7 +5,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
-import { getStorage, setStorage } from "../../../utils/storage";
+import { getStorage, getMasterStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
 import { initialClients, Client } from "../data/clientsData";
 import {
@@ -80,25 +80,25 @@ export default function AddClient() {
   }, []);
 
   const countryOptions = useMemo(() => {
-    return getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+    return getMasterStorage<any[]>("saiflow_master_countries", COUNTRIES)
       .filter((x) => x.status === "Active")
       .map((x) => ({ value: x.name, label: x.name }));
   }, []);
 
   const stateOptions = useMemo(() => {
-    const selectedCountryObj = getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+    const selectedCountryObj = getMasterStorage<any[]>("saiflow_master_countries", COUNTRIES)
       .find((c) => c.name === country);
     if (!selectedCountryObj) return [];
-    return getStorage<any[]>("saiflow_master_states", STATES)
+    return getMasterStorage<any[]>("saiflow_master_states", STATES)
       .filter((s) => s.countryId === selectedCountryObj.id && s.status === "Active")
       .map((s) => ({ value: s.name, label: s.name }));
   }, [country]);
 
   const cityOptions = useMemo(() => {
-    const selectedStateObj = getStorage<any[]>("saiflow_master_states", STATES)
+    const selectedStateObj = getMasterStorage<any[]>("saiflow_master_states", STATES)
       .find((s) => s.name === state);
     if (!selectedStateObj) return [];
-    return getStorage<any[]>("saiflow_master_cities", CITIES)
+    return getMasterStorage<any[]>("saiflow_master_cities", CITIES)
       .filter((c) => c.stateId === selectedStateObj.id && c.status === "Active")
       .map((c) => ({ value: c.name, label: c.name }));
   }, [state]);

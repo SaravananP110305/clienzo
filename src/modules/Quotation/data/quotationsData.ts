@@ -18,6 +18,7 @@ export interface RequirementSection {
   deliverables: string[];
   assumptions: string[];
   constraints: string[];
+  techStack?: string[];
 }
 
 // ─── Section: Estimation ─────────────────────────────────────────────────────

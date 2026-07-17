@@ -69,7 +69,17 @@ export default function MasterConfigPage({
 
   // Reset list if configuration initialData or storageKey changes (routing changes)
   useEffect(() => {
-    setItems(getStorage(storageKey, initialData));
+    // Refresh localStorage if the initialData has new items not yet stored
+    const stored = getStorage<MasterItem[]>(storageKey, initialData);
+    const existingIds = new Set(stored.map(i => i.id));
+    const missingItems = initialData.filter(i => !existingIds.has(i.id));
+    if (missingItems.length > 0) {
+      const merged = [...stored, ...missingItems];
+      setStorage(storageKey, merged);
+      setItems(merged);
+    } else {
+      setItems(stored);
+    }
     setSearchQuery("");
     setStatusFilter("all");
     setCurrentPage(1);

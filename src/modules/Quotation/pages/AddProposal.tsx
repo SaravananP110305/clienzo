@@ -17,15 +17,14 @@ import {
   initialProposals,
 } from "../data/quotationsData";
 import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
-import { FiPlus, FiTrash2, FiXCircle, FiUser, FiList, FiDollarSign, FiFileText } from "react-icons/fi";
+import {
+  TECHNOLOGIES,
+  PROJECT_CATEGORIES,
+  PAYMENT_TYPES,
+} from "../../Master/data/masterData";
+import { FiPlus, FiTrash2, FiXCircle, FiUser, FiList, FiDollarSign, FiFileText, FiCpu } from "react-icons/fi";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-
-const CATEGORY_OPTIONS = [
-  "UI/UX Design", "Frontend", "Backend", "Mobile App", "Integration",
-  "Data Engineering", "Testing", "Deployment", "Documentation",
-  "Consulting", "Maintenance", "Other",
-];
 
 
 
@@ -48,6 +47,7 @@ const EMPTY_REQUIREMENT: RequirementSection = {
   deliverables: [""],
   assumptions: [""],
   constraints: [""],
+  techStack: [],
 };
 
 const EMPTY_ESTIMATION_ITEM: EstimationLineItem = {
@@ -62,6 +62,47 @@ export default function AddProposal() {
   const isEditMode = !!id;
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
+
+  // ── Master Data Options ──────────────────────────────────────────────────────
+  const serviceOptions = useMemo(() => {
+    // Combine legacy categories (for sample data backward compat) with PROJECT_CATEGORIES from master data
+    const legacyCats = [
+      "Development", "UI/UX Design", "Frontend", "Backend", "Mobile App", "Integration",
+      "Data Engineering", "Testing", "Deployment", "Documentation",
+      "Consulting", "Maintenance", "UI/UX", "Dashboard", "ML/AI",
+      "Payments", "Inventory", "CRM Core", "AI Integration", "Workflow",
+      "Reporting", "Data Pipeline", "Processing", "Automation", "Admin Panel", "Other",
+    ];
+    const masterCategories = getStorage<any[]>("saiflow_master_services", PROJECT_CATEGORIES)
+      .filter((s: any) => s.status === "Active")
+      .map((s: any) => s.name);
+    const combined = [...new Set([...legacyCats, ...masterCategories])];
+    return combined.map((c) => ({ value: c, label: c }));
+  }, []);
+
+  const paymentTypeOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_payment_types", PAYMENT_TYPES)
+      .filter((p: any) => p.status === "Active")
+      .map((p: any) => ({ value: p.name, label: p.name }));
+  }, []);
+
+  const techStackOptions = useMemo(() => {
+    return getStorage<any[]>("saiflow_master_technologies", TECHNOLOGIES)
+      .filter((t: any) => t.status === "Active")
+      .map((t: any) => ({ value: t.name, label: t.name }));
+  }, []);
+
+  const [formTechStack, setFormTechStack] = useState<string[]>([]);
+
+  const handleAddTechStack = (val: string) => {
+    if (val && !formTechStack.includes(val)) {
+      setFormTechStack([...formTechStack, val]);
+    }
+  };
+
+  const handleRemoveTechStack = (tech: string) => {
+    setFormTechStack(formTechStack.filter(t => t !== tech));
+  };
 
   // ── Form State ─────────────────────────────────────────────────────────────
   const [formLeadName, setFormLeadName] = useState("");
@@ -121,6 +162,7 @@ export default function AddProposal() {
         setFormLeadPhone(proposal.leadPhone);
         setFormStatus(proposal.status);
         setFormRequirement(proposal.requirement);
+        setFormTechStack(proposal.requirement.techStack || []);
         setFormEstimationItems(proposal.estimation.items);
         setFormDiscountPct(proposal.estimation.discountPercent);
         setFormTaxPct(proposal.estimation.taxPercent);
@@ -211,6 +253,7 @@ export default function AddProposal() {
       deliverables: formRequirement.deliverables.filter((d) => d.trim()),
       assumptions: formRequirement.assumptions.filter((a) => a.trim()),
       constraints: formRequirement.constraints.filter((c) => c.trim()),
+      techStack: formTechStack,
     };
 
     const estimation: EstimationSection = {
@@ -379,6 +422,38 @@ export default function AddProposal() {
           <h3 className="text-sm font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
             <FiList className="size-4 text-brand-500" /> Requirement
           </h3>
+          {/* Tech Stack Selector */}
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+              <FiCpu className="size-3.5" /> Tech Stack
+            </label>
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <Select
+                  options={[{ value: "", label: "Select technology..." }, ...techStackOptions]}
+                  placeholder="Add technology..."
+                  defaultValue=""
+                  onChange={handleAddTechStack}
+                />
+              </div>
+            </div>
+            {formTechStack.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {formTechStack.map((tech) => (
+                  <span key={tech}
+                    className="inline-flex items-center gap-1 rounded-md bg-brand-50 dark:bg-brand-500/10 px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20"
+                  >
+                    {tech}
+                    <button type="button" onClick={() => handleRemoveTechStack(tech)}
+                      className="text-brand-400 hover:text-brand-600 cursor-pointer">
+                      <FiXCircle className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="mb-4">
             <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Overview</label>
             <textarea value={formRequirement.overview}
@@ -437,8 +512,8 @@ export default function AddProposal() {
                     <td className="py-1.5 px-2">
                       <select value={item.category}
                         onChange={(e) => updateEstimationItem(item.id, "category", e.target.value)}
-                        className="w-28 rounded border border-gray-200 bg-transparent px-2 py-1.5 text-xs text-gray-800 dark:border-gray-800 dark:text-white/90">
-                        {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                        className="w-36 rounded border border-gray-200 bg-transparent px-2 py-1.5 text-xs text-gray-800 dark:border-gray-800 dark:text-white/90">
+                        {serviceOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
                     </td>
                     <td className="py-1.5 px-2">
@@ -510,8 +585,14 @@ export default function AddProposal() {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Payment Terms</label>
-              <Input type="text" placeholder="e.g. Net 30, Milestone-based" value={formPaymentTerms} onChange={(e) => setFormPaymentTerms(e.target.value)} />
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Payment Type <span className="text-error-500">*</span></label>
+              <Select
+                key={isEditMode ? `payment-${formPaymentTerms}` : 'payment-create'}
+                options={[{ value: "", label: "Select payment type..." }, ...paymentTypeOptions]}
+                placeholder="Select payment type..."
+                defaultValue={formPaymentTerms}
+                onChange={(val) => setFormPaymentTerms(val)}
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Validity (days)</label>

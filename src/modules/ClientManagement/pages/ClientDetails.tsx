@@ -1,19 +1,11 @@
-import { useState, useMemo, useRef } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
 import { Client, initialClients } from "../data/clientsData";
-import { Meeting, initialMeetings, getMeetingStatusColor } from "../../MeetingManagement/data/meetingsData";
 import { getStorage } from "../../../utils/storage";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "../../../components/ui/table";
 import {
   FiBriefcase,
   FiUser,
@@ -26,7 +18,6 @@ import {
   FiActivity,
   FiDollarSign,
   FiCreditCard,
-  FiPlus,
   FiExternalLink,
   FiShield,
 } from "react-icons/fi";
@@ -62,32 +53,7 @@ export default function ClientDetails() {
   const clients = getStorage<Client[]>("saiflow_clients", initialClients);
   const client = clients.find((c) => c.id === Number(id));
 
-  const meetings = getStorage<Meeting[]>("saiflow_meetings", initialMeetings);
-
-  // Filter client's meetings
-  const clientMeetings = useMemo(() => {
-    if (!client) return [];
-    return meetings.filter(
-      (m) =>
-        m.relatedToType === "Client" &&
-        (m.relatedToId === client.id || m.company.toLowerCase() === client.company.toLowerCase())
-    );
-  }, [client, meetings]);
-
   const [activeTab, setActiveTab] = useState("overview");
-
-  // Activity Timeline pagination
-  const TIMELINE_INITIAL_COUNT = 10;
-  const TIMELINE_BATCH_SIZE = 10;
-  const [timelineVisibleCount, setTimelineVisibleCount] = useState(TIMELINE_INITIAL_COUNT);
-
-  const prevClientIdRef = useRef<number | undefined>(undefined);
-  if (prevClientIdRef.current !== client?.id) {
-    prevClientIdRef.current = client?.id;
-    if (timelineVisibleCount !== TIMELINE_INITIAL_COUNT) {
-      setTimeout(() => setTimelineVisibleCount(TIMELINE_INITIAL_COUNT), 0);
-    }
-  }
 
   if (!client) {
     return (
@@ -112,13 +78,8 @@ export default function ClientDetails() {
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "contacts", label: "Contacts" },
-    { id: "meetings", label: "Meetings", count: clientMeetings.length },
     { id: "timeline", label: "Timeline" },
   ];
-
-  const handleCreateMeeting = () => {
-    navigate(`/meetings/add?relatedType=Client&relatedId=${client.id}`);
-  };
 
   return (
     <>
@@ -137,13 +98,6 @@ export default function ClientDetails() {
           <FiArrowLeft className="size-4" />
           Back to list
         </button>
-        <Button
-          size="sm"
-          onClick={() => navigate(`/meetings/add?relatedType=Client&relatedId=${client.id}`)}
-          startIcon={<FiPlus className="size-4" />}
-        >
-          Schedule meeting
-        </Button>
       </div>
 
       {/* Summary Header Card */}
@@ -270,76 +224,6 @@ export default function ClientDetails() {
           </div>
         )}
 
-        {activeTab === "meetings" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95">
-                Client Meetings
-              </h3>
-              <Button size="sm" onClick={handleCreateMeeting} startIcon={<FiPlus className="size-3" />}>
-                New Meeting
-              </Button>
-            </div>
-
-            {clientMeetings.length > 0 ? (
-              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-white/[0.05]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableCell isHeader>Subject</TableCell>
-                      <TableCell isHeader>Date / Time</TableCell>
-                      <TableCell isHeader>Platform</TableCell>
-                      <TableCell isHeader>Contact Person</TableCell>
-                      <TableCell isHeader>Status</TableCell>
-                      <TableCell isHeader className="text-right">Actions</TableCell>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clientMeetings.map((m) => (
-                      <TableRow key={m.id}>
-                        <TableCell className="font-semibold text-gray-800 dark:text-white/90">
-                          {m.subject}
-                        </TableCell>
-                        <TableCell>
-                          {m.date} at {m.time}
-                        </TableCell>
-                        <TableCell>
-                          <Badge size="sm" color="info">
-                            {m.meetingPlatform || m.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{m.contactPerson}</TableCell>
-                        <TableCell>
-                          <Badge size="sm" color={getMeetingStatusColor(m.status)}>
-                            {m.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <button
-                            onClick={() => navigate(`/meetings/${m.id}`)}
-                            className="text-xs text-brand-500 hover:text-brand-600 font-semibold cursor-pointer"
-                          >
-                            Details
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-                <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
-                  No meetings have been scheduled for this client yet.
-                </p>
-                <Button size="sm" onClick={handleCreateMeeting}>
-                  Schedule First Meeting
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Timeline */}
         {activeTab === "timeline" && (
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
@@ -347,61 +231,25 @@ export default function ClientDetails() {
               <FiActivity className="size-4 text-brand-500" />
               Client Relationship Timeline
             </h3>
-            {(client.clientSince || clientMeetings.length > 0) ? (
-              <>
-                <div className="relative border-l-2 border-gray-100 dark:border-gray-850 ml-4 pl-6 space-y-6">
-                  <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
+            {client.clientSince ? (
+              <div className="relative border-l-2 border-gray-100 dark:border-gray-850 ml-4 pl-6 space-y-6">
+                <div className="relative">
+                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
+                  </span>
+                  <div>
+                    <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
+                      {client.clientSince}
                     </span>
-                    <div>
-                      <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
-                        {client.clientSince || "2024-01-10"}
-                      </span>
-                      <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                        Client Account Created
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Converted from qualified won lead. Relationship manager assigned: {client.relationshipManager || "John Doe"}.
-                      </p>
-                    </div>
+                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
+                      Client Account Created
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Converted from qualified won lead. Relationship manager assigned: {client.relationshipManager || "John Doe"}.
+                    </p>
                   </div>
-
-                  {clientMeetings.slice(0, timelineVisibleCount).map((m) => (
-                    <div key={m.id} className="relative">
-                      <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 ring-4 ring-white dark:ring-gray-900">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
-                      </span>
-                      <div>
-                        <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
-                          {m.date}
-                        </span>
-                        <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                          Meeting Held: {m.subject}
-                        </p>
-                        <p className="text-xs text-gray-550 dark:text-gray-400 mt-1">
-                          Platform: {m.meetingPlatform || m.type}. Status: {m.status}.
-                        </p>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-
-                {/* Load More */}
-                {timelineVisibleCount < clientMeetings.length && (
-                  <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
-                    <button
-                      onClick={() => setTimelineVisibleCount((p) => Math.min(p + TIMELINE_BATCH_SIZE, clientMeetings.length))}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Load More ({clientMeetings.length - timelineVisibleCount} remaining)
-                    </button>
-                  </div>
-                )}
-              </>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <FiActivity className="size-8 text-gray-300 dark:text-gray-600 mb-3" />

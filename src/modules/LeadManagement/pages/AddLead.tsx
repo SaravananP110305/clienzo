@@ -6,7 +6,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
-import { getStorage, setStorage } from "../../../utils/storage";
+import { getStorage, getMasterStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
 import { initialLeads, Lead, LeadStatus, LeadPriority } from "../data/leadsData";
 import {
@@ -126,25 +126,25 @@ export default function AddLead() {
   }, []);
 
   const countryOptions = useMemo(() => {
-    return getStorage("saiflow_master_countries", COUNTRIES)
+    return getMasterStorage("saiflow_master_countries", COUNTRIES)
       .filter((x: any) => x.status === "Active")
       .map((x: any) => ({ value: x.name, label: x.name }));
   }, []);
 
   const stateOptions = useMemo(() => {
-    const selectedCountryObj = getStorage<any[]>("saiflow_master_countries", COUNTRIES)
+    const selectedCountryObj = getMasterStorage<any[]>("saiflow_master_countries", COUNTRIES)
       .find((c) => c.name === watchCountry);
     if (!selectedCountryObj) return [];
-    return getStorage<any[]>("saiflow_master_states", STATES)
+    return getMasterStorage<any[]>("saiflow_master_states", STATES)
       .filter((s) => s.countryId === selectedCountryObj.id && s.status === "Active")
       .map((s) => ({ value: s.name, label: s.name }));
   }, [watchCountry]);
 
   const cityOptions = useMemo(() => {
-    const selectedStateObj = getStorage<any[]>("saiflow_master_states", STATES)
+    const selectedStateObj = getMasterStorage<any[]>("saiflow_master_states", STATES)
       .find((s) => s.name === watchState);
     if (!selectedStateObj) return [];
-    return getStorage<any[]>("saiflow_master_cities", CITIES)
+    return getMasterStorage<any[]>("saiflow_master_cities", CITIES)
       .filter((c) => c.stateId === selectedStateObj.id && c.status === "Active")
       .map((c) => ({ value: c.name, label: c.name }));
   }, [watchState]);
