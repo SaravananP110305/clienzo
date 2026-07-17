@@ -222,6 +222,15 @@ export default function ContactLeadDetail() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
+  // Get the currently logged-in user
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
+    name: "John Doe",
+    email: "john.doe@saiflow.com",
+    role: "Business Development Executive",
+  });
+  const currentUserName = loggedInUser?.name || "John Doe";
+  const isAdmin = loggedInUser?.role === "Administrator";
+
   // Activity log pagination
   const ACTIVITY_INITIAL_COUNT = 10;
   const ACTIVITY_BATCH_SIZE = 10;
@@ -234,9 +243,11 @@ export default function ContactLeadDetail() {
     }
   }
 
-  const [leadsList, setLeadsList] = useState<Lead[]>(() =>
-    getStorage<Lead[]>("saiflow_leads", initialLeads)
-  );
+  const [leadsList, setLeadsList] = useState<Lead[]>(() => {
+    const allLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    if (isAdmin) return allLeads;
+    return allLeads.filter((l) => l.assignedTo === currentUserName);
+  });
   const lead = leadsList.find((l) => l.id === Number(id));
 
   const [isEditingSummary, setIsEditingSummary] = useState(false);

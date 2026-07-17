@@ -22,7 +22,7 @@ import {
   FiClock,
   FiXCircle,
 } from "react-icons/fi";
-import { getStatusColor, getPriorityColor, ASSIGNEES, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
+import { getStatusColor, getPriorityColor, type Lead, initialLeads } from "../../LeadManagement/data/leadsData";
 import { getStorage, setStorage } from "../../../utils/storage";
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
@@ -34,7 +34,20 @@ export default function MyLeads() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const [leads, setLeads] = useState<Lead[]>(() => getStorage<Lead[]>("saiflow_leads", initialLeads));
+  // Get the currently logged-in user
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
+    name: "John Doe",
+    email: "john.doe@saiflow.com",
+    role: "Business Development Executive",
+  });
+  const currentUserName = loggedInUser?.name || "John Doe";
+  const isAdmin = loggedInUser?.role === "Administrator";
+
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    const allLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
+    if (isAdmin) return allLeads;
+    return allLeads.filter((l) => l.assignedTo === currentUserName);
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -43,8 +56,6 @@ export default function MyLeads() {
   const [sortField, setSortField] = useState<keyof Lead>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [assigneeFilter, setAssigneeFilter] = useState("all");
-  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"new" | "contacted">("new");
 
   type ContactResult = "Interested" | "Call Later" | "Not Interested";
@@ -193,10 +204,6 @@ export default function MyLeads() {
       result = result.filter((l) => l.status === statusFilter);
     }
 
-    if (assigneeFilter !== "all") {
-      result = result.filter((l) => l.assignedTo === assigneeFilter);
-    }
-
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -211,7 +218,7 @@ export default function MyLeads() {
     });
 
     return result;
-  }, [leads, activeTab, searchQuery, statusFilter, assigneeFilter, sortField, sortOrder]);
+  }, [leads, activeTab, searchQuery, statusFilter, sortField, sortOrder]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -246,10 +253,10 @@ export default function MyLeads() {
   return (
     <>
       <PageMeta
-        title="All Leads | SaiFlow"
-        description="View and contact all leads in SaiFlow CRM."
+        title={isAdmin ? "All Leads | SaiFlow" : "My Leads | SaiFlow"}
+        description={isAdmin ? "View all leads in SaiFlow CRM." : "View and contact your leads in SaiFlow CRM."}
       />
-      <PageBreadcrumb pageTitle="All Leads" />
+      <PageBreadcrumb pageTitle={isAdmin ? "All Leads" : "My Leads"} />
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-white/[0.05] mb-5">
@@ -265,7 +272,7 @@ export default function MyLeads() {
               : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
           }`}
         >
-          New Leads
+          {isAdmin ? "New Leads" : "My New Leads"}
         </button>
         <button
           onClick={() => {
@@ -279,7 +286,7 @@ export default function MyLeads() {
               : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
           }`}
         >
-          Contacted Leads
+          {isAdmin ? "Contacted Leads" : "My Contacted Leads"}
         </button>
       </div>
 
@@ -300,7 +307,6 @@ export default function MyLeads() {
               <button
                 onClick={() => {
                   setIsStatusOpen(!isStatusOpen);
-                  setIsAssigneeOpen(false);
                 }}
                 className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
               >
@@ -336,46 +342,6 @@ export default function MyLeads() {
             </Dropdown>
           </div>
           )}
-
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsAssigneeOpen(!isAssigneeOpen);
-                setIsStatusOpen(false);
-              }}
-              className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              <span className="truncate">
-                {assigneeFilter === "all" ? "All assignees" : assigneeFilter}
-              </span>
-              <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
-            </button>
-            <Dropdown
-              isOpen={isAssigneeOpen}
-              onClose={() => setIsAssigneeOpen(false)}
-              className="left-0 right-auto w-44 p-1 mt-2"
-            >
-              <ul className="flex flex-col gap-0.5">
-                {[{ value: "all", label: "All assignees" }, ...ASSIGNEES.map((a) => ({ value: a, label: a }))].map((opt) => (
-                  <li key={opt.value}>
-                    <DropdownItem
-                      onItemClick={() => {
-                        setAssigneeFilter(opt.value);
-                        setCurrentPage(1);
-                        setIsAssigneeOpen(false);
-                      }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
-                        ? "bg-brand-500 text-white font-medium"
-                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                        }`}
-                    >
-                      {opt.label}
-                    </DropdownItem>
-                  </li>
-                ))}
-              </ul>
-            </Dropdown>
-          </div>
         </div>
       </div>
 

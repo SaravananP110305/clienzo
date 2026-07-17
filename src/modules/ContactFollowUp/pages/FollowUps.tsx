@@ -37,9 +37,21 @@ const FOLLOW_UP_STATUS_OPTIONS = [
 export default function FollowUps() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [followupsList, setFollowupsList] = useState<FollowUp[]>(() =>
-    getStorage<FollowUp[]>("saiflow_followups", initialFollowUps)
-  );
+
+  // Get the currently logged-in user
+  const loggedInUser = getStorage<any>("saiflow_logged_in_user", {
+    name: "John Doe",
+    email: "john.doe@saiflow.com",
+    role: "Business Development Executive",
+  });
+  const currentUserName = loggedInUser?.name || "John Doe";
+  const isAdmin = loggedInUser?.role === "Administrator";
+
+  const [followupsList, setFollowupsList] = useState<FollowUp[]>(() => {
+    const allFollowUps = getStorage<FollowUp[]>("saiflow_followups", initialFollowUps);
+    if (isAdmin) return allFollowUps;
+    return allFollowUps.filter((f) => f.assignedTo === currentUserName);
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -309,46 +321,48 @@ export default function FollowUps() {
             </Dropdown>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsAssigneeOpen(!isAssigneeOpen);
-                setIsStatusOpen(false);
-              }}
-              className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              <span className="truncate">
-                {assigneeFilter === "all" ? "All assignees" : assigneeFilter}
-              </span>
-              <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
-            </button>
-            <Dropdown
-              isOpen={isAssigneeOpen}
-              onClose={() => setIsAssigneeOpen(false)}
-              className="left-0 right-auto w-44 p-1 mt-2"
-            >
-              <ul className="flex flex-col gap-0.5">
-                {[{ value: "all", label: "All assignees" }, ...ASSIGNEES.map((a) => ({ value: a, label: a }))].map((opt) => (
-                  <li key={opt.value}>
-                    <DropdownItem
-                      onItemClick={() => {
-                        setAssigneeFilter(opt.value);
-                        setCurrentPage(1);
-                        setIsAssigneeOpen(false);
-                      }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
-                        assigneeFilter === opt.value
-                          ? "bg-brand-500 text-white font-medium"
-                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      {opt.label}
-                    </DropdownItem>
-                  </li>
-                ))}
-              </ul>
-            </Dropdown>
-          </div>
+          {isAdmin && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsAssigneeOpen(!isAssigneeOpen);
+                  setIsStatusOpen(false);
+                }}
+                className="flex items-center justify-between h-11 w-40 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer dropdown-toggle hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <span className="truncate">
+                  {assigneeFilter === "all" ? "All assignees" : assigneeFilter}
+                </span>
+                <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-1" />
+              </button>
+              <Dropdown
+                isOpen={isAssigneeOpen}
+                onClose={() => setIsAssigneeOpen(false)}
+                className="left-0 right-auto w-44 p-1 mt-2"
+              >
+                <ul className="flex flex-col gap-0.5">
+                  {[{ value: "all", label: "All assignees" }, ...ASSIGNEES.map((a) => ({ value: a, label: a }))].map((opt) => (
+                    <li key={opt.value}>
+                      <DropdownItem
+                        onItemClick={() => {
+                          setAssigneeFilter(opt.value);
+                          setCurrentPage(1);
+                          setIsAssigneeOpen(false);
+                        }}
+                        className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${
+                          assigneeFilter === opt.value
+                            ? "bg-brand-500 text-white font-medium"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                        }`}
+                      >
+                        {opt.label}
+                      </DropdownItem>
+                    </li>
+                  ))}
+                </ul>
+              </Dropdown>
+            </div>
+          )}
         </div>
       </div>
 

@@ -327,7 +327,7 @@ const AppSidebar: React.FC = () => {
                                       <span className="inline-flex rounded-full h-2 w-2 bg-gray-300 dark:bg-gray-700"></span>
                                     )}
                                   </span>
-                                  {sub.name}
+                                  {sub.name === "All Leads" && !isAdmin ? "My Leads" : sub.name}
                                 </Link>
                               </li>
                             );
