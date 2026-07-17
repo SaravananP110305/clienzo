@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
@@ -73,6 +73,41 @@ const WORKFLOW_STEPS: ProposalStatus[] = [
   "Converted",
 ];
 
+// ─── Status Transitions (for list-view quick actions) ───────────────────────
+
+interface StatusAction {
+  key: string;
+  label: string;
+  status: ProposalStatus;
+  icon: React.ReactNode;
+  destructive?: boolean;
+  needsConfirm?: boolean;
+}
+
+const STATUS_TRANSITIONS: Record<ProposalStatus, StatusAction[]> = {
+  Draft: [
+    { key: "send", label: "Send to client", status: "Sent", icon: <FiSend className="size-3.5" /> },
+  ],
+  Sent: [
+    { key: "review", label: "Mark as Reviewed", status: "Under Review", icon: <FiClock className="size-3.5" /> },
+    { key: "reject", label: "Reject", status: "Rejected", icon: <FiXCircle className="size-3.5" />, destructive: true, needsConfirm: true },
+  ],
+  "Under Review": [
+    { key: "negotiate", label: "Negotiate", status: "Negotiation", icon: <FiRefreshCw className="size-3.5" /> },
+    { key: "approved", label: "Approve", status: "Approved", icon: <FiCheckCircle className="size-3.5" /> },
+    { key: "reject", label: "Reject", status: "Rejected", icon: <FiXCircle className="size-3.5" />, destructive: true, needsConfirm: true },
+  ],
+  Negotiation: [
+    { key: "approved", label: "Approve", status: "Approved", icon: <FiCheckCircle className="size-3.5" /> },
+    { key: "reject", label: "Reject", status: "Rejected", icon: <FiXCircle className="size-3.5" />, destructive: true, needsConfirm: true },
+  ],
+  Approved: [
+    { key: "convert", label: "Convert to Client", status: "Converted", icon: <FiTrendingUp className="size-3.5" />, needsConfirm: true },
+  ],
+  Rejected: [],
+  Converted: [],
+};
+
 
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -137,6 +172,21 @@ export default function QuotationList() {
   const [sortField, setSortField] = useState<keyof Proposal>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
+
+  // Status dropdown (per row in list view)
+  const [activeStatusDropdown, setActiveStatusDropdown] = useState<number | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Close status dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+        setActiveStatusDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Modals
   const deleteModal = useModal();
@@ -512,13 +562,80 @@ export default function QuotationList() {
                       <TableCell className="px-5 py-4 text-theme-sm text-end font-semibold text-gray-800 dark:text-white/90">
                         {formatCurrency(totalAmount)}
                       </TableCell>
-                      <TableCell className="px-5 py-4 whitespace-nowrap">
-                        <Badge size="sm" color={STATUS_CONFIG[proposal.status].color}>
-                          <span className="flex items-center gap-1">
+                      <TableCell className="px-5 py-4 whitespace-nowrap relative" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveStatusDropdown(activeStatusDropdown === proposal.id ? null : proposal.id);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all cursor-pointer
+                              ${STATUS_CONFIG[proposal.status].color === "light" ? "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "info" ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-400" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "warning" ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "success" ? "border-green-200 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-400" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "error" ? "border-red-200 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-400" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "primary" ? "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-900/20 dark:text-purple-400" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "dark" ? "border-gray-300 bg-gray-100 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" : ""}
+                              hover:ring-2 hover:ring-offset-1
+                              ${STATUS_CONFIG[proposal.status].color === "light" ? "hover:ring-gray-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "info" ? "hover:ring-blue-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "warning" ? "hover:ring-yellow-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "success" ? "hover:ring-green-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "error" ? "hover:ring-red-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "primary" ? "hover:ring-purple-300" : ""}
+                              ${STATUS_CONFIG[proposal.status].color === "dark" ? "hover:ring-gray-300" : ""}
+                              ${activeStatusDropdown === proposal.id ? "ring-2 ring-offset-1" : ""}
+                            `}
+                          >
                             {STATUS_CONFIG[proposal.status].icon}
                             {STATUS_CONFIG[proposal.status].label}
-                          </span>
-                        </Badge>
+                            <ChevronDownIcon className={`w-3 h-3 transition-transform ${activeStatusDropdown === proposal.id ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {/* Status Dropdown Menu */}
+                          {activeStatusDropdown === proposal.id && STATUS_TRANSITIONS[proposal.status].length > 0 && (
+                            <div
+                              ref={statusDropdownRef}
+                              className="absolute left-0 top-full mt-1 z-[100] w-56 p-1.5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-700 mb-1">
+                                Change status
+                              </div>
+                              {STATUS_TRANSITIONS[proposal.status].map((action) => (
+                                <button
+                                  key={action.key}
+                                  onClick={() => {
+                                    setActiveStatusDropdown(null);
+                                    handleStatusAction(action.key, proposal);
+                                  }}
+                                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                                    ${action.destructive
+                                      ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                                    }`}
+                                >
+                                  <span className={`shrink-0 ${action.destructive ? "text-red-500" : "text-gray-500 dark:text-gray-400"}`}>
+                                    {action.icon}
+                                  </span>
+                                  <span className="flex-1 text-left">{action.label}</span>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                                    {action.destructive && <FiXCircle className="size-3" />}
+                                    {action.key === "convert" && <FiTrendingUp className="size-3" />}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* No transitions available badge */}
+                          {activeStatusDropdown === proposal.id && STATUS_TRANSITIONS[proposal.status].length === 0 && (
+                            <div className="absolute left-0 top-full mt-1 z-[100] w-48 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl text-center">
+                              <p className="text-xs text-gray-400 dark:text-gray-500">No further transitions available</p>
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">
                         <div>{formatDate(proposal.updatedAt)}</div>
