@@ -454,8 +454,7 @@ export default function QuotationList() {
                 {(Object.keys(STATUS_CONFIG) as ProposalStatus[]).map((st) => (
                   <li key={st}>
                     <button onClick={() => { setStatusFilter(st); setCurrentPage(1); setIsStatusFilterOpen(false); }}
-                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm flex items-center gap-2 ${statusFilter === st ? "bg-brand-500 text-white" : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"}`}>
-                      {STATUS_CONFIG[st].icon}
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === st ? "bg-brand-500 text-white" : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"}`}>
                       {STATUS_CONFIG[st].label}
                     </button>
                   </li>
