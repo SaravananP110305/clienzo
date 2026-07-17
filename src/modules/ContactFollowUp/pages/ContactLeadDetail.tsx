@@ -226,7 +226,7 @@ export default function ContactLeadDetail() {
   const ACTIVITY_INITIAL_COUNT = 10;
   const ACTIVITY_BATCH_SIZE = 10;
   const [activityVisibleCount, setActivityVisibleCount] = useState(ACTIVITY_INITIAL_COUNT);
-  const prevLeadIdRef = useRef<string | undefined>();
+  const prevLeadIdRef = useRef<string | undefined>(undefined);
   if (prevLeadIdRef.current !== id) {
     prevLeadIdRef.current = id;
     if (activityVisibleCount !== ACTIVITY_INITIAL_COUNT) {

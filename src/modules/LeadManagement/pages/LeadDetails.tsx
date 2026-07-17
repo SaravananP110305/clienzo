@@ -67,7 +67,7 @@ export default function LeadDetails() {
   const [timelineVisibleCount, setTimelineVisibleCount] = useState(TIMELINE_INITIAL_COUNT);
 
   // Reset visible count when lead changes
-  const prevLeadIdRef = useRef<number | undefined>();
+  const prevLeadIdRef = useRef<number | undefined>(undefined);
   if (prevLeadIdRef.current !== lead?.id) {
     prevLeadIdRef.current = lead?.id;
     if (timelineVisibleCount !== TIMELINE_INITIAL_COUNT) {

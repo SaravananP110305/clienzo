@@ -80,7 +80,8 @@ export default function ClientDetails() {
   const TIMELINE_INITIAL_COUNT = 10;
   const TIMELINE_BATCH_SIZE = 10;
   const [timelineVisibleCount, setTimelineVisibleCount] = useState(TIMELINE_INITIAL_COUNT);
-  const prevClientIdRef = useRef<number | undefined>();
+
+  const prevClientIdRef = useRef<number | undefined>(undefined);
   if (prevClientIdRef.current !== client?.id) {
     prevClientIdRef.current = client?.id;
     if (timelineVisibleCount !== TIMELINE_INITIAL_COUNT) {
@@ -178,19 +179,17 @@ export default function ClientDetails() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 px-4 text-sm font-semibold border-b-2 transition-all duration-200 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
+              className={`py-3 px-4 text-sm font-semibold border-b-2 transition-all duration-200 flex items-center gap-2 cursor-pointer whitespace-nowrap ${activeTab === tab.id
                   ? "border-brand-500 text-brand-600 dark:text-brand-400"
                   : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/[0.03] rounded-t-lg"
-              }`}
+                }`}
             >
               {tab.label}
               {tab.count !== undefined && (
-                <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full px-1.5 text-[11px] font-bold leading-none transition-all duration-200 ${
-                  activeTab === tab.id
+                <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full px-1.5 text-[11px] font-bold leading-none transition-all duration-200 ${activeTab === tab.id
                     ? "bg-brand-500 text-white shadow-xs"
                     : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                }`}>
+                  }`}>
                   {tab.count}
                 </span>
               )}
@@ -350,58 +349,58 @@ export default function ClientDetails() {
             </h3>
             {(client.clientSince || clientMeetings.length > 0) ? (
               <>
-              <div className="relative border-l-2 border-gray-100 dark:border-gray-850 ml-4 pl-6 space-y-6">
-                <div className="relative">
-                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
-                  </span>
-                  <div>
-                    <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
-                      {client.clientSince || "2024-01-10"}
-                    </span>
-                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                      Client Account Created
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Converted from qualified won lead. Relationship manager assigned: {client.relationshipManager || "John Doe"}.
-                    </p>
-                  </div>
-                </div>
-
-                {clientMeetings.slice(0, timelineVisibleCount).map((m) => (
-                  <div key={m.id} className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 ring-4 ring-white dark:ring-gray-900">
+                <div className="relative border-l-2 border-gray-100 dark:border-gray-850 ml-4 pl-6 space-y-6">
+                  <div className="relative">
+                    <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900">
                       <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
                     </span>
                     <div>
                       <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
-                        {m.date}
+                        {client.clientSince || "2024-01-10"}
                       </span>
                       <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                        Meeting Held: {m.subject}
+                        Client Account Created
                       </p>
-                      <p className="text-xs text-gray-550 dark:text-gray-400 mt-1">
-                        Platform: {m.meetingPlatform || m.type}. Status: {m.status}.
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Converted from qualified won lead. Relationship manager assigned: {client.relationshipManager || "John Doe"}.
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* Load More */}
-              {timelineVisibleCount < clientMeetings.length && (
-                <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
-                  <button
-                    onClick={() => setTimelineVisibleCount((p) => Math.min(p + TIMELINE_BATCH_SIZE, clientMeetings.length))}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                    Load More ({clientMeetings.length - timelineVisibleCount} remaining)
-                  </button>
+                  {clientMeetings.slice(0, timelineVisibleCount).map((m) => (
+                    <div key={m.id} className="relative">
+                      <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 ring-4 ring-white dark:ring-gray-900">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
+                      </span>
+                      <div>
+                        <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
+                          {m.date}
+                        </span>
+                        <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
+                          Meeting Held: {m.subject}
+                        </p>
+                        <p className="text-xs text-gray-550 dark:text-gray-400 mt-1">
+                          Platform: {m.meetingPlatform || m.type}. Status: {m.status}.
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+
+                {/* Load More */}
+                {timelineVisibleCount < clientMeetings.length && (
+                  <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+                    <button
+                      onClick={() => setTimelineVisibleCount((p) => Math.min(p + TIMELINE_BATCH_SIZE, clientMeetings.length))}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition cursor-pointer"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Load More ({clientMeetings.length - timelineVisibleCount} remaining)
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">

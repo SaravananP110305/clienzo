@@ -94,7 +94,7 @@ export default function MeetingDetails() {
   const ACTIVITY_INITIAL_COUNT = 10;
   const ACTIVITY_BATCH_SIZE = 10;
   const [activityVisibleCount, setActivityVisibleCount] = useState(ACTIVITY_INITIAL_COUNT);
-  const prevMeetingIdRef = useRef<number | undefined>();
+  const prevMeetingIdRef = useRef<number | undefined>(undefined);
   if (prevMeetingIdRef.current !== meeting?.id) {
     prevMeetingIdRef.current = meeting?.id;
     if (activityVisibleCount !== ACTIVITY_INITIAL_COUNT) {
