@@ -67,6 +67,10 @@ export default function AddProposal() {
   const [formLeadEmail, setFormLeadEmail] = useState("");
   const [formLeadPhone, setFormLeadPhone] = useState("");
   const [formStatus, setFormStatus] = useState<ProposalStatus>("Draft");
+  
+  // Inline validation errors for required fields
+  const [formLeadNameError, setFormLeadNameError] = useState("");
+  const [formCompanyNameError, setFormCompanyNameError] = useState("");
 
   const [formRequirement, setFormRequirement] = useState<RequirementSection>(EMPTY_REQUIREMENT);
   const [formEstimationItems, setFormEstimationItems] = useState<EstimationLineItem[]>([]);
@@ -158,11 +162,19 @@ export default function AddProposal() {
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
-  const handleSave = () => {
-    if (!formLeadName.trim() || !formCompanyName.trim()) {
-      showToast("Please fill in lead name and company name.", "error");
-      return;
+  const validateBasicFields = (): boolean => {
+    const errors: string[] = [];
+    if (!formLeadName.trim()) errors.push("Lead name is required.");
+    if (!formCompanyName.trim()) errors.push("Company name is required.");
+    if (errors.length > 0) {
+      showToast(errors.join(" "), "error");
+      return false;
     }
+    return true;
+  };
+
+  const handleSave = () => {
+    if (!validateBasicFields()) return;
 
     const subtotal = formEstimationItems.reduce((s, i) => s + i.amount, 0);
     const discountAmount = Math.round(subtotal * (formDiscountPct / 100));
@@ -291,13 +303,29 @@ export default function AddProposal() {
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Lead Name <span className="text-error-500">*</span>
               </label>
-              <Input type="text" placeholder="e.g. John Doe" value={formLeadName} onChange={(e) => setFormLeadName(e.target.value)} />
+              <Input
+                type="text"
+                placeholder="e.g. John Doe"
+                value={formLeadName}
+                onChange={(e) => { setFormLeadName(e.target.value); if (e.target.value.trim() && formLeadNameError) setFormLeadNameError(""); }}
+                onBlur={() => { if (!formLeadName.trim()) setFormLeadNameError("Lead name is required."); else setFormLeadNameError(""); }}
+                error={!!formLeadNameError}
+                hint={formLeadNameError || undefined}
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Company Name <span className="text-error-500">*</span>
               </label>
-              <Input type="text" placeholder="e.g. Acme Corp" value={formCompanyName} onChange={(e) => setFormCompanyName(e.target.value)} />
+              <Input
+                type="text"
+                placeholder="e.g. Acme Corp"
+                value={formCompanyName}
+                onChange={(e) => { setFormCompanyName(e.target.value); if (e.target.value.trim() && formCompanyNameError) setFormCompanyNameError(""); }}
+                onBlur={() => { if (!formCompanyName.trim()) setFormCompanyNameError("Company name is required."); else setFormCompanyNameError(""); }}
+                error={!!formCompanyNameError}
+                hint={formCompanyNameError || undefined}
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">Email</label>

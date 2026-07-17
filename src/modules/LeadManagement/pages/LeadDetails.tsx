@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -62,8 +62,19 @@ export default function LeadDetails() {
   const lead = leads.find((l) => l.id === Number(id));
 
   // Activity Timeline pagination
-  const [timelinePage, setTimelinePage] = useState(1);
-  const TIMELINE_PER_PAGE = 5;
+  const TIMELINE_INITIAL_COUNT = 10;
+  const TIMELINE_BATCH_SIZE = 10;
+  const [timelineVisibleCount, setTimelineVisibleCount] = useState(TIMELINE_INITIAL_COUNT);
+
+  // Reset visible count when lead changes
+  const prevLeadIdRef = useRef<number | undefined>();
+  if (prevLeadIdRef.current !== lead?.id) {
+    prevLeadIdRef.current = lead?.id;
+    if (timelineVisibleCount !== TIMELINE_INITIAL_COUNT) {
+      // Will be set in next render, use setTimeout to avoid render-time setState
+      setTimeout(() => setTimelineVisibleCount(TIMELINE_INITIAL_COUNT), 0);
+    }
+  }
 
   // Convert Lead Modal state
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -247,10 +258,9 @@ export default function LeadDetails() {
     return events.sort((a, b) => b.timestamp - a.timestamp);
   }, [lead]);
 
-  const totalTimelinePages = Math.ceil(timelineEvents.length / TIMELINE_PER_PAGE);
   const paginatedTimeline = timelineEvents.slice(
     0,
-    timelinePage * TIMELINE_PER_PAGE
+    timelineVisibleCount
   );
 
   return (
@@ -548,31 +558,17 @@ export default function LeadDetails() {
               ))}
             </div>
 
-            {/* Show More / Pagination */}
-            {timelineEvents.length > TIMELINE_PER_PAGE && (
-              <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+            {/* Show More / Load More */}
+            {timelineVisibleCount < timelineEvents.length && (
+              <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
                 <button
-                  onClick={() => setTimelinePage((p) => Math.max(1, p - 1))}
-                  disabled={timelinePage === 1}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  onClick={() => setTimelineVisibleCount((p) => Math.min(p + TIMELINE_BATCH_SIZE, timelineEvents.length))}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
-                  Previous
-                </button>
-                <span className="text-xs text-gray-400 dark:text-gray-500">
-                  {Math.min(timelinePage * TIMELINE_PER_PAGE, timelineEvents.length)} of {timelineEvents.length}
-                </span>
-                <button
-                  onClick={() => setTimelinePage((p) => Math.min(totalTimelinePages, p + 1))}
-                  disabled={timelinePage >= totalTimelinePages}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                >
-                  Next
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+                  Load More ({timelineEvents.length - timelineVisibleCount} remaining)
                 </button>
               </div>
             )}

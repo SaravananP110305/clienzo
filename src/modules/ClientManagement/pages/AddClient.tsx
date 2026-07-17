@@ -140,19 +140,71 @@ export default function AddClient() {
     setLoading(false);
   }, [id, isEditMode]);
 
+  // ── Validation helpers ──────────────────────
+
+  const validateField = (field: string, value: string): string | null => {
+    switch (field) {
+      case "name":
+        if (!value.trim()) return "Client name is required.";
+        break;
+      case "company":
+        if (!value.trim()) return "Company name is required.";
+        break;
+      case "email":
+        if (!value.trim()) return "Email is required.";
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value.trim())) return "Please enter a valid email address.";
+        break;
+      case "phone":
+        if (!value.trim()) return "Phone number is required.";
+        if (!/^[+]?[\d\s()-]{6,20}$/.test(value.trim())) return "Please enter a valid phone number.";
+        break;
+    }
+    return null;
+  };
+
+  const handleBlur = (field: string, value: string) => {
+    const err = validateField(field, value);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (err) next[field] = err;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   // ── Validation & Save ──────────────────────
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    if (!name.trim()) newErrors.name = "Client name is required.";
-    if (!company.trim()) newErrors.company = "Company is required.";
-    if (!email.trim()) newErrors.email = "Email is required.";
-    if (!phone.trim()) newErrors.phone = "Phone is required.";
+    
+    const nameErr = validateField("name", name);
+    if (nameErr) newErrors.name = nameErr;
+    
+    const companyErr = validateField("company", company);
+    if (companyErr) newErrors.company = companyErr;
+    
+    const emailErr = validateField("email", email);
+    if (emailErr) newErrors.email = emailErr;
+    
+    const phoneErr = validateField("phone", phone);
+    if (phoneErr) newErrors.phone = phoneErr;
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast("Please fill all required fields.", "error");
+      showToast("Please fill all required fields correctly.", "error");
       return;
     }
 
@@ -257,7 +309,8 @@ export default function AddClient() {
         type={opts?.type || "text"}
         placeholder={opts?.placeholder || ""}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => handleFieldChange(opts?.errorKey || "", e.target.value, onChange)}
+        onBlur={() => opts?.errorKey && handleBlur(opts.errorKey, value)}
         error={!!(opts?.errorKey && errors[opts.errorKey])}
         hint={opts?.errorKey ? errors[opts.errorKey] : undefined}
       />

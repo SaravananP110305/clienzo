@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -221,6 +221,18 @@ export default function ContactLeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  // Activity log pagination
+  const ACTIVITY_INITIAL_COUNT = 10;
+  const ACTIVITY_BATCH_SIZE = 10;
+  const [activityVisibleCount, setActivityVisibleCount] = useState(ACTIVITY_INITIAL_COUNT);
+  const prevLeadIdRef = useRef<string | undefined>();
+  if (prevLeadIdRef.current !== id) {
+    prevLeadIdRef.current = id;
+    if (activityVisibleCount !== ACTIVITY_INITIAL_COUNT) {
+      setTimeout(() => setActivityVisibleCount(ACTIVITY_INITIAL_COUNT), 0);
+    }
+  }
 
   const [leadsList, setLeadsList] = useState<Lead[]>(() =>
     getStorage<Lead[]>("saiflow_leads", initialLeads)
@@ -654,15 +666,37 @@ export default function ContactLeadDetail() {
         </h3>
 
         {activities.length > 0 ? (
-          <div className="pl-1">
-            {activities.map((activity, idx) => (
-              <ActivityItem
-                key={activity.id}
-                activity={activity}
-                isLast={idx === activities.length - 1}
-              />
-            ))}
-          </div>
+          <>
+            <div className="pl-1">
+              {activities.slice(0, activityVisibleCount).map((activity, idx) => {
+                const isLastInFull = idx === activities.length - 1;
+                const isLastVisible = idx === activityVisibleCount - 1;
+                const isLast = activityVisibleCount >= activities.length ? isLastInFull : isLastVisible;
+                return (
+                  <ActivityItem
+                    key={activity.id}
+                    activity={activity}
+                    isLast={isLast}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Load More */}
+            {activityVisibleCount < activities.length && (
+              <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+                <button
+                  onClick={() => setActivityVisibleCount((p) => Math.min(p + ACTIVITY_BATCH_SIZE, activities.length))}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                  Load More ({activities.length - activityVisibleCount} remaining)
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <FiActivity className="size-8 text-gray-300 dark:text-gray-600 mb-3" />

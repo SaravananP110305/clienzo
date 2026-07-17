@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -89,6 +89,18 @@ export default function MeetingDetails() {
 
   const [activityLogs, setActivityLogs] = useState<MeetingActivityLog[]>([]);
   const [summaryEntries, setSummaryEntries] = useState<SummaryEntry[]>([]);
+
+  // Activity log pagination
+  const ACTIVITY_INITIAL_COUNT = 10;
+  const ACTIVITY_BATCH_SIZE = 10;
+  const [activityVisibleCount, setActivityVisibleCount] = useState(ACTIVITY_INITIAL_COUNT);
+  const prevMeetingIdRef = useRef<number | undefined>();
+  if (prevMeetingIdRef.current !== meeting?.id) {
+    prevMeetingIdRef.current = meeting?.id;
+    if (activityVisibleCount !== ACTIVITY_INITIAL_COUNT) {
+      setTimeout(() => setActivityVisibleCount(ACTIVITY_INITIAL_COUNT), 0);
+    }
+  }
 
   // Edit Summary Modal
   const [editSummaryModal, setEditSummaryModal] = useState(false);
@@ -814,8 +826,9 @@ export default function MeetingDetails() {
             )}
           </h3>
           {activityLogs.length > 0 ? (
+            <>
             <div className="relative border-l-2 border-gray-100 dark:border-gray-700 ml-4 pl-6 space-y-6">
-              {activityLogs.map((log) => {
+              {activityLogs.slice(0, activityVisibleCount).map((log) => {
                 // Determine color theme per action type
                 const actionTheme = (() => {
                   const action = log.action.toLowerCase();
@@ -855,6 +868,22 @@ export default function MeetingDetails() {
                 );
               })}
             </div>
+
+            {/* Load More */}
+            {activityVisibleCount < activityLogs.length && (
+              <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+                <button
+                  onClick={() => setActivityVisibleCount((p) => Math.min(p + ACTIVITY_BATCH_SIZE, activityLogs.length))}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                  Load More ({activityLogs.length - activityVisibleCount} remaining)
+                </button>
+              </div>
+            )}
+            </>
           ) : (
             <div className="text-center py-6">
               <div className="mb-2 flex justify-center">
