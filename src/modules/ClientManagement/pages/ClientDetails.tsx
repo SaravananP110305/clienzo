@@ -75,7 +75,7 @@ export default function ClientDetails() {
   }
 
   // Tab configurations
-  const tabs = [
+  const tabs: { id: string; label: string; count?: number }[] = [
     { id: "overview", label: "Overview" },
     { id: "contacts", label: "Contacts" },
     { id: "timeline", label: "Timeline" },

@@ -31,6 +31,8 @@ import LeadReport from "./modules/Reports/pages/LeadReport";
 import MeetingReport from "./modules/Reports/pages/MeetingReport";
 import EmployeeReport from "./modules/Reports/pages/EmployeeReport";
 import FollowUpReport from "./modules/Reports/pages/FollowUpReport";
+import ClientReport from "./modules/Reports/pages/ClientReport";
+import ProposalReport from "./modules/Reports/pages/ProposalReport";
 import { ToastProvider } from "./context/ToastContext";
 import { getStorage, setStorage } from "./utils/storage";
 
@@ -252,6 +254,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["Administrator"]}>
                   <FollowUpReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports/clients"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <ClientReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports/proposals"
+              element={
+                <ProtectedRoute allowedRoles={["Administrator"]}>
+                  <ProposalReport />
                 </ProtectedRoute>
               }
             />
