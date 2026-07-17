@@ -193,8 +193,7 @@ export default function Dashboard() {
     const pipelineValue = proposals
       .filter((p) => p.status === "Sent" || p.status === "Approved" || p.status === "Under Review")
       .reduce((sum, p) => {
-        const latest = p.versions[p.versions.length - 1];
-        return sum + (latest?.estimation.total || 0);
+        return sum + (p.estimation.total || 0);
       }, 0);
 
     return [

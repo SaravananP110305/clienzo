@@ -209,11 +209,11 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between items-center pt-6 border-t border-gray-100 dark:border-gray-800">
               <div>
-                <h4 className="text-sm font-semibold text-error-600">Database Wipe (Danger Zone)</h4>
+                <h4 className="text-sm font-semibold text-error-600">Demo Data Reset (Danger Zone)</h4>
                 <p className="text-xs text-gray-500">Resetting local storage cleans up all mock data configurations.</p>
               </div>
               <Button type="button" onClick={handleResetDatabase} className="bg-error-50 text-error-600 border-error-100 hover:bg-error-100 dark:bg-error-500/10 dark:text-error-500" size="sm">
-                Reset App Data
+                Reset Demo Data
               </Button>
             </div>
             <div className="flex justify-end pt-4">

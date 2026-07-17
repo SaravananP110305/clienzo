@@ -290,7 +290,6 @@ export default function MeetingDetails() {
       preferredCommunication: "Email",
       creditLimit: creditLimit,
       handoverStatus: "Pending",
-      handoverHistory: [],
     };
 
     const updatedClients = [...clientsList, newClient];

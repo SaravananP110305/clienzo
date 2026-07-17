@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
@@ -23,7 +23,6 @@ import {
   FiDownload,
   FiEye,
   FiEdit,
-  FiTrash2,
   FiClock,
   FiCheckCircle,
   FiXCircle,
@@ -35,22 +34,19 @@ import {
   FiActivity,
   FiArrowLeft,
   FiArrowRight,
-  FiMessageSquare,
   FiInfo,
   FiUser,
   FiCalendar,
   FiTrendingUp,
-  FiLayers,
 } from "react-icons/fi";
 import { useToast } from "../../../hooks/useToast";
 import {
   Proposal,
-  ProposalVersion,
   ProposalStatus,
-  ProposalEmail,
   initialProposals,
 } from "../data/quotationsData";
 import { initialClients, Client } from "../../ClientManagement/data/clientsData";
+import { initialLeads, Lead } from "../../LeadManagement/data/leadsData";
 import jsPDF from "jspdf";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -122,7 +118,7 @@ export default function QuotationList() {
   const [proposals, setProposals] = useState<Proposal[]>(() => {
     const raw = getStorage<Proposal[]>("saiflow_proposals", initialProposals);
     // Validate stored data: if items lack the nested structure, it's stale — fall back to sample data
-    if (raw.length > 0 && (!raw[0].versions || !raw[0].proposalNo)) {
+    if (raw.length > 0 && (!raw[0].requirement || !raw[0].proposalNo)) {
       setStorage("saiflow_proposals", initialProposals);
       return initialProposals;
     }
@@ -131,7 +127,7 @@ export default function QuotationList() {
 
   const [view, setView] = useState<"list" | "detail">("list");
   const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null);
-  const [activeDetailTab, setActiveDetailTab] = useState<"requirement" | "estimation" | "quotation" | "versions" | "workflow" | "emails">("requirement");
+  const [activeDetailTab, setActiveDetailTab] = useState<"requirement" | "estimation" | "quotation" | "workflow">("requirement");
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -144,8 +140,6 @@ export default function QuotationList() {
 
   // Modals
   const deleteModal = useModal();
-  const emailModal = useModal();
-  const versionHistoryModal = useModal();
   const confirmActionModal = useModal();
 
   // Action confirmation
@@ -158,258 +152,17 @@ export default function QuotationList() {
     [proposals, selectedProposalId]
   );
 
-  const currentVersion = useMemo(() => {
-    if (!selectedProposal) return null;
-    return selectedProposal.versions.find((v) => v.id === selectedProposal.currentVersionId) || selectedProposal.versions[selectedProposal.versions.length - 1];
-  }, [selectedProposal]);
-
-
-
-  // ── PDF Export ─────────────────────────────────────────────────────────────
-
-  const exportToPDF = useCallback((proposal: Proposal, versionId?: number) => {
-    try {
-      showToast("Generating PDF...", "info");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      let y = 20;
-
-      y += 14;
-
-      pdf.setFontSize(18);
-      pdf.setFont("helvetica", "bold");
-      pdf.text("Business Proposal", pageWidth / 2, y, { align: "center" });
-      y += 8;
-
-      pdf.setFontSize(10);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(100, 100, 100);
-      pdf.text(`${proposal.proposalNo} | ${formatDate(proposal.createdAt)}`, pageWidth / 2, y, { align: "center" });
-      y += 6;
-      pdf.text(`Status: ${proposal.status}`, pageWidth / 2, y, { align: "center" });
-      y += 12;
-
-      const v = versionId
-        ? proposal.versions.find((ver) => ver.id === versionId)
-        : proposal.versions[proposal.versions.length - 1];
-
-      if (!v) {
-        showToast("No version data available.", "error");
-        return;
-      }
-
-      // Helpers
-      const line = () => {
-        pdf.setDrawColor(220, 220, 220);
-        pdf.line(14, y, pageWidth - 14, y);
-        y += 6;
-      };
-      const sectionTitle = (title: string) => {
-        pdf.setFontSize(13);
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(30, 30, 30);
-        pdf.text(title, 14, y);
-        y += 7;
-      };
-      const bodyText = (text: string) => {
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(60, 60, 60);
-        const lines = pdf.splitTextToSize(text, pageWidth - 28);
-        lines.forEach((l: string) => {
-          if (y > 280) {
-            pdf.addPage();
-            y = 20;
-          }
-          pdf.text(l, 14, y);
-          y += 5;
-        });
-      };
-      const bulletItem = (text: string) => {
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(60, 60, 60);
-        const lines = pdf.splitTextToSize(`• ${text}`, pageWidth - 36);
-        lines.forEach((l: string) => {
-          if (y > 280) {
-            pdf.addPage();
-            y = 20;
-          }
-          pdf.text(l, 20, y);
-          y += 4.5;
-        });
-      };
-
-      // Client Info
-      sectionTitle("Client Information");
-      bodyText(`Company: ${proposal.companyName}`);
-      bodyText(`Contact: ${proposal.leadName} (${proposal.leadEmail})`);
-      bodyText(`Phone: ${proposal.leadPhone}`);
-      y += 4;
-      line();
-
-      // Requirement
-      sectionTitle("1. Requirement");
-      sectionTitle("Overview");
-      bodyText(v.requirement.overview || "—");
-      sectionTitle("Objectives");
-      v.requirement.objectives.forEach((o) => bulletItem(o));
-      sectionTitle("Technical Requirements");
-      v.requirement.technicalRequirements.forEach((t) => bulletItem(t));
-      sectionTitle("Deliverables");
-      v.requirement.deliverables.forEach((d) => bulletItem(d));
-      y += 2;
-      line();
-
-      // Estimation
-      sectionTitle("2. Estimation");
-      if (v.estimation.items.length > 0) {
-        // Table header
-        const col1 = 14, col2 = 60, col3 = 120, col4 = 140, col5 = 160, colWidth = pageWidth - 28;
-        pdf.setFontSize(8);
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFillColor(59, 130, 246);
-        pdf.rect(14, y - 3, colWidth, 6, "F");
-        pdf.text("Category", col1 + 2, y + 1);
-        pdf.text("Description", col2 + 2, y + 1);
-        pdf.text("Qty", col3 + 2, y + 1);
-        pdf.text("Rate", col4 + 2, y + 1);
-        pdf.text("Amount", col5 + 2, y + 1);
-        y += 5;
-
-        pdf.setFont("helvetica", "normal");
-        v.estimation.items.forEach((item, idx) => {
-          if (y > 270) {
-            pdf.addPage();
-            y = 20;
-          }
-          pdf.setFillColor(idx % 2 === 0 ? 245 : 255, idx % 2 === 0 ? 247 : 255, idx % 2 === 0 ? 250 : 255);
-          pdf.rect(14, y - 2.5, colWidth, 5, "F");
-          pdf.setTextColor(60, 60, 60);
-          const desc = pdf.splitTextToSize(item.description, 55)[0] || "";
-          pdf.text(item.category.substring(0, 12), col1 + 2, y + 1);
-          pdf.text(String(desc).substring(0, 30), col2 + 2, y + 1);
-          pdf.text(String(item.quantity), col3 + 2, y + 1);
-          pdf.text(formatCurrency(item.unitPrice), col4 + 2, y + 1);
-          pdf.text(formatCurrency(item.amount), col5 + 2, y + 1);
-          y += 5;
-        });
-
-        // Totals
-        y += 2;
-        const totalX = pageWidth - 60;
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(60, 60, 60);
-        pdf.text(`Subtotal:`, totalX, y);
-        pdf.text(formatCurrency(v.estimation.subtotal), pageWidth - 14, y, { align: "right" });
-        y += 5;
-        if (v.estimation.discountPercent > 0) {
-          pdf.text(`Discount (${v.estimation.discountPercent}%):`, totalX, y);
-          pdf.text(`-${formatCurrency(v.estimation.discountAmount)}`, pageWidth - 14, y, { align: "right" });
-          y += 5;
-        }
-        pdf.text(`Tax (${v.estimation.taxPercent}%):`, totalX, y);
-        pdf.text(formatCurrency(v.estimation.taxAmount), pageWidth - 14, y, { align: "right" });
-        y += 5;
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(10);
-        pdf.text("Total:", totalX, y);
-        pdf.text(formatCurrency(v.estimation.total), pageWidth - 14, y, { align: "right" });
-        y += 8;
-      }
-      line();
-
-      // Quotation
-      sectionTitle("3. Quotation / Pricing Terms");
-      bodyText(`Payment Terms: ${v.quotation.paymentTerms}`);
-      bodyText(`Validity: ${v.quotation.validityDays} days`);
-      bodyText(`Delivery Timeline: ${v.quotation.deliveryTimeline}`);
-      bodyText(`Warranty: ${v.quotation.warrantyPeriod}`);
-      y += 2;
-
-      if (v.quotation.paymentMilestones.length > 0) {
-        sectionTitle("Payment Milestones");
-        v.quotation.paymentMilestones.forEach((m) => {
-          bulletItem(`${m.milestone} - ${m.percentage}% (${formatCurrency(m.amount)})`);
-        });
-        y += 2;
-      }
-
-      bodyText(`Notes: ${v.quotation.notes}`);
-      const tnc = v.quotation.termsAndConditions?.split("\n") || [];
-      if (tnc.length > 0) {
-        sectionTitle("Terms & Conditions");
-        tnc.forEach((t) => bulletItem(t));
-      }
-
-      // Footer
-      y = 285;
-      pdf.setFontSize(7);
-      pdf.setFont("helvetica", "italic");
-      pdf.setTextColor(150, 150, 150);
-      pdf.text(`Generated on ${formatDateTime(new Date().toISOString())} | SaiFlow CRM`, pageWidth / 2, y, { align: "center" });
-
-      pdf.save(`${proposal.proposalNo.replace(/\//g, "-")}.pdf`);
-      showToast("PDF exported successfully!", "success");
-    } catch (err) {
-      console.error("PDF export error:", err);
-      showToast("Failed to generate PDF.", "error");
-    }
-  }, [showToast]);
-
-  // ── Email Functions ────────────────────────────────────────────────────────
-
-  const [emailTo, setEmailTo] = useState("");
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailBody, setEmailBody] = useState("");
-  const [emailVersionId, setEmailVersionId] = useState<number | undefined>(undefined);
-
-  const openEmailModal = (proposal: Proposal) => {
-    setEmailTo(proposal.leadEmail);
-    setEmailSubject(`Business Proposal ${proposal.proposalNo} - ${proposal.companyName}`);
-    setEmailBody(`Dear ${proposal.leadName},\n\nPlease find attached the business proposal (${proposal.proposalNo}) for ${proposal.companyName}.\n\nWe look forward to your feedback.\n\nBest regards,\n[Your Name]\nSaiFlow CRM`);
-    setEmailVersionId(proposal.currentVersionId);
-    emailModal.openModal();
+  const handleExportPDF = (proposal: Proposal) => {
+    exportProposalToPDF(proposal, showToast);
   };
 
-  const handleSendEmail = () => {
-    if (!selectedProposal) return;
-    const newEmail: ProposalEmail = {
-      id: generateId(selectedProposal.emails),
-      to: emailTo,
-      cc: [],
-      subject: emailSubject,
-      body: emailBody,
-      sentAt: new Date().toISOString(),
-      status: "Sent",
-      versionId: emailVersionId || selectedProposal.currentVersionId,
-    };
-    const updated = proposals.map((p) =>
-      p.id === selectedProposal.id
-        ? {
-            ...p,
-            emails: [...p.emails, newEmail],
-            workflowLogs: [
-              ...p.workflowLogs,
-              {
-                id: generateId(p.workflowLogs),
-                action: "Email sent",
-                fromStatus: p.status,
-                toStatus: p.status,
-                timestamp: new Date().toISOString(),
-                performedBy: "Current User",
-                notes: `Email sent to ${emailTo} with subject: ${emailSubject}`,
-              },
-            ],
-          }
-        : p
-    );
-    setProposals(updated);
-    setStorage("saiflow_proposals", updated);
-    showToast(`Email "${emailSubject}" sent to ${emailTo}`, "success");
-    emailModal.closeModal();
+  const handleSort = (field: keyof Proposal) => {
+    const isAsc = sortField === field && sortOrder === "asc";
+    setSortOrder(isAsc ? "desc" : "asc");
+    setSortField(field);
   };
+
+
 
   // ── Status Management ──────────────────────────────────────────────────────
 
@@ -460,6 +213,17 @@ export default function QuotationList() {
           onConfirm: () => {
             // Update proposal status
             updateStatus(proposal.id, "Converted", "Lead converted to client. Project initiated.");
+            // Find and update associated lead status to "Won" in storage
+            const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
+            const updatedLeads = leads.map((l) => {
+              const isMatch =
+                (l.company && l.company.toLowerCase() === proposal.companyName.toLowerCase()) ||
+                (l.email && l.email.toLowerCase() === proposal.leadEmail.toLowerCase()) ||
+                (l.phone && l.phone === proposal.leadPhone);
+              return isMatch ? { ...l, status: "Won" as const } : l;
+            });
+            setStorage("saiflow_leads", updatedLeads);
+
             // Create client entry from proposal data
             const currentClients = getStorage<Client[]>("saiflow_clients", initialClients);
             const newClientId = currentClients.length > 0 ? Math.max(...currentClients.map((c) => c.id)) + 1 : 1;
@@ -477,7 +241,6 @@ export default function QuotationList() {
               latestProposalNo: proposal.proposalNo,
               proposalStatus: proposal.status,
               handoverStatus: "Pending",
-              handoverHistory: [],
             };
             setStorage("saiflow_clients", [...currentClients, newClient]);
             showToast(`Client "${proposal.companyName}" created successfully!`, "success");
@@ -661,8 +424,7 @@ export default function QuotationList() {
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {paginatedProposals.length > 0 ? (
                 paginatedProposals.map((proposal) => {
-                  const latest = proposal.versions[proposal.versions.length - 1];
-                  const totalAmount = latest?.estimation.total || 0;
+                  const totalAmount = proposal.estimation.total || 0;
                   return (
                     <TableRow key={proposal.id}
                       className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
@@ -704,7 +466,7 @@ export default function QuotationList() {
                             className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="Edit">
                             <FiEdit className="size-4" />
                           </button>
-                          <button onClick={() => exportToPDF(proposal)}
+                          <button onClick={() => handleExportPDF(proposal)}
                             className="p-1.5 text-gray-500 hover:text-cyan-600 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="Export PDF">
                             <FiDownload className="size-4" />
                           </button>
@@ -745,21 +507,16 @@ export default function QuotationList() {
     </>
   );
 
-  // ── Render: Detail View ────────────────────────────────────────────────────
-
   const renderDetailView = () => {
-    if (!selectedProposal || !currentVersion) return null;
+    if (!selectedProposal) return null;
 
     const status = STATUS_CONFIG[selectedProposal.status];
-    const versionCount = selectedProposal.versions.length;
 
     const tabs = [
       { key: "requirement" as const, label: "Requirement", icon: <FiList className="size-4" /> },
       { key: "estimation" as const, label: "Estimation", icon: <FiDollarSign className="size-4" /> },
       { key: "quotation" as const, label: "Quotation", icon: <FiFileText className="size-4" /> },
-      { key: "versions" as const, label: `Versions (${versionCount})`, icon: <FiLayers className="size-4" /> },
       { key: "workflow" as const, label: "Workflow", icon: <FiActivity className="size-4" /> },
-      { key: "emails" as const, label: `Emails (${selectedProposal.emails.length})`, icon: <FiMail className="size-4" /> },
     ];
 
     return (
@@ -805,12 +562,15 @@ export default function QuotationList() {
             <Button onClick={() => navigate(`/quotations/${selectedProposal.id}/edit`)} size="sm" variant="outline" startIcon={<FiEdit />}>
               Edit
             </Button>
-            <Button onClick={() => exportToPDF(selectedProposal)} size="sm" variant="outline" startIcon={<FiDownload />}>
+            <Button onClick={() => handleExportPDF(selectedProposal)} size="sm" variant="outline" startIcon={<FiDownload />}>
               PDF
             </Button>
-            <Button onClick={() => openEmailModal(selectedProposal)} size="sm" variant="outline" startIcon={<FiMail />}>
+            <a href={`mailto:${selectedProposal.leadEmail}?subject=Business Proposal ${selectedProposal.proposalNo} - ${selectedProposal.companyName}`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-white/5 transition"
+            >
+              <FiMail className="size-4" />
               Email
-            </Button>
+            </a>
           </div>
         </div>
 
@@ -831,7 +591,6 @@ export default function QuotationList() {
             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
               <span className="flex items-center gap-1"><FiCalendar className="size-3.5" /> Created {formatDate(selectedProposal.createdAt)}</span>
               <span className="flex items-center gap-1"><FiRefreshCw className="size-3.5" /> Updated {getTimeAgo(selectedProposal.updatedAt)}</span>
-              <span className="flex items-center gap-1"><FiLayers className="size-3.5" /> {versionCount} version{versionCount > 1 ? "s" : ""}</span>
             </div>
           </div>
 
@@ -844,7 +603,6 @@ export default function QuotationList() {
                 const converted = selectedProposal.status === "Converted";
                 const isCompleted = idx < stepIdx;
                 const isCurrent = idx === stepIdx;
-                const isInactive = idx > stepIdx || (rejected && idx >= stepIdx);
 
                 let stepStatus: "completed" | "current" | "incomplete" | "rejected" = "incomplete";
                 if (rejected && idx === stepIdx) stepStatus = "rejected";
@@ -909,12 +667,10 @@ export default function QuotationList() {
 
         {/* Tab Content */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-          {activeDetailTab === "requirement" && renderRequirementTab(currentVersion)}
-          {activeDetailTab === "estimation" && renderEstimationTab(currentVersion)}
-          {activeDetailTab === "quotation" && renderQuotationTab(currentVersion)}
-          {activeDetailTab === "versions" && renderVersionsTab()}
+          {activeDetailTab === "requirement" && renderRequirementTab(selectedProposal)}
+          {activeDetailTab === "estimation" && renderEstimationTab(selectedProposal)}
+          {activeDetailTab === "quotation" && renderQuotationTab(selectedProposal)}
           {activeDetailTab === "workflow" && renderWorkflowTab()}
-          {activeDetailTab === "emails" && renderEmailsTab()}
         </div>
       </div>
     );
@@ -922,27 +678,29 @@ export default function QuotationList() {
 
   // ── Render: Requirement Tab ────────────────────────────────────────────────
 
-  const renderRequirementTab = (version: ProposalVersion) => (
+  // ── Render: Requirement Tab ────────────────────────────────────────────────
+
+  const renderRequirementTab = (proposal: Proposal) => (
     <div className="p-5 space-y-6">
       <div>
         <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
           <FiInfo className="size-4 text-brand-500" /> Overview
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{version.requirement.overview || "No overview provided."}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{proposal.requirement.overview || "No overview provided."}</p>
       </div>
 
-      <SectionBlock title="Objectives" items={version.requirement.objectives} emptyText="No objectives defined." />
-      <SectionBlock title="Technical Requirements" items={version.requirement.technicalRequirements} emptyText="No technical requirements defined." />
-      <SectionBlock title="Deliverables" items={version.requirement.deliverables} emptyText="No deliverables defined." />
-      <SectionBlock title="Assumptions" items={version.requirement.assumptions} emptyText="No assumptions defined." />
-      <SectionBlock title="Constraints" items={version.requirement.constraints} emptyText="No constraints defined." />
+      <SectionBlock title="Objectives" items={proposal.requirement.objectives} emptyText="No objectives defined." />
+      <SectionBlock title="Technical Requirements" items={proposal.requirement.technicalRequirements} emptyText="No technical requirements defined." />
+      <SectionBlock title="Deliverables" items={proposal.requirement.deliverables} emptyText="No deliverables defined." />
+      <SectionBlock title="Assumptions" items={proposal.requirement.assumptions} emptyText="No assumptions defined." />
+      <SectionBlock title="Constraints" items={proposal.requirement.constraints} emptyText="No constraints defined." />
     </div>
   );
 
   // ── Render: Estimation Tab ─────────────────────────────────────────────────
 
-  const renderEstimationTab = (version: ProposalVersion) => {
-    const est = version.estimation;
+  const renderEstimationTab = (proposal: Proposal) => {
+    const est = proposal.estimation;
     return (
       <div className="p-5">
         <div className="overflow-x-auto">
@@ -999,8 +757,8 @@ export default function QuotationList() {
 
   // ── Render: Quotation Tab ──────────────────────────────────────────────────
 
-  const renderQuotationTab = (version: ProposalVersion) => {
-    const quote = version.quotation;
+  const renderQuotationTab = (proposal: Proposal) => {
+    const quote = proposal.quotation;
     return (
       <div className="p-5 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1038,60 +796,6 @@ export default function QuotationList() {
             <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line leading-relaxed">{quote.termsAndConditions}</div>
           </div>
         )}
-      </div>
-    );
-  };
-
-  // ── Render: Versions Tab ───────────────────────────────────────────────────
-
-  const renderVersionsTab = () => {
-    if (!selectedProposal) return null;
-    return (
-      <div className="p-5">
-        <div className="relative pl-8 space-y-6">
-          {[...selectedProposal.versions].reverse().map((ver, idx, arr) => {
-            const isLatest = idx === 0;
-            const isLast = idx === arr.length - 1;
-            return (
-              <div key={ver.id} className="relative">
-                {!isLast && (
-                  <div className="absolute left-[-20px] top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
-                )}
-                <div className={`absolute left-[-26px] top-1 w-3.5 h-3.5 rounded-full border-2 ${isLatest ? "bg-brand-500 border-brand-500" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600"}`} />
-                <div className={`p-4 rounded-lg border ${isLatest ? "border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-900/10" : "border-gray-100 dark:border-white/[0.05]"}`}>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
-                        {ver.versionLabel}
-                      </h4>
-                      {isLatest && <Badge size="sm" color="primary">Current</Badge>}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                      <FiCalendar className="size-3" />
-                      {formatDate(ver.createdAt)}
-                      <FiUser className="size-3 ml-1" />
-                      {ver.createdBy}
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    Total: <span className="font-semibold text-gray-800 dark:text-white">{formatCurrency(ver.estimation.total)}</span>
-                  </div>
-                  {ver.revisionNotes && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-white/[0.05] mt-2">
-                      <span className="font-medium">Notes:</span> {ver.revisionNotes}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={() => exportToPDF(selectedProposal, ver.id)}
-                      className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 flex items-center gap-1 cursor-pointer">
-                      <FiDownload className="size-3" /> Export this version
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     );
   };
@@ -1139,50 +843,6 @@ export default function QuotationList() {
     );
   };
 
-  // ── Render: Emails Tab ─────────────────────────────────────────────────────
-
-  const renderEmailsTab = () => {
-    if (!selectedProposal) return null;
-    return (
-      <div className="p-5">
-        {selectedProposal.emails.length > 0 ? (
-          <div className="space-y-3">
-            {[...selectedProposal.emails].reverse().map((email) => (
-              <div key={email.id} className="p-4 rounded-lg border border-gray-100 dark:border-white/[0.05]">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-full bg-brand-50 dark:bg-brand-900/20">
-                      <FiMail className="size-3.5 text-brand-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800 dark:text-white">{email.subject}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">To: {email.to}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge size="sm" color={email.status === "Sent" ? "warning" : email.status === "Opened" ? "success" : email.status === "Replied" ? "info" : "error"}>
-                      {email.status}
-                    </Badge>
-                    <span className="text-xs text-gray-400">{formatDateTime(email.sentAt)}</span>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-pre-line line-clamp-2">{email.body}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-10">
-            <FiMail className="size-8 text-gray-300 dark:text-gray-600 mb-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">No emails sent yet.</p>
-            <Button onClick={() => openEmailModal(selectedProposal)} size="sm" variant="outline" startIcon={<FiMail />}>
-              Send Email
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
       <PageMeta title="Business Proposal | SaiFlow" description="Create, manage, and track business proposals with full version history and workflow." />
@@ -1192,7 +852,7 @@ export default function QuotationList() {
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.closeModal} className="max-w-md p-6">
         <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">Delete Proposal</h4>
         <p className="text-sm text-gray-500 mb-6">
-          Are you sure you want to delete proposal "{selectedProposal?.proposalNo}"? This action cannot be undone and all versions will be removed.
+          Are you sure you want to delete proposal "{selectedProposal?.proposalNo}"? This action cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
           <Button onClick={deleteModal.closeModal} variant="outline" size="sm">Cancel</Button>
@@ -1212,75 +872,7 @@ export default function QuotationList() {
         </div>
       </Modal>
 
-      {/* Email Modal */}
-      <Modal isOpen={emailModal.isOpen} onClose={emailModal.closeModal} className="max-w-lg p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/[0.05] pb-3">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-white">Send Proposal via Email</h4>
-              <p className="text-xs text-gray-500 mt-1">To: {selectedProposal?.companyName}</p>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">To</label>
-            <Input type="text" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Subject</label>
-            <Input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message</label>
-            <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 dark:border-gray-800 dark:text-white/90 resize-none h-36"
-              placeholder="Email body..." />
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button onClick={emailModal.closeModal} variant="outline" size="sm">Cancel</Button>
-            <Button onClick={handleSendEmail} variant="primary" size="sm" startIcon={<FiSend />}>
-              Send Email
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
-      {/* Version History Modal */}
-      <Modal isOpen={versionHistoryModal.isOpen} onClose={versionHistoryModal.closeModal} className="max-w-2xl p-6 max-h-[80vh] overflow-y-auto">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">Version History</h4>
-        {selectedProposal && (
-          <div className="relative pl-8 space-y-4">
-            {[...selectedProposal.versions].reverse().map((ver, idx, arr) => {
-              const isLatest = idx === 0;
-              const isLast = idx === arr.length - 1;
-              return (
-                <div key={ver.id} className="relative">
-                  {!isLast && <div className="absolute left-[-16px] top-5 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />}
-                  <div className={`absolute left-[-20px] top-1 w-3 h-3 rounded-full border-2 ${isLatest ? "bg-brand-500 border-brand-500" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600"}`} />
-                  <div className={`p-3 rounded-lg border ${isLatest ? "border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-900/10" : "border-gray-100 dark:border-white/[0.05]"}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-800 dark:text-white">{ver.versionLabel}</span>
-                        {isLatest && <Badge size="sm" color="primary">Current</Badge>}
-                      </div>
-                      <span className="text-xs text-gray-400">{formatDate(ver.createdAt)}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {ver.createdBy} &middot; Total: {formatCurrency(ver.estimation.total)}
-                    </div>
-                    {ver.revisionNotes && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 italic">"{ver.revisionNotes}"</p>
-                    )}
-                    <button onClick={() => exportToPDF(selectedProposal, ver.id)}
-                      className="text-xs text-brand-500 hover:text-brand-600 mt-2 flex items-center gap-1 cursor-pointer">
-                      <FiDownload className="size-3" /> Export this version
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Modal>
     </>
   );
 }
@@ -1319,4 +911,197 @@ function InfoCard({ label, value }: { label: string; value: string }) {
       <p className="text-sm font-medium text-gray-800 dark:text-white">{value || "—"}</p>
     </div>
   );
+}
+
+export function exportProposalToPDF(proposal: Proposal, showToast: (msg: string, type: "info" | "success" | "error") => void) {
+  try {
+    showToast("Generating PDF...", "info");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    let y = 20;
+
+    y += 14;
+
+    pdf.setFontSize(18);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Business Proposal", pageWidth / 2, y, { align: "center" });
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`${proposal.proposalNo} | ${proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}`, pageWidth / 2, y, { align: "center" });
+    y += 6;
+    pdf.text(`Status: ${proposal.status}`, pageWidth / 2, y, { align: "center" });
+    y += 12;
+
+    const req = proposal.requirement;
+    const est = proposal.estimation;
+    const quot = proposal.quotation;
+
+    // Helpers
+    const line = () => {
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(14, y, pageWidth - 14, y);
+      y += 6;
+    };
+    const sectionTitle = (title: string) => {
+      pdf.setFontSize(13);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(30, 30, 30);
+      pdf.text(title, 14, y);
+      y += 7;
+    };
+    const bodyText = (text: string) => {
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      const lines = pdf.splitTextToSize(text || "", pageWidth - 28);
+      lines.forEach((l: string) => {
+        if (y > 280) {
+          pdf.addPage();
+          y = 20;
+        }
+        pdf.text(l, 14, y);
+        y += 5;
+      });
+    };
+    const bulletItem = (text: string) => {
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      const lines = pdf.splitTextToSize(`• ${text}`, pageWidth - 36);
+      lines.forEach((l: string) => {
+        if (y > 280) {
+          pdf.addPage();
+          y = 20;
+        }
+        pdf.text(l, 20, y);
+        y += 4.5;
+      });
+    };
+
+    // Client Info
+    sectionTitle("Client Information");
+    bodyText(`Company: ${proposal.companyName}`);
+    bodyText(`Contact: ${proposal.leadName} (${proposal.leadEmail})`);
+    bodyText(`Phone: ${proposal.leadPhone}`);
+    y += 4;
+    line();
+
+    // Requirement
+    sectionTitle("1. Requirement");
+    sectionTitle("Overview");
+    bodyText(req.overview || "—");
+    
+    if (req.objectives && req.objectives.length > 0) {
+      sectionTitle("Objectives");
+      req.objectives.forEach((o) => bulletItem(o));
+    }
+    if (req.technicalRequirements && req.technicalRequirements.length > 0) {
+      sectionTitle("Technical Requirements");
+      req.technicalRequirements.forEach((t) => bulletItem(t));
+    }
+    if (req.deliverables && req.deliverables.length > 0) {
+      sectionTitle("Deliverables");
+      req.deliverables.forEach((d) => bulletItem(d));
+    }
+    y += 2;
+    line();
+
+    // Estimation
+    sectionTitle("2. Estimation");
+    if (est.items && est.items.length > 0) {
+      // Table header
+      const col1 = 14, col2 = 60, col3 = 120, col4 = 140, col5 = 160, colWidth = pageWidth - 28;
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(14, y - 3, colWidth, 6, "F");
+      pdf.text("Category", col1 + 2, y + 1);
+      pdf.text("Description", col2 + 2, y + 1);
+      pdf.text("Qty", col3 + 2, y + 1);
+      pdf.text("Rate", col4 + 2, y + 1);
+      pdf.text("Amount", col5 + 2, y + 1);
+      y += 5;
+
+      pdf.setFont("helvetica", "normal");
+      est.items.forEach((item, idx) => {
+        if (y > 270) {
+          pdf.addPage();
+          y = 20;
+        }
+        pdf.setFillColor(idx % 2 === 0 ? 245 : 255, idx % 2 === 0 ? 247 : 255, idx % 2 === 0 ? 250 : 255);
+        pdf.rect(14, y - 2.5, colWidth, 5, "F");
+        pdf.setTextColor(60, 60, 60);
+        const desc = pdf.splitTextToSize(item.description, 55)[0] || "";
+        pdf.text(item.category.substring(0, 12), col1 + 2, y + 1);
+        pdf.text(String(desc).substring(0, 30), col2 + 2, y + 1);
+        pdf.text(String(item.quantity), col3 + 2, y + 1);
+        pdf.text(formatCurrency(item.unitPrice), col4 + 2, y + 1);
+        pdf.text(formatCurrency(item.amount), col5 + 2, y + 1);
+        y += 5;
+      });
+
+      // Totals
+      y += 2;
+      const totalX = pageWidth - 60;
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      pdf.text(`Subtotal:`, totalX, y);
+      pdf.text(formatCurrency(est.subtotal), pageWidth - 14, y, { align: "right" });
+      y += 5;
+      if (est.discountPercent > 0) {
+        pdf.text(`Discount (${est.discountPercent}%):`, totalX, y);
+        pdf.text(`-${formatCurrency(est.discountAmount)}`, pageWidth - 14, y, { align: "right" });
+        y += 5;
+      }
+      pdf.text(`Tax (${est.taxPercent}%):`, totalX, y);
+      pdf.text(formatCurrency(est.taxAmount), pageWidth - 14, y, { align: "right" });
+      y += 5;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.text("Total:", totalX, y);
+      pdf.text(formatCurrency(est.total), pageWidth - 14, y, { align: "right" });
+      y += 8;
+    }
+    line();
+
+    // Quotation
+    sectionTitle("3. Quotation / Pricing Terms");
+    bodyText(`Payment Terms: ${quot.paymentTerms}`);
+    bodyText(`Validity: ${quot.validityDays} days`);
+    bodyText(`Delivery Timeline: ${quot.deliveryTimeline}`);
+    bodyText(`Warranty: ${quot.warrantyPeriod}`);
+    y += 2;
+
+    if (quot.paymentMilestones && quot.paymentMilestones.length > 0) {
+      sectionTitle("Payment Milestones");
+      quot.paymentMilestones.forEach((m) => {
+        bulletItem(`${m.milestone} - ${m.percentage}% (${formatCurrency(m.amount)})`);
+      });
+      y += 2;
+    }
+
+    bodyText(`Notes: ${quot.notes}`);
+    const tnc = quot.termsAndConditions?.split("\n") || [];
+    if (tnc.length > 0) {
+      sectionTitle("Terms & Conditions");
+      tnc.forEach((t) => bulletItem(t));
+    }
+
+    // Footer
+    y = 285;
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "italic");
+    pdf.setTextColor(150, 150, 150);
+    pdf.text(`Generated on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} | SaiFlow CRM`, pageWidth / 2, y, { align: "center" });
+
+    pdf.save(`${proposal.proposalNo.replace(/\//g, "-")}.pdf`);
+    showToast("PDF exported successfully!", "success");
+  } catch (err) {
+    console.error("PDF export error:", err);
+    showToast("Failed to generate PDF.", "error");
+  }
 }

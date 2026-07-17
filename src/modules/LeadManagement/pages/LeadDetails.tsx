@@ -113,11 +113,16 @@ export default function LeadDetails() {
       preferredCommunication: "Email",
       creditLimit: creditLimit,
       handoverStatus: "Pending",
-      handoverHistory: [],
     };
 
     const updatedClients = [...clientsList, newClient];
     setStorage("saiflow_clients", updatedClients);
+
+    // Update original Lead status to "Won" in storage
+    const updatedLeads = leads.map((l) =>
+      l.id === lead.id ? { ...l, status: "Won" as const } : l
+    );
+    setStorage("saiflow_leads", updatedLeads);
 
     showToast(`Lead converted to Client ${lead.company} successfully!`, "success");
     setShowConvertModal(false);

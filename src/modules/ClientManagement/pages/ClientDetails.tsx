@@ -4,9 +4,8 @@ import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Button from "../../../components/ui/button/Button";
-import { Client, HandoverRecord, initialClients } from "../data/clientsData";
+import { Client, initialClients } from "../data/clientsData";
 import { Meeting, initialMeetings, getMeetingStatusColor } from "../../MeetingManagement/data/meetingsData";
-import { Proposal, initialProposals } from "../../Quotation/data/quotationsData";
 import { getStorage } from "../../../utils/storage";
 import {
   Table,
@@ -30,10 +29,6 @@ import {
   FiPlus,
   FiExternalLink,
   FiShield,
-  FiCheckCircle,
-  FiDownload,
-  FiFileText,
-  FiClock,
 } from "react-icons/fi";
 
 interface InfoCardProps {
@@ -42,23 +37,6 @@ interface InfoCardProps {
   value: React.ReactNode;
 }
 
-const HANDOVER_STATUS_COLORS: Record<string, "primary" | "success" | "warning" | "info" | "light"> = {
-  Pending: "warning",
-  "In Progress": "info",
-  Completed: "success",
-};
-
-const HANDOVER_ITEMS_MAP: Record<string, string> = {
-  clientDetails: "Client Details",
-  leadDetails: "Lead Details",
-  requirement: "Requirement",
-  estimation: "Estimation",
-  quotation: "Quotation",
-  approvedProposalPdf: "Approved Proposal PDF",
-  summary: "Summary",
-  notes: "Notes",
-};
-
 function InfoCard({ icon, label, value }: InfoCardProps) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5 dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -66,7 +44,7 @@ function InfoCard({ icon, label, value }: InfoCardProps) {
         <span className="text-gray-500 dark:text-gray-400">{icon}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <span className="block text-xs text-gray-400 dark:text-gray-505 mb-0.5">
+        <span className="block text-xs text-gray-400 dark:text-gray-550 mb-0.5">
           {label}
         </span>
         <span className="block text-sm font-medium text-gray-850 dark:text-white/90 break-words">
@@ -96,15 +74,6 @@ export default function ClientDetails() {
     );
   }, [client, meetings]);
 
-  const proposals = getStorage<Proposal[]>("saiflow_proposals", initialProposals);
-  const clientProposal = client?.latestProposalId
-    ? proposals.find((p) => p.id === client?.latestProposalId)
-    : client
-    ? proposals.find((p) =>
-        p.companyName.toLowerCase() === client.company.toLowerCase()
-      )
-    : undefined;
-
   const [activeTab, setActiveTab] = useState("overview");
 
   if (!client) {
@@ -131,8 +100,6 @@ export default function ClientDetails() {
     { id: "overview", label: "Overview" },
     { id: "contacts", label: "Contacts" },
     { id: "meetings", label: "Meetings", count: clientMeetings.length },
-    { id: "projects", label: "Projects", count: client.projectsCount || 0 },
-    { id: "handover", label: "Handover", count: client.handoverHistory.length },
     { id: "timeline", label: "Timeline" },
   ];
 
@@ -362,171 +329,6 @@ export default function ClientDetails() {
           </div>
         )}
 
-        {/* Mock Project List */}
-        {activeTab === "projects" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4">
-              Client Projects
-            </h3>
-            {client.projectsCount > 0 ? (
-              <div className="max-w-full overflow-x-auto custom-scrollbar">
-                <Table>
-                  <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-                    <TableRow>
-                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Project Name</TableCell>
-                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Category</TableCell>
-                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</TableCell>
-                      <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Launch Date</TableCell>
-                      <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Progress</TableCell>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                    <TableRow className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
-                      <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">E-Commerce App Redesign</TableCell>
-                      <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Mobile Application</TableCell>
-                      <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                        <Badge size="sm" color="primary">In Progress</Badge>
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">2026-09-01</TableCell>
-                      <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-end whitespace-nowrap">60%</TableCell>
-                    </TableRow>
-                    {client.projectsCount > 1 && (
-                      <TableRow className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
-                        <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">HR Portal Integration</TableCell>
-                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Web Application</TableCell>
-                        <TableCell className="px-5 py-4 text-theme-sm whitespace-nowrap">
-                          <Badge size="sm" color="success">Active</Badge>
-                        </TableCell>
-                        <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">2026-06-15</TableCell>
-                        <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 text-end whitespace-nowrap">100%</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl dark:border-white/[0.05]">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No active projects found for this client.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Handover */}
-        {activeTab === "handover" && (
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
-            {/* Handover Status Header */}
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.05]">
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <FiShield className="size-4 text-brand-500" />
-                Handover Status
-              </h3>
-              <Badge size="sm" color={HANDOVER_STATUS_COLORS[client.handoverStatus] || "warning"}>
-                <span className="flex items-center gap-1">
-                  {client.handoverStatus === "Completed" ? <FiCheckCircle className="size-3" /> : <FiClock className="size-3" />}
-                  {client.handoverStatus}
-                </span>
-              </Badge>
-            </div>
-
-            {/* Proposal Info */}
-            {clientProposal && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 p-3 bg-gray-50 dark:bg-white/[0.03] rounded-lg">
-                <div>
-                  <span className="text-xs text-gray-400 block">Proposal</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white">{clientProposal.proposalNo}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Proposal Status</span>
-                  <Badge size="sm" color={
-                    clientProposal.status === "Approved" ? "success" :
-                    clientProposal.status === "Rejected" ? "error" :
-                    clientProposal.status === "Converted" ? "primary" :
-                    "warning"
-                  }>
-                    {clientProposal.status}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Assigned Employee</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white">
-                    {client.assignedEmployee || client.relationshipManager || "—"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Conversion Date</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white">
-                    {client.conversionDate ? new Date(client.conversionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Handover History */}
-            <h3 className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wider">
-              Handover History
-            </h3>
-
-            {client.handoverHistory.length > 0 ? (
-              <div className="relative pl-8 space-y-4">
-                {[...client.handoverHistory].reverse().map((record) => (
-                  <div key={record.id} className="relative">
-                    <div className="absolute left-[-20px] top-4 bottom-0 w-0.5 bg-gray-100 dark:bg-gray-800" />
-                    <div className="absolute left-[-25px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 dark:bg-emerald-600" />
-                    <div className="p-4 rounded-lg border border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02] transition">
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                            Handed over to {record.handoverTo}
-                          </span>
-                          <Badge size="sm" color={HANDOVER_STATUS_COLORS[record.status] || "warning"}>
-                            {record.status}
-                          </Badge>
-                        </div>
-                        <span className="text-xs text-gray-400">
-                          {new Date(record.handoverDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        <FiUser className="size-3" /> {record.handoverBy}
-                        <FiFileText className="size-3 ml-1" /> {record.proposalNo}
-                        <FiDownload className="size-3 ml-1" /> All items transferred
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {(Object.entries(record.transferredData) as [keyof HandoverRecord["transferredData"], boolean][])
-                          .filter(([, val]) => val)
-                          .map(([key]) => (
-                            <span key={key} className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                              <FiCheckCircle className="size-2.5" />
-                              {HANDOVER_ITEMS_MAP[key] || key}
-                            </span>
-                          ))}
-                      </div>
-                      {record.notes && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-1 border-t border-gray-50 dark:border-white/[0.03] pt-2">
-                          "{record.notes}"
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 border border-dashed border-gray-200 dark:border-white/[0.05] rounded-lg">
-                <FiShield className="size-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No handovers have been completed yet.
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Use the "Handover to Development Team" action from the client list to transfer this client to a development team.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Timeline */}
         {activeTab === "timeline" && (
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
@@ -552,26 +354,6 @@ export default function ClientDetails() {
                 </div>
               </div>
 
-              {/* Handover Timeline Events */}
-              {client.handoverHistory.map((record) => (
-                <div key={`handover-${record.id}`} className="relative">
-                  <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-4 ring-white dark:ring-gray-900">
-                    <FiShield className="size-2 text-white" />
-                  </span>
-                  <div>
-                    <span className="text-xs text-gray-400 dark:text-gray-505 block mb-0.5">
-                      {new Date(record.handoverDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </span>
-                    <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
-                      Handover to {record.handoverTo}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Handed over by {record.handoverBy}. Proposal: {record.proposalNo}. Status: {record.status}.
-                    </p>
-                  </div>
-                </div>
-              ))}
-
               {clientMeetings.map((m) => (
                 <div key={m.id} className="relative">
                   <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 ring-4 ring-white dark:ring-gray-900">
@@ -584,7 +366,7 @@ export default function ClientDetails() {
                     <p className="text-sm font-semibold text-gray-850 dark:text-white/90">
                       Meeting Held: {m.subject}
                     </p>
-                    <p className="text-xs text-gray-505 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-gray-550 dark:text-gray-400 mt-1">
                       Platform: {m.meetingPlatform || m.type}. Status: {m.status}.
                     </p>
                   </div>

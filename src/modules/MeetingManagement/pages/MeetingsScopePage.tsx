@@ -94,7 +94,7 @@ export default function MeetingsScopePage({
           m.subject.toLowerCase().includes(q) ||
           m.company.toLowerCase().includes(q) ||
           m.contactPerson.toLowerCase().includes(q) ||
-          m.meetingType?.toLowerCase().includes(q)
+          m.type?.toLowerCase().includes(q)
       );
     }
     result.sort((a, b) => {
@@ -475,7 +475,7 @@ export default function MeetingsScopePage({
               <TableRow>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Company", "company")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Contact", "contactPerson")}</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Type", "meetingType")}</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Type", "type")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Date", "date")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Time", "time")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Status", "status")}</TableCell>
@@ -490,7 +490,7 @@ export default function MeetingsScopePage({
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
                   >
                     <TableCell className="px-4 py-4">
-                      <div className="flex items-center gap-2.5">
+                       <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold text-xs">
                           {meeting.company.charAt(0)}
                         </div>
@@ -507,7 +507,7 @@ export default function MeetingsScopePage({
                     </TableCell>
                     <TableCell className="px-4 py-4">
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {meeting.meetingType || meeting.type}
+                        {meeting.type}
                       </span>
                     </TableCell>
                     <TableCell className="px-4 py-4">

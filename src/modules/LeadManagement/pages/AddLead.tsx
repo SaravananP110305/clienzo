@@ -194,7 +194,6 @@ export default function AddLead() {
   const handleSave = (data: LeadFormValues) => {
     const currentLeads = getStorage<Lead[]>("saiflow_leads", initialLeads);
     if (isEditMode) {
-      const existingLead = currentLeads.find((l) => l.id === Number(id));
       const updated = currentLeads.map((l) =>
         l.id === Number(id)
           ? {

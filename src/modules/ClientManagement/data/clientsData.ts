@@ -1,24 +1,3 @@
-export interface HandoverRecord {
-  id: number;
-  handoverDate: string;
-  handoverBy: string;
-  handoverTo: string;
-  proposalId: number;
-  proposalNo: string;
-  status: "Pending" | "In Progress" | "Completed";
-  notes: string;
-  transferredData: {
-    clientDetails: boolean;
-    leadDetails: boolean;
-    requirement: boolean;
-    estimation: boolean;
-    quotation: boolean;
-    approvedProposalPdf: boolean;
-    summary: boolean;
-    notes: boolean;
-  };
-}
-
 export interface Client {
   id: number;
   name: string; // Contact Name
@@ -64,8 +43,7 @@ export interface Client {
   latestProposalId?: number;
   latestProposalNo?: string;
   proposalStatus?: string;
-  handoverStatus: "Pending" | "In Progress" | "Completed";
-  handoverHistory: HandoverRecord[];
+  handoverStatus: "Pending" | "Onboarded";
 }
 
 export const initialClients: Client[] = [
@@ -103,7 +81,6 @@ export const initialClients: Client[] = [
     latestProposalNo: "BP-2026-001",
     proposalStatus: "Negotiation",
     handoverStatus: "Pending",
-    handoverHistory: [],
   },
   {
     id: 2,
@@ -138,29 +115,7 @@ export const initialClients: Client[] = [
     latestProposalId: 2,
     latestProposalNo: "BP-2026-002",
     proposalStatus: "Approved",
-    handoverStatus: "Completed",
-    handoverHistory: [
-      {
-        id: 1,
-        handoverDate: "2024-03-20",
-        handoverBy: "Robert Lee",
-        handoverTo: "Dev Team Alpha",
-        proposalId: 2,
-        proposalNo: "BP-2026-002",
-        status: "Completed",
-        notes: "Full handover completed. All documents transferred.",
-        transferredData: {
-          clientDetails: true,
-          leadDetails: true,
-          requirement: true,
-          estimation: true,
-          quotation: true,
-          approvedProposalPdf: true,
-          summary: true,
-          notes: true,
-        },
-      },
-    ],
+    handoverStatus: "Onboarded",
   },
   {
     id: 3,
@@ -196,6 +151,5 @@ export const initialClients: Client[] = [
     latestProposalNo: "BP-2026-005",
     proposalStatus: "Rejected",
     handoverStatus: "Pending",
-    handoverHistory: [],
   },
 ];

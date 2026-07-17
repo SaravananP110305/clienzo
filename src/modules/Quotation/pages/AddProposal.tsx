@@ -8,7 +8,6 @@ import Input from "../../../components/form/input/InputField";
 import { useToast } from "../../../hooks/useToast";
 import {
   Proposal,
-  ProposalVersion,
   ProposalStatus,
   RequirementSection,
   EstimationLineItem,
@@ -26,15 +25,7 @@ const CATEGORY_OPTIONS = [
   "Consulting", "Maintenance", "Other",
 ];
 
-const STATUS_OPTIONS: { value: ProposalStatus; label: string }[] = [
-  { value: "Draft", label: "Draft" },
-  { value: "Sent", label: "Sent" },
-  { value: "Under Review", label: "Under Review" },
-  { value: "Negotiation", label: "Negotiation" },
-  { value: "Approved", label: "Approved" },
-  { value: "Rejected", label: "Rejected" },
-  { value: "Converted", label: "Converted" },
-];
+
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -89,33 +80,30 @@ export default function AddProposal() {
   const [formNotes, setFormNotes] = useState("");
   const [formTnC, setFormTnC] = useState("");
 
-  // ── Load existing data for edit mode ───────────────────────────────────────
-
   useEffect(() => {
     if (isEditMode) {
       const rawProposals = getStorage<Proposal[]>("saiflow_proposals", initialProposals);
       // Validate stored data — fall back to sample data if stale
-      const proposals = rawProposals.length > 0 && (!rawProposals[0].versions || !rawProposals[0].proposalNo)
+      const proposals = rawProposals.length > 0 && (!rawProposals[0].requirement || !rawProposals[0].proposalNo)
         ? initialProposals
         : rawProposals;
       const proposal = proposals.find((p) => p.id === Number(id));
       if (proposal) {
-        const v = proposal.versions[proposal.versions.length - 1];
         setFormLeadName(proposal.leadName);
         setFormCompanyName(proposal.companyName);
         setFormLeadEmail(proposal.leadEmail);
         setFormLeadPhone(proposal.leadPhone);
         setFormStatus(proposal.status);
-        setFormRequirement(v.requirement);
-        setFormEstimationItems(v.estimation.items);
-        setFormDiscountPct(v.estimation.discountPercent);
-        setFormTaxPct(v.estimation.taxPercent);
-        setFormPaymentTerms(v.quotation.paymentTerms);
-        setFormValidityDays(v.quotation.validityDays);
-        setFormDeliveryTimeline(v.quotation.deliveryTimeline);
-        setFormWarranty(v.quotation.warrantyPeriod);
-        setFormNotes(v.quotation.notes);
-        setFormTnC(v.quotation.termsAndConditions);
+        setFormRequirement(proposal.requirement);
+        setFormEstimationItems(proposal.estimation.items);
+        setFormDiscountPct(proposal.estimation.discountPercent);
+        setFormTaxPct(proposal.estimation.taxPercent);
+        setFormPaymentTerms(proposal.quotation.paymentTerms);
+        setFormValidityDays(proposal.quotation.validityDays);
+        setFormDeliveryTimeline(proposal.quotation.deliveryTimeline);
+        setFormWarranty(proposal.quotation.warrantyPeriod);
+        setFormNotes(proposal.quotation.notes);
+        setFormTnC(proposal.quotation.termsAndConditions);
       } else {
         showToast("Proposal not found.", "error");
         navigate("/quotations");
@@ -203,17 +191,8 @@ export default function AddProposal() {
       paymentMilestones: [], notes: formNotes, termsAndConditions: formTnC,
     };
 
-    const newVersion: ProposalVersion = {
-      id: Date.now(),
-      versionLabel: "v1.0",
-      createdAt: new Date().toISOString().split("T")[0],
-      createdBy: "Current User",
-      requirement: requirements, estimation, quotation,
-      revisionNotes: "",
-    };
-
     let allProposals = getStorage<Proposal[]>("saiflow_proposals", initialProposals);
-    if (allProposals.length > 0 && (!allProposals[0].versions || !allProposals[0].proposalNo)) {
+    if (allProposals.length > 0 && (!allProposals[0].requirement || !allProposals[0].proposalNo)) {
       allProposals = initialProposals;
       setStorage("saiflow_proposals", initialProposals);
     }
@@ -229,8 +208,9 @@ export default function AddProposal() {
           leadPhone: formLeadPhone.trim(),
           status: formStatus,
           updatedAt: new Date().toISOString().split("T")[0],
-          versions: [...p.versions.slice(0, -1), newVersion],
-          currentVersionId: newVersion.id,
+          requirement: requirements,
+          estimation,
+          quotation,
           workflowLogs: [
             ...p.workflowLogs,
             {
@@ -257,15 +237,15 @@ export default function AddProposal() {
         status: formStatus,
         createdAt: new Date().toISOString().split("T")[0],
         updatedAt: new Date().toISOString().split("T")[0],
-        versions: [newVersion],
-        emails: [],
+        requirement: requirements,
+        estimation,
+        quotation,
         workflowLogs: [{
           id: 1, action: "Proposal created",
           fromStatus: "Draft", toStatus: formStatus,
           timestamp: new Date().toISOString(),
           performedBy: "Current User", notes: "New proposal created",
         }],
-        currentVersionId: newVersion.id,
       };
       setStorage("saiflow_proposals", [...allProposals, newProposal]);
       showToast("Proposal created successfully.", "success");

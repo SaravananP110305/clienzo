@@ -224,7 +224,6 @@ export default function AddClient() {
         preferredCommunication: preferredCommunication || undefined,
         creditLimit: creditLimit || undefined,
         handoverStatus: "Pending",
-        handoverHistory: [],
       };
       setStorage("saiflow_clients", [...clients, newClient]);
       showToast("Client added successfully.", "success");

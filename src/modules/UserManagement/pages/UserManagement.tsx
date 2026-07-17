@@ -24,7 +24,6 @@ import {
   ChevronUpIcon,
 } from "../../../icons";
 import { FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
-import { DEPARTMENTS } from "../../Master/data/masterData";
 
 interface User {
   id: number;
