@@ -16,8 +16,8 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import { ChevronDownIcon } from "../../../icons";
-import {
-  FiEye,
+import Button from "../../../components/ui/button/Button";
+import { FiEye,
   FiDownload,
   FiShield,
   FiCheckCircle,
@@ -156,6 +156,34 @@ export default function ClientList() {
     return processedClients.slice(start, start + rowsPerPage);
   }, [processedClients, currentPage, rowsPerPage]);
 
+  // Bulk actions
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const selectAll = useMemo(() => paginatedClients.length > 0 && selectedIds.length === paginatedClients.length, [paginatedClients, selectedIds]);
+  const isIndeterminate = useMemo(() => selectedIds.length > 0 && selectedIds.length < paginatedClients.length, [paginatedClients, selectedIds]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(paginatedClients.map(c => c.id));
+    }
+  };
+
+  const handleBulkOnboard = () => {
+    const updated = clients.map(c =>
+      selectedIds.includes(c.id) ? { ...c, handoverStatus: "Onboarded" as const } : c
+    );
+    setClients(updated);
+    setStorage("saiflow_clients", updated);
+    showToast(`${selectedIds.length} client(s) marked as Onboarded.`, "success");
+    setSelectedIds([]);
+  };
+
   const totalPages = Math.ceil(processedClients.length / rowsPerPage);
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -224,12 +252,38 @@ export default function ClientList() {
         </div>
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl border border-brand-200 bg-brand-50 dark:border-brand-500/20 dark:bg-brand-500/10">
+          <span className="text-sm font-medium text-brand-700 dark:text-brand-400">
+            {selectedIds.length} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="primary" onClick={handleBulkOnboard}>
+              Mark Onboarded
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Clients Table */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto custom-scrollbar">
           <Table className="min-w-full">
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
+                <TableCell isHeader className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                  />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Client Name</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Company</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Contact Number</TableCell>
@@ -250,6 +304,14 @@ export default function ClientList() {
                     <TableRow key={client.id}
                       className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                     >
+                      <TableCell className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(client.id)}
+                          onChange={() => toggleSelect(client.id)}
+                          className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                        />
+                      </TableCell>
                       {/* Client Name */}
                       <TableCell className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
@@ -362,7 +424,7 @@ export default function ClientList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={10} className="px-5 py-12 text-center">
+                  <TableCell colSpan={11} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <FiUsers className="size-10 text-gray-300 dark:text-gray-600" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">No clients found.</p>

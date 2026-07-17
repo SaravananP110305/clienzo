@@ -60,6 +60,18 @@ export default function AddLead() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
 
+  // Collapsible sections for progressive disclosure
+  const [expandedSections, setExpandedSections] = useState({
+    companyAddress: false,
+    leadAssignment: false,
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    if (!isEditMode) {
+      setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+    }
+  };
+
   const {
     control,
     handleSubmit,
@@ -516,13 +528,20 @@ export default function AddLead() {
 
         {/* ═══════════════════ SECTION 2: Company & Address ═══════════════════ */}
         <div>
-          <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => toggleSection("companyAddress")}
+            className="w-full flex items-center gap-4 mb-5 cursor-pointer group"
+          >
             <span className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-400">
               Company & Address
             </span>
             <div className="h-px flex-1 bg-gradient-to-r from-brand-500/30 to-transparent" />
-          </div>
-          <div className="grid grid-cols-1 gap-6">
+            <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.companyAddress ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div className={`grid grid-cols-1 gap-6 overflow-hidden transition-all duration-300 ${expandedSections.companyAddress ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} ${isEditMode ? 'max-h-[2000px] opacity-100' : ''}`}>
           {/* Card 3: Company Details */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
@@ -678,13 +697,20 @@ export default function AddLead() {
 
         {/* ═══════════════════ SECTION 3: Lead & Assignment ═══════════════════ */}
         <div>
-          <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => toggleSection("leadAssignment")}
+            className="w-full flex items-center gap-4 mb-5 cursor-pointer group"
+          >
             <span className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-400">
               Lead & Assignment
             </span>
             <div className="h-px flex-1 bg-gradient-to-r from-brand-500/30 to-transparent" />
-          </div>
-          <div className="grid grid-cols-1 gap-6">
+            <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.leadAssignment ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div className={`grid grid-cols-1 gap-6 overflow-hidden transition-all duration-300 ${expandedSections.leadAssignment ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} ${isEditMode ? 'max-h-[2000px] opacity-100' : ''}`}>
           {/* Card 5: Lead Details */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/95 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">

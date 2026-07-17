@@ -142,7 +142,7 @@ export default function QuotationList() {
   const deleteModal = useModal();
   const confirmActionModal = useModal();
 
-  // Action confirmation
+  // Action confirmation (only for destructive actions)
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // ── Derived - Selected Proposal ────────────────────────────────────────────
@@ -199,21 +199,16 @@ export default function QuotationList() {
     setSelectedProposalId(proposal.id);
     switch (action) {
       case "send":
-        setConfirmAction({
-          title: "Send Proposal",
-          message: `Mark proposal ${proposal.proposalNo} as "Sent" and notify the lead?`,
-          onConfirm: () => updateStatus(proposal.id, "Sent", "Proposal sent to client for review."),
-        });
-        confirmActionModal.openModal();
+        // Non-destructive: one-click
+        updateStatus(proposal.id, "Sent", "Proposal sent to client for review.");
         break;
       case "convert":
+        // Significant action: keep confirmation
         setConfirmAction({
           title: "Convert to Client",
           message: `Mark proposal ${proposal.proposalNo} as "Converted" and create a client record for ${proposal.companyName}? You'll be redirected to the Clients page.`,
           onConfirm: () => {
-            // Update proposal status
             updateStatus(proposal.id, "Converted", "Lead converted to client. Project initiated.");
-            // Find and update associated lead status to "Won" in storage
             const leads = getStorage<Lead[]>("saiflow_leads", initialLeads);
             const updatedLeads = leads.map((l) => {
               const isMatch =
@@ -223,8 +218,6 @@ export default function QuotationList() {
               return isMatch ? { ...l, status: "Won" as const } : l;
             });
             setStorage("saiflow_leads", updatedLeads);
-
-            // Create client entry from proposal data
             const currentClients = getStorage<Client[]>("saiflow_clients", initialClients);
             const newClientId = currentClients.length > 0 ? Math.max(...currentClients.map((c) => c.id)) + 1 : 1;
             const newClient: Client = {
@@ -244,13 +237,13 @@ export default function QuotationList() {
             };
             setStorage("saiflow_clients", [...currentClients, newClient]);
             showToast(`Client "${proposal.companyName}" created successfully!`, "success");
-            // Navigate to clients page
             navigate("/clients");
           },
         });
         confirmActionModal.openModal();
         break;
       case "reject":
+        // Destructive-ish: keep confirmation
         setConfirmAction({
           title: "Reject Proposal",
           message: `Mark proposal ${proposal.proposalNo} as "Rejected"? This will close the proposal.`,
@@ -259,20 +252,12 @@ export default function QuotationList() {
         confirmActionModal.openModal();
         break;
       case "approved":
-        setConfirmAction({
-          title: "Approve Proposal",
-          message: `Mark proposal ${proposal.proposalNo} as "Approved"?`,
-          onConfirm: () => updateStatus(proposal.id, "Approved", "Client approved the proposal."),
-        });
-        confirmActionModal.openModal();
+        // Non-destructive: one-click
+        updateStatus(proposal.id, "Approved", "Client approved the proposal.");
         break;
       case "negotiate":
-        setConfirmAction({
-          title: "Start Negotiation",
-          message: `Move proposal ${proposal.proposalNo} to "Negotiation"? You can create a revised version.`,
-          onConfirm: () => updateStatus(proposal.id, "Negotiation", "Client requested revisions - moved to negotiation."),
-        });
-        confirmActionModal.openModal();
+        // Non-destructive: one-click
+        updateStatus(proposal.id, "Negotiation", "Client requested revisions - moved to negotiation.");
         break;
     }
   };
@@ -332,6 +317,49 @@ export default function QuotationList() {
     return processedProposals.slice(start, start + rowsPerPage);
   }, [processedProposals, currentPage, rowsPerPage]);
 
+  // Bulk actions
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const selectAll = useMemo(() => paginatedProposals.length > 0 && selectedIds.length === paginatedProposals.length, [paginatedProposals, selectedIds]);
+  const isIndeterminate = useMemo(() => selectedIds.length > 0 && selectedIds.length < paginatedProposals.length, [paginatedProposals, selectedIds]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(paginatedProposals.map(p => p.id));
+    }
+  };
+
+  const handleBulkSend = () => {
+    const now = new Date().toISOString();
+    const updated = proposals.map(p =>
+      selectedIds.includes(p.id) && p.status === "Draft"
+        ? { ...p, status: "Sent" as ProposalStatus, updatedAt: now.split("T")[0], workflowLogs: [...p.workflowLogs, { id: generateId(p.workflowLogs), action: "Status changed to Sent", fromStatus: p.status, toStatus: "Sent" as ProposalStatus, timestamp: now, performedBy: "Current User", notes: "Bulk sent." }] }
+        : p
+    );
+    setProposals(updated);
+    setStorage("saiflow_proposals", updated);
+    showToast(`${selectedIds.filter(id => proposals.find(p => p.id === id)?.status === "Draft").length} proposal(s) sent.`, "success");
+    setSelectedIds([]);
+  };
+
+  const handleBulkApprove = () => {
+    const now = new Date().toISOString();
+    const updated = proposals.map(p =>
+      selectedIds.includes(p.id) && (p.status === "Sent" || p.status === "Under Review" || p.status === "Negotiation")
+        ? { ...p, status: "Approved" as ProposalStatus, updatedAt: now.split("T")[0], workflowLogs: [...p.workflowLogs, { id: generateId(p.workflowLogs), action: "Status changed to Approved", fromStatus: p.status, toStatus: "Approved" as ProposalStatus, timestamp: now, performedBy: "Current User", notes: "Bulk approved." }] }
+        : p
+    );
+    setProposals(updated);
+    setStorage("saiflow_proposals", updated);
+    showToast(`${selectedIds.length} proposal(s) approved.`, "success");
+    setSelectedIds([]);
+  };
+
   const totalPages = Math.ceil(processedProposals.length / rowsPerPage);
 
 
@@ -387,12 +415,41 @@ export default function QuotationList() {
         </Button>
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl border border-brand-200 bg-brand-50 dark:border-brand-500/20 dark:bg-brand-500/10">
+          <span className="text-sm font-medium text-brand-700 dark:text-brand-400">
+            {selectedIds.length} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleBulkSend}>
+              Send
+            </Button>
+            <Button size="sm" variant="primary" onClick={handleBulkApprove}>
+              Approve
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto">
           <Table className="min-w-full">
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
               <TableRow>
+                <TableCell isHeader className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                  />
+                </TableCell>
                 {[
                   { key: "proposalNo", label: "Proposal No" },
                   { key: "companyName", label: "Company" },
@@ -430,6 +487,14 @@ export default function QuotationList() {
                       className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
                       onClick={() => { setSelectedProposalId(proposal.id); setView("detail"); setActiveDetailTab("requirement"); }}
                     >
+                      <TableCell className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(proposal.id)}
+                          onChange={() => toggleSelect(proposal.id)}
+                          className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                        />
+                      </TableCell>
                       <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                         {proposal.proposalNo}
                       </TableCell>
@@ -477,7 +542,7 @@ export default function QuotationList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-5 py-12 text-center">
+                  <TableCell colSpan={8} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <FiFileText className="size-10 text-gray-300 dark:text-gray-600" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">No proposals found.</p>

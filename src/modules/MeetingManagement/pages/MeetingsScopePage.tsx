@@ -117,6 +117,44 @@ export default function MeetingsScopePage({
     return filteredMeetings.slice(start, start + rowsPerPage);
   }, [filteredMeetings, currentPage, rowsPerPage]);
 
+  // Bulk actions
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const selectAll = useMemo(() => paginatedMeetings.length > 0 && selectedIds.length === paginatedMeetings.length, [paginatedMeetings, selectedIds]);
+  const isIndeterminate = useMemo(() => selectedIds.length > 0 && selectedIds.length < paginatedMeetings.length, [paginatedMeetings, selectedIds]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(paginatedMeetings.map(m => m.id));
+    }
+  };
+
+  const handleBulkComplete = () => {
+    const bulkMeetings = meetings.filter(m => selectedIds.includes(m.id) && (m.status === "Scheduled" || m.status === "Rescheduled"));
+    bulkMeetings.forEach(meeting => {
+      updateMeetingWithLog(meeting.id, { status: "Completed", completedDate: new Date().toISOString().split("T")[0] }, "Bulk completed.");
+      updateLeadStatus(meeting, "Won", "Bulk completed.");
+    });
+    showToast(`${bulkMeetings.length} meeting(s) completed. Related leads marked as Won.`, "success");
+    setSelectedIds([]);
+  };
+
+  const handleBulkCancel = () => {
+    const bulkMeetings = meetings.filter(m => selectedIds.includes(m.id) && (m.status === "Scheduled" || m.status === "Rescheduled"));
+    bulkMeetings.forEach(meeting => {
+      updateMeetingWithLog(meeting.id, { status: "Cancelled", cancelledDate: new Date().toISOString().split("T")[0] }, "Bulk cancelled.");
+      updateLeadStatus(meeting, "Lost", "Bulk cancelled.");
+    });
+    showToast(`${bulkMeetings.length} meeting(s) cancelled. Related leads marked as Lost.`, "success");
+    setSelectedIds([]);
+  };
+
   const totalItems = filteredMeetings.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
@@ -467,12 +505,41 @@ export default function MeetingsScopePage({
         ))}
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl border border-brand-200 bg-brand-50 dark:border-brand-500/20 dark:bg-brand-500/10">
+          <span className="text-sm font-medium text-brand-700 dark:text-brand-400">
+            {selectedIds.length} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleBulkComplete}>
+              Complete ({selectedIds.length})
+            </Button>
+            <Button size="sm" className="bg-error-600 hover:bg-error-700" onClick={handleBulkCancel}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* ── Meetings Table ── */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto custom-scrollbar">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-gray-900">
               <TableRow>
+                <TableCell isHeader className="px-4 py-3.5 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                  />
+                </TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Company", "company")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Contact", "contactPerson")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Type", "type")}</TableCell>
@@ -489,6 +556,15 @@ export default function MeetingsScopePage({
                     key={meeting.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
                   >
+                    <TableCell className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(meeting.id)}
+                        onChange={() => toggleSelect(meeting.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                      />
+                    </TableCell>
                     <TableCell className="px-4 py-4">
                        <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold text-xs">
@@ -545,7 +621,7 @@ export default function MeetingsScopePage({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-5 py-12 text-center">
+                  <TableCell colSpan={8} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
                         <FiCalendar className="size-5 text-gray-400" />

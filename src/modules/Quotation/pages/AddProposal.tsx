@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
+import Select from "../../../components/form/Select";
 import { useToast } from "../../../hooks/useToast";
 import {
   Proposal,
@@ -15,6 +16,7 @@ import {
   QuotationSection,
   initialProposals,
 } from "../data/quotationsData";
+import { Lead, initialLeads } from "../../LeadManagement/data/leadsData";
 import { FiPlus, FiTrash2, FiXCircle, FiUser, FiList, FiDollarSign, FiFileText } from "react-icons/fi";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -71,6 +73,26 @@ export default function AddProposal() {
   // Inline validation errors for required fields
   const [formLeadNameError, setFormLeadNameError] = useState("");
   const [formCompanyNameError, setFormCompanyNameError] = useState("");
+
+  // Lead selection for auto-fill
+  const leadsList = useMemo(() => {
+    return getStorage<Lead[]>("saiflow_leads", initialLeads)
+      .map((l) => ({ value: l.id.toString(), label: `${l.company} (${l.contactPerson})` }));
+  }, []);
+
+  const handleLeadSelect = (val: string) => {
+    const leadId = Number(val);
+    const lead = getStorage<Lead[]>("saiflow_leads", initialLeads).find((l) => l.id === leadId);
+    if (lead) {
+      setFormLeadName(lead.contactPerson);
+      setFormCompanyName(lead.company);
+      setFormLeadEmail(lead.email);
+      setFormLeadPhone(lead.phone);
+      setFormLeadNameError("");
+      setFormCompanyNameError("");
+      showToast(`Auto-filled from lead "${lead.company}"`, "info");
+    }
+  };
 
   const [formRequirement, setFormRequirement] = useState<RequirementSection>(EMPTY_REQUIREMENT);
   const [formEstimationItems, setFormEstimationItems] = useState<EstimationLineItem[]>([]);
@@ -298,6 +320,20 @@ export default function AddProposal() {
           <h3 className="text-sm font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
             <FiUser className="size-4 text-brand-500" /> Lead Information
           </h3>
+          {/* Lead Quick Select */}
+          {!isEditMode && (
+            <div className="mb-4 p-3 rounded-lg bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100 dark:border-brand-500/20">
+              <label className="mb-1.5 block text-xs font-semibold text-brand-700 dark:text-brand-400">
+                🔍 Quick select from existing lead <span className="text-xs font-normal text-gray-500">(auto-fills all fields below)</span>
+              </label>
+              <Select
+                options={[{ value: "", label: "Select a lead to auto-fill..." }, ...leadsList]}
+                placeholder="Select a lead..."
+                defaultValue=""
+                onChange={handleLeadSelect}
+              />
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">

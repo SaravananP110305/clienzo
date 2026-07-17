@@ -245,6 +245,48 @@ export default function LeadList() {
     return processedLeads.slice(start, start + rowsPerPage);
   }, [processedLeads, currentPage, rowsPerPage]);
 
+  // Bulk actions
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkAssignee, setBulkAssignee] = useState<string>("");
+  const [showBulkAssign, setShowBulkAssign] = useState(false);
+
+  const selectAll = useMemo(() => paginatedLeads.length > 0 && selectedIds.length === paginatedLeads.length, [paginatedLeads, selectedIds]);
+  const isIndeterminate = useMemo(() => selectedIds.length > 0 && selectedIds.length < paginatedLeads.length, [paginatedLeads, selectedIds]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(paginatedLeads.map(l => l.id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    const updated = leads.filter(l => !selectedIds.includes(l.id));
+    setLeads(updated);
+    setStorage("saiflow_leads", updated);
+    showToast(`${selectedIds.length} lead(s) deleted successfully.`, "success");
+    setSelectedIds([]);
+  };
+
+  const handleBulkReassign = () => {
+    if (selectedIds.length === 0 || !bulkAssignee) return;
+    const updated = leads.map(l =>
+      selectedIds.includes(l.id) ? { ...l, assignedTo: bulkAssignee } : l
+    );
+    setLeads(updated);
+    setStorage("saiflow_leads", updated);
+    showToast(`${selectedIds.length} lead(s) reassigned to ${bulkAssignee}.`, "success");
+    setSelectedIds([]);
+    setBulkAssignee("");
+    setShowBulkAssign(false);
+  };
+
   const totalItems = processedLeads.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
@@ -449,6 +491,51 @@ export default function LeadList() {
 
 
 
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl border border-brand-200 bg-brand-50 dark:border-brand-500/20 dark:bg-brand-500/10">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-brand-700 dark:text-brand-400">
+              {selectedIds.length} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {showBulkAssign ? (
+              <div className="flex items-center gap-2">
+                <select
+                  value={bulkAssignee}
+                  onChange={(e) => setBulkAssignee(e.target.value)}
+                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                >
+                  <option value="">Select assignee...</option>
+                  {ASSIGNEES.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+                <Button size="sm" onClick={handleBulkReassign} disabled={!bulkAssignee}>
+                  Confirm
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => { setShowBulkAssign(false); setBulkAssignee(""); }}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button size="sm" variant="outline" onClick={() => setShowBulkAssign(true)}>
+                  Reassign
+                </Button>
+                <Button size="sm" className="bg-error-600 hover:bg-error-700" onClick={handleBulkDelete}>
+                  Delete ({selectedIds.length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>
+                  Clear
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Table Container */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         <div className="max-w-full overflow-x-auto custom-scrollbar">
@@ -458,6 +545,15 @@ export default function LeadList() {
               <Table>
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
                   <TableRow>
+                    <TableCell isHeader className="px-4 py-3 text-start w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectAll}
+                        ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                      />
+                    </TableCell>
                     <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap w-12">
                       S.No
                     </TableCell>
@@ -491,6 +587,14 @@ export default function LeadList() {
                         key={lead.id}
                         className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                       >
+                        <TableCell className="px-4 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(lead.id)}
+                            onChange={() => toggleSelect(lead.id)}
+                            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                          />
+                        </TableCell>
                         <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
                           {(currentPage - 1) * rowsPerPage + index + 1}
                         </TableCell>
@@ -564,7 +668,7 @@ export default function LeadList() {
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={9}
                         className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                       >
                         No leads found matching search criteria.
@@ -585,6 +689,14 @@ export default function LeadList() {
                   >
                     {/* Card Header */}
                     <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(lead.id)}
+                          onChange={() => toggleSelect(lead.id)}
+                          className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                        />
+                      </div>
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-50 dark:bg-brand-500/10 text-theme-xs font-semibold text-brand-600 dark:text-brand-400">
                           {(currentPage - 1) * rowsPerPage + index + 1}
