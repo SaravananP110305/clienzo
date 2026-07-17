@@ -1111,187 +1111,351 @@ export function exportProposalToPDF(proposal: Proposal, showToast: (msg: string,
     showToast("Generating PDF...", "info");
     const pdf = new jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
-    let y = 20;
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 18;
+    let y = margin;
+    let pageNum = 1;
 
-    y += 14;
+    // ── Helper: Page Header (brand bar) ─────────────────────────────────────
+    const addPageHeader = () => {
+      // Brand color bar
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(0, 0, pageWidth, 12, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("SAIFLOW CRM", margin, 8);
+      pdf.text("Business Proposal", pageWidth / 2, 8, { align: "center" });
+      pdf.text(proposal.proposalNo, pageWidth - 14, 8, { align: "right" });
+    };
 
-    pdf.setFontSize(18);
+    // ── Helper: Page Footer ─────────────────────────────────────────────────
+    const addPageFooter = () => {
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, pageHeight - 10, pageWidth - margin, pageHeight - 10);
+      pdf.setTextColor(150, 150, 150);
+      pdf.setFontSize(6.5);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Generated on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} | Page ${pageNum}`, margin, pageHeight - 5);
+      pdf.text("SaiFlow CRM — Confidential", pageWidth - margin, pageHeight - 5, { align: "right" });
+    };
+
+    // ── Helper: Check page break ────────────────────────────────────────────
+    const checkPageBreak = (needed: number) => {
+      if (y + needed > pageHeight - 18) {
+        addPageFooter();
+        pdf.addPage();
+        pageNum++;
+        y = margin + 14;
+        addPageHeader();
+        y += 4;
+      }
+    };
+
+    // ── First Page: Header ──────────────────────────────────────────────────
+    addPageHeader();
+    y += 18;
+
+    // Title section with background
+    pdf.setFillColor(249, 250, 251);
+    pdf.rect(margin, y - 3, pageWidth - margin * 2, 30, "F");
+    pdf.setDrawColor(59, 130, 246);
+    pdf.setLineWidth(0.3);
+    pdf.rect(margin, y - 3, pageWidth - margin * 2, 30, "S");
+
+    pdf.setFontSize(16);
     pdf.setFont("helvetica", "bold");
-    pdf.text("Business Proposal", pageWidth / 2, y, { align: "center" });
-    y += 8;
+    pdf.setTextColor(30, 30, 30);
+    pdf.text(`BUSINESS PROPOSAL`, pageWidth / 2, y + 6, { align: "center" });
 
-    pdf.setFontSize(10);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(100, 100, 100);
-    pdf.text(`${proposal.proposalNo} | ${proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}`, pageWidth / 2, y, { align: "center" });
-    y += 6;
-    pdf.text(`Status: ${proposal.status}`, pageWidth / 2, y, { align: "center" });
-    y += 12;
+    pdf.text(`${proposal.proposalNo}`, pageWidth / 2, y + 14, { align: "center" });
+    pdf.text(`Status: ${proposal.status}  |  Date: ${proposal.createdAt ? formatDate(proposal.createdAt) : ""}`, pageWidth / 2, y + 21, { align: "center" });
+    y += 32;
 
     const req = proposal.requirement;
     const est = proposal.estimation;
     const quot = proposal.quotation;
 
-    // Helpers
-    const line = () => {
-      pdf.setDrawColor(220, 220, 220);
-      pdf.line(14, y, pageWidth - 14, y);
-      y += 6;
-    };
+    // ── Helper: Styled section title ────────────────────────────────────────
     const sectionTitle = (title: string) => {
-      pdf.setFontSize(13);
+      checkPageBreak(14);
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, y - 2, pageWidth - margin * 2, 8, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(9);
       pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(30, 30, 30);
-      pdf.text(title, 14, y);
-      y += 7;
+      pdf.text(title, margin + 3, y + 4);
+      y += 12;
     };
+
+    // ── Helper: Body text ────────────────────────────────────────────────────
     const bodyText = (text: string) => {
-      pdf.setFontSize(9);
+      pdf.setFontSize(8.5);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(60, 60, 60);
-      const lines = pdf.splitTextToSize(text || "", pageWidth - 28);
+      const lines = pdf.splitTextToSize(text || "", pageWidth - margin * 2 - 4);
       lines.forEach((l: string) => {
-        if (y > 280) {
-          pdf.addPage();
-          y = 20;
-        }
-        pdf.text(l, 14, y);
-        y += 5;
-      });
-    };
-    const bulletItem = (text: string) => {
-      pdf.setFontSize(9);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(60, 60, 60);
-      const lines = pdf.splitTextToSize(`• ${text}`, pageWidth - 36);
-      lines.forEach((l: string) => {
-        if (y > 280) {
-          pdf.addPage();
-          y = 20;
-        }
-        pdf.text(l, 20, y);
+        checkPageBreak(5);
+        pdf.text(l, margin + 2, y);
         y += 4.5;
       });
     };
 
-    // Client Info
-    sectionTitle("Client Information");
-    bodyText(`Company: ${proposal.companyName}`);
-    bodyText(`Contact: ${proposal.leadName} (${proposal.leadEmail})`);
-    bodyText(`Phone: ${proposal.leadPhone}`);
-    y += 4;
-    line();
+    // ── Helper: Bullet item ──────────────────────────────────────────────────
+    const bulletItem = (text: string) => {
+      pdf.setFontSize(8.5);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      const lines = pdf.splitTextToSize(`• ${text}`, pageWidth - margin * 2 - 10);
+      lines.forEach((l: string) => {
+        checkPageBreak(4.5);
+        pdf.text(l, margin + 6, y);
+        y += 4;
+      });
+    };
 
-    // Requirement
-    sectionTitle("1. Requirement");
-    sectionTitle("Overview");
+    // ── Helper: Separator line ───────────────────────────────────────────────
+    const separator = () => {
+      checkPageBreak(8);
+      y += 2;
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 5;
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 1. CLIENT INFORMATION
+    // ═══════════════════════════════════════════════════════════════════════════
+    sectionTitle("1. CLIENT INFORMATION");
+    bodyText(`Company: ${proposal.companyName}`);
+    bodyText(`Contact: ${proposal.leadName}`);
+    bodyText(`Email: ${proposal.leadEmail}`);
+    bodyText(`Phone: ${proposal.leadPhone}`);
+    separator();
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 2. REQUIREMENT
+    // ═══════════════════════════════════════════════════════════════════════════
+    sectionTitle("2. REQUIREMENT");
+
+    // Overview
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(80, 80, 80);
+    checkPageBreak(7);
+    pdf.text("Overview", margin + 2, y);
+    y += 6;
     bodyText(req.overview || "—");
-    
+    y += 2;
+
     if (req.objectives && req.objectives.length > 0) {
-      sectionTitle("Objectives");
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(80, 80, 80);
+      checkPageBreak(7);
+      pdf.text("Objectives", margin + 2, y);
+      y += 6;
       req.objectives.forEach((o) => bulletItem(o));
+      y += 1;
     }
     if (req.technicalRequirements && req.technicalRequirements.length > 0) {
-      sectionTitle("Technical Requirements");
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(80, 80, 80);
+      checkPageBreak(7);
+      pdf.text("Technical Requirements", margin + 2, y);
+      y += 6;
       req.technicalRequirements.forEach((t) => bulletItem(t));
+      y += 1;
     }
     if (req.deliverables && req.deliverables.length > 0) {
-      sectionTitle("Deliverables");
-      req.deliverables.forEach((d) => bulletItem(d));
-    }
-    y += 2;
-    line();
-
-    // Estimation
-    sectionTitle("2. Estimation");
-    if (est.items && est.items.length > 0) {
-      // Table header
-      const col1 = 14, col2 = 60, col3 = 120, col4 = 140, col5 = 160, colWidth = pageWidth - 28;
-      pdf.setFontSize(8);
+      pdf.setFontSize(9);
       pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(255, 255, 255);
+      pdf.setTextColor(80, 80, 80);
+      checkPageBreak(7);
+      pdf.text("Deliverables", margin + 2, y);
+      y += 6;
+      req.deliverables.forEach((d) => bulletItem(d));
+      y += 1;
+    }
+    separator();
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 3. ESTIMATION
+    // ═══════════════════════════════════════════════════════════════════════════
+    sectionTitle("3. ESTIMATION");
+
+    if (est.items && est.items.length > 0) {
+      // Table header row
+      const cols = [margin, 55, 105, 125, 145, pageWidth - margin];
+      const colWidth = pageWidth - margin * 2;
+
+      checkPageBreak(24);
       pdf.setFillColor(59, 130, 246);
-      pdf.rect(14, y - 3, colWidth, 6, "F");
-      pdf.text("Category", col1 + 2, y + 1);
-      pdf.text("Description", col2 + 2, y + 1);
-      pdf.text("Qty", col3 + 2, y + 1);
-      pdf.text("Rate", col4 + 2, y + 1);
-      pdf.text("Amount", col5 + 2, y + 1);
+      pdf.rect(margin, y - 3, colWidth, 6, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("CATEGORY", cols[0] + 2, y + 1);
+      pdf.text("DESCRIPTION", cols[1] + 2, y + 1);
+      pdf.text("QTY", cols[2] + 2, y + 1);
+      pdf.text("RATE", cols[3] + 2, y + 1);
+      pdf.text("AMOUNT", cols[4] + 2, y + 1);
       y += 5;
 
+      // Table rows
       pdf.setFont("helvetica", "normal");
       est.items.forEach((item, idx) => {
-        if (y > 270) {
-          pdf.addPage();
-          y = 20;
+        checkPageBreak(6);
+        // Alternating row background
+        if (idx % 2 === 0) {
+          pdf.setFillColor(248, 250, 252);
+          pdf.rect(margin, y - 2.5, colWidth, 5, "F");
         }
-        pdf.setFillColor(idx % 2 === 0 ? 245 : 255, idx % 2 === 0 ? 247 : 255, idx % 2 === 0 ? 250 : 255);
-        pdf.rect(14, y - 2.5, colWidth, 5, "F");
         pdf.setTextColor(60, 60, 60);
-        const desc = pdf.splitTextToSize(item.description, 55)[0] || "";
-        pdf.text(item.category.substring(0, 12), col1 + 2, y + 1);
-        pdf.text(String(desc).substring(0, 30), col2 + 2, y + 1);
-        pdf.text(String(item.quantity), col3 + 2, y + 1);
-        pdf.text(formatCurrency(item.unitPrice), col4 + 2, y + 1);
-        pdf.text(formatCurrency(item.amount), col5 + 2, y + 1);
+        pdf.setFontSize(7);
+        const desc = pdf.splitTextToSize(item.description, 45)[0] || "";
+        pdf.text(item.category.substring(0, 14), cols[0] + 2, y + 1);
+        pdf.setFontSize(6.5);
+        pdf.text(String(desc).substring(0, 35), cols[1] + 2, y + 1);
+        pdf.setFontSize(7);
+        pdf.text(String(item.quantity), cols[2] + 2, y + 1);
+        pdf.text(formatCurrency(item.unitPrice), cols[3] + 2, y + 1);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(formatCurrency(item.amount), cols[4] + 2, y + 1);
+        pdf.setFont("helvetica", "normal");
         y += 5;
       });
 
-      // Totals
-      y += 2;
-      const totalX = pageWidth - 60;
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(60, 60, 60);
-      pdf.text(`Subtotal:`, totalX, y);
-      pdf.text(formatCurrency(est.subtotal), pageWidth - 14, y, { align: "right" });
+      // Totals section
+      y += 1;
+      checkPageBreak(20);
+      const totalX = pageWidth - margin - 40;
+      pdf.setFontSize(8);
+
+      // Subtotal
+      pdf.setTextColor(80, 80, 80);
+      pdf.text("Subtotal:", totalX, y);
+      pdf.text(formatCurrency(est.subtotal), pageWidth - margin, y, { align: "right" });
       y += 5;
+
+      // Discount
       if (est.discountPercent > 0) {
+        pdf.setTextColor(220, 60, 60);
         pdf.text(`Discount (${est.discountPercent}%):`, totalX, y);
-        pdf.text(`-${formatCurrency(est.discountAmount)}`, pageWidth - 14, y, { align: "right" });
+        pdf.text(`-${formatCurrency(est.discountAmount)}`, pageWidth - margin, y, { align: "right" });
         y += 5;
       }
+
+      // Tax
+      pdf.setTextColor(80, 80, 80);
       pdf.text(`Tax (${est.taxPercent}%):`, totalX, y);
-      pdf.text(formatCurrency(est.taxAmount), pageWidth - 14, y, { align: "right" });
+      pdf.text(formatCurrency(est.taxAmount), pageWidth - margin, y, { align: "right" });
       y += 5;
-      pdf.setFont("helvetica", "bold");
+
+      // Total (highlighted)
+      pdf.setFillColor(239, 246, 255);
+      pdf.rect(totalX - 3, y - 2.5, pageWidth - margin - totalX + 6, 8, "F");
+      pdf.setTextColor(59, 130, 246);
       pdf.setFontSize(10);
-      pdf.text("Total:", totalX, y);
-      pdf.text(formatCurrency(est.total), pageWidth - 14, y, { align: "right" });
-      y += 8;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("TOTAL:", totalX, y + 2);
+      pdf.text(formatCurrency(est.total), pageWidth - margin, y + 2, { align: "right" });
+      y += 10;
     }
-    line();
+    separator();
 
-    // Quotation
-    sectionTitle("3. Quotation / Pricing Terms");
-    bodyText(`Payment Terms: ${quot.paymentTerms}`);
-    bodyText(`Validity: ${quot.validityDays} days`);
-    bodyText(`Delivery Timeline: ${quot.deliveryTimeline}`);
-    bodyText(`Warranty: ${quot.warrantyPeriod}`);
-    y += 2;
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 4. QUOTATION / PRICING TERMS
+    // ═══════════════════════════════════════════════════════════════════════════
+    sectionTitle("4. QUOTATION / PRICING TERMS");
 
+    // Info cards in a grid-like layout
+    checkPageBreak(30);
+    const cardW = (pageWidth - margin * 2 - 4) / 2;
+    const cardH = 14;
+
+    const drawInfoCard = (x: number, label: string, value: string) => {
+      pdf.setDrawColor(220, 220, 220);
+      pdf.setFillColor(249, 250, 251);
+      pdf.roundedRect(x, y, cardW, cardH, 1.5, 1.5, "FD");
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFontSize(6);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(label.toUpperCase(), x + 3, y + 4);
+      pdf.setTextColor(30, 30, 30);
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "bold");
+      const val = pdf.splitTextToSize(value || "—", cardW - 6);
+      pdf.text(val[0], x + 3, y + 10);
+    };
+
+    drawInfoCard(margin, "Payment Terms", quot.paymentTerms);
+    drawInfoCard(margin + cardW + 4, "Validity", `${quot.validityDays} days`);
+    y += cardH + 3;
+    drawInfoCard(margin, "Delivery Timeline", quot.deliveryTimeline);
+    drawInfoCard(margin + cardW + 4, "Warranty", quot.warrantyPeriod);
+    y += cardH + 6;
+
+    // Payment Milestones
     if (quot.paymentMilestones && quot.paymentMilestones.length > 0) {
       sectionTitle("Payment Milestones");
       quot.paymentMilestones.forEach((m) => {
-        bulletItem(`${m.milestone} - ${m.percentage}% (${formatCurrency(m.amount)})`);
+        bulletItem(`${m.milestone} — ${m.percentage}% (${formatCurrency(m.amount)})`);
       });
       y += 2;
     }
 
-    bodyText(`Notes: ${quot.notes}`);
+    // Notes
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(80, 80, 80);
+    checkPageBreak(10);
+    pdf.text("Notes", margin + 2, y);
+    y += 6;
+    bodyText(quot.notes || "No additional notes.");
+    y += 2;
+
+    // Terms & Conditions
     const tnc = quot.termsAndConditions?.split("\n") || [];
     if (tnc.length > 0) {
       sectionTitle("Terms & Conditions");
-      tnc.forEach((t) => bulletItem(t));
+      tnc.forEach((t) => {
+        if (t.trim()) bulletItem(t.trim());
+      });
+      separator();
     }
 
-    // Footer
-    y = 285;
-    pdf.setFontSize(7);
-    pdf.setFont("helvetica", "italic");
-    pdf.setTextColor(150, 150, 150);
-    pdf.text(`Generated on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} | SaiFlow CRM`, pageWidth / 2, y, { align: "center" });
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 5. AUTHORIZATION
+    // ═══════════════════════════════════════════════════════════════════════════
+    checkPageBreak(30);
+    sectionTitle("5. AUTHORIZATION");
+    bodyText("This proposal has been prepared for the above-mentioned client. By signing below, you agree to the terms and conditions outlined in this proposal.");
+    y += 4;
 
-    pdf.save(`${proposal.proposalNo.replace(/\//g, "-")}.pdf`);
+    // Signature lines
+    pdf.setDrawColor(180, 180, 180);
+    const sigY = y + 6;
+    pdf.line(margin, sigY, margin + 60, sigY);
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(120, 120, 120);
+    pdf.text("Authorized Signature", margin, sigY + 4);
+
+    pdf.line(pageWidth - margin - 60, sigY, pageWidth - margin, sigY);
+    pdf.text("Date", pageWidth - margin - 60, sigY + 4);
+    y = sigY + 10;
+
+    // ── Final Footer ─────────────────────────────────────────────────────────
+    addPageFooter();
+
+    // Save PDF
+    const safeName = proposal.proposalNo.replace(/[/\\?%*:|"<>]/g, "-");
+    pdf.save(`${safeName}.pdf`);
     showToast("PDF exported successfully!", "success");
   } catch (err) {
     console.error("PDF export error:", err);
