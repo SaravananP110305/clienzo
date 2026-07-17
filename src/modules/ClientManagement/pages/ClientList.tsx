@@ -15,7 +15,7 @@ import {
   TableRow,
   TableCell,
 } from "../../../components/ui/table";
-import { ChevronDownIcon } from "../../../icons";
+import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import Button from "../../../components/ui/button/Button";
 import { FiEye,
   FiDownload,
@@ -76,6 +76,8 @@ export default function ClientList() {
   const [handoverFilter, setHandoverFilter] = useState<string>("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<keyof Client>("id");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
 
@@ -118,6 +120,38 @@ export default function ClientList() {
 
   // ── List Processing ────────────────────────────────────────────────────────
 
+  const handleSort = (field: keyof Client) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const renderSortHeader = (label: string, field: keyof Client) => {
+    const isActive = sortField === field;
+    return (
+      <button
+        onClick={() => handleSort(field)}
+        className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer"
+      >
+        {label}
+        <span className="flex flex-col">
+          <ChevronUpIcon
+            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
+          />
+          <ChevronDownIcon
+            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
+              }`}
+          />
+        </span>
+      </button>
+    );
+  };
+
   const processedClients = useMemo(() => {
     let result = [...clients];
 
@@ -139,8 +173,21 @@ export default function ClientList() {
       result = result.filter((c) => c.handoverStatus === handoverFilter);
     }
 
+    result.sort((a, b) => {
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      const strA = String(aVal ?? "").toLowerCase();
+      const strB = String(bVal ?? "").toLowerCase();
+      if (strA < strB) return sortOrder === "asc" ? -1 : 1;
+      if (strA > strB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
     return result;
-  }, [clients, searchQuery, handoverFilter]);
+  }, [clients, searchQuery, handoverFilter, sortField, sortOrder]);
 
   const paginatedClients = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -275,19 +322,20 @@ export default function ClientList() {
                     className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                   />
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Client Name</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Company</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Contact Number</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Email</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Conversion Date</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Assigned Employee</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Handover Status</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("S.No", "id")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Client Name", "name")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Company", "company")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Contact Number", "phone")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Email", "email")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Conversion Date", "conversionDate")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Assigned Employee", "assignedEmployee")}</TableCell>
+                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Handover Status", "handoverStatus")}</TableCell>
                 <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</TableCell>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {paginatedClients.length > 0 ? (
-                paginatedClients.map((client) => (
+                paginatedClients.map((client, index) => (
                     <TableRow key={client.id}
                       className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                     >
@@ -298,6 +346,9 @@ export default function ClientList() {
                           onChange={() => toggleSelect(client.id)}
                           className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                         />
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
+                        {(currentPage - 1) * rowsPerPage + index + 1}
                       </TableCell>
                       {/* Client Name */}
                       <TableCell className="px-5 py-4 whitespace-nowrap">
@@ -385,7 +436,7 @@ export default function ClientList() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="px-5 py-12 text-center">
+                  <TableCell colSpan={10} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <FiUsers className="size-10 text-gray-300 dark:text-gray-600" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">No clients found.</p>

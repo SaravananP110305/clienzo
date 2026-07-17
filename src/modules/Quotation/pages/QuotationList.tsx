@@ -504,6 +504,7 @@ export default function QuotationList() {
                   />
                 </TableCell>
                 {[
+                  { key: "id", label: "S.No" },
                   { key: "proposalNo", label: "Proposal No" },
                   { key: "companyName", label: "Company" },
                   { key: "leadName", label: "Lead Contact" },
@@ -533,7 +534,7 @@ export default function QuotationList() {
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {paginatedProposals.length > 0 ? (
-                paginatedProposals.map((proposal) => {
+                paginatedProposals.map((proposal, index) => {
                   const totalAmount = proposal.estimation.total || 0;
                   return (
                     <TableRow key={proposal.id}
@@ -547,6 +548,9 @@ export default function QuotationList() {
                           onChange={() => toggleSelect(proposal.id)}
                           className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                         />
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
+                        {(currentPage - 1) * rowsPerPage + index + 1}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                         {proposal.proposalNo}
@@ -662,7 +666,7 @@ export default function QuotationList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="px-5 py-12 text-center">
+                  <TableCell colSpan={9} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <FiFileText className="size-10 text-gray-300 dark:text-gray-600" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">No proposals found.</p>

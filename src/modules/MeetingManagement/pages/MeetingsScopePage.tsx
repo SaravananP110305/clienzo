@@ -540,6 +540,7 @@ export default function MeetingsScopePage({
                     className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                   />
                 </TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("S.No", "id")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Company", "company")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Contact", "contactPerson")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Type", "type")}</TableCell>
@@ -551,7 +552,7 @@ export default function MeetingsScopePage({
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {filteredMeetings.length > 0 ? (
-                paginatedMeetings.map((meeting) => (
+                paginatedMeetings.map((meeting, index) => (
                   <TableRow
                     key={meeting.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
@@ -564,6 +565,9 @@ export default function MeetingsScopePage({
                         onClick={(e) => e.stopPropagation()}
                         className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                       />
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
+                      {(currentPage - 1) * rowsPerPage + index + 1}
                     </TableCell>
                     <TableCell className="px-4 py-4">
                        <div className="flex items-center gap-2.5">
@@ -621,7 +625,7 @@ export default function MeetingsScopePage({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="px-5 py-12 text-center">
+                  <TableCell colSpan={9} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
                         <FiCalendar className="size-5 text-gray-400" />
