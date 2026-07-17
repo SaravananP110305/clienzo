@@ -362,6 +362,9 @@ export default function FollowUps() {
                   {renderSortHeader("S.No", "id")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  Lead ID
+                </TableCell>
+                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {renderSortHeader("Company", "company")}
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -393,6 +396,11 @@ export default function FollowUps() {
                   >
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
                       {item.id}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90 whitespace-nowrap">
+                      <span className="font-mono text-xs tracking-wider">
+                        SF-LEAD-{String(item.leadId).padStart(4, "0")}
+                      </span>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm font-medium whitespace-nowrap">
                       <button
