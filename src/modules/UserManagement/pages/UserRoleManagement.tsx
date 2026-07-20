@@ -52,7 +52,7 @@ export const sidebarStructure = [
   { name: "Meetings", key: "meetings" },
   { name: "Proposals", key: "quotations" },
   { name: "Clients", key: "clients" },
-  { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report", "Client report", "Proposal report"] },
+  { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report", "Proposal report", "Client report"] },
   { name: "Settings", key: "settings" }
 ];
 
@@ -95,16 +95,16 @@ const buildRolePermissions = (
     const isUsers = perm.key === "users" || perm.parentKey === "users";
     const isReports = perm.key === "reports" || perm.parentKey === "reports";
     const isSettings = perm.key === "settings";
-    
+
     let view = false;
     let create = false;
     let edit = false;
     let del = false;
-    
+
     if (rules.all) {
       view = create = edit = del = true;
     }
-    
+
     if (roleName === "Business Development Manager") {
       if (isUsers) {
         view = create = edit = true;
@@ -134,7 +134,7 @@ const buildRolePermissions = (
         view = true;
       }
     }
-    
+
     return {
       ...perm,
       view,
@@ -187,7 +187,7 @@ export const syncPermissions = (savedPermissions: Permission[]): Permission[] =>
   if (!savedPermissions || !Array.isArray(savedPermissions)) {
     return defaultPermissionsList.map(p => ({ ...p }));
   }
-  
+
   return defaultPermissionsList.map(defaultPerm => {
     const saved = savedPermissions.find(p => p.key === defaultPerm.key) || savedPermissions.find(p => p.menu === defaultPerm.menu);
     if (saved) {

@@ -125,8 +125,8 @@ const navItems: NavItem[] = [
       { name: "Meeting report", path: "/reports/meetings" },
       { name: "Employee report", path: "/reports/employees" },
       { name: "Follow-up report", path: "/reports/follow-ups" },
-      { name: "Client report", path: "/reports/clients" },
       { name: "Proposal report", path: "/reports/proposals" },
+      { name: "Client report", path: "/reports/clients" },
     ],
   },
   {
