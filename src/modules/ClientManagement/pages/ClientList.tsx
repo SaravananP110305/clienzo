@@ -8,7 +8,7 @@ import Input from "../../../components/form/input/InputField";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
-import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
+import { ChevronDownIcon } from "../../../icons";
 import Button from "../../../components/ui/button/Button";
 import { FiEye,
   FiDownload,
@@ -112,17 +112,6 @@ export default function ClientList() {
     showToast(`Client "${client.company}" status updated to ${newStatus}`, "success");
   };
 
-  // ── List Processing ────────────────────────────────────────────────────────
-
-  const handleSort = (field: keyof Client) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-    setCurrentPage(1);
-  };
 
   const processedClients = useMemo(() => {
     let result = [...clients];
