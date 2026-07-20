@@ -540,7 +540,7 @@ export default function MeetingsScopePage({
                     className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                   />
                 </TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("S.No", "id")}</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Meeting ID", "id")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Company", "company")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Contact", "contactPerson")}</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-start text-theme-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Type", "type")}</TableCell>
@@ -552,7 +552,7 @@ export default function MeetingsScopePage({
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {filteredMeetings.length > 0 ? (
-                paginatedMeetings.map((meeting, index) => (
+                paginatedMeetings.map((meeting) => (
                   <TableRow
                     key={meeting.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
@@ -567,7 +567,7 @@ export default function MeetingsScopePage({
                       />
                     </TableCell>
                     <TableCell className="px-4 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
-                      {(currentPage - 1) * rowsPerPage + index + 1}
+                      {`SF-MTG-${String(meeting.id).padStart(4, "0")}`}
                     </TableCell>
                     <TableCell className="px-4 py-4">
                        <div className="flex items-center gap-2.5">

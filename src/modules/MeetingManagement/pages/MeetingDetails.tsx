@@ -373,8 +373,10 @@ export default function MeetingDetails() {
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
             {meeting.subject}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {meeting.meetingPlatform || meeting.type || "Online"}
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+            <span>Meeting ID: SF-MTG-{String(meeting.id).padStart(4, "0")}</span>
+            <span>•</span>
+            <span>{meeting.meetingPlatform || meeting.type || "Online"}</span>
           </p>
         </div>
         <div className="flex items-center gap-3">

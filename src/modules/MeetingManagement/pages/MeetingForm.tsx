@@ -306,7 +306,18 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-100 dark:border-white/[0.05]">
             Lead
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Meeting ID
+              </label>
+              <Input
+                type="text"
+                disabled={true}
+                value={isEditMode ? `SF-MTG-${String(id).padStart(4, "0")}` : "Auto-generated"}
+                className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+              />
+            </div>
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Lead <span className="text-error-500">*</span>
