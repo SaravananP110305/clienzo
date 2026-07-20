@@ -216,9 +216,9 @@ export default function ClientList() {
           <div className="relative">
             <button
               onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
-              className="flex items-center justify-between h-11 w-44 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
+              className="flex items-center justify-between h-11 w-48 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <span className="truncate">{handoverFilter === "all" ? "All Onboarding" : handoverFilter}</span>
+              <span className="truncate">Onboarding: {handoverFilter === "all" ? "All" : handoverFilter}</span>
               <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-2" />
             </button>
             <Dropdown
@@ -232,7 +232,7 @@ export default function ClientList() {
                     onItemClick={() => { setHandoverFilter("all"); setCurrentPage(1); setIsStatusFilterOpen(false); }}
                     className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${handoverFilter === "all" ? "bg-brand-500 text-white font-medium" : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"}`}
                   >
-                    All Onboarding
+                    All
                   </DropdownItem>
                 </li>
                 {(["Pending", "Onboarded"] as const).map((st) => (
@@ -253,48 +253,39 @@ export default function ClientList() {
           <div className="relative">
             <button
               onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-              className="flex items-center justify-between h-11 w-48 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
+              className="flex items-center justify-between h-11 w-52 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <span className="truncate text-left flex-1">Sort: {sortField === "id" ? "Client ID" : sortField === "name" ? "Client Name" : sortField === "company" ? "Company" : sortField === "conversionDate" ? "Conversion Date" : "Default"} ({sortOrder.toUpperCase()})</span>
+              <span className="truncate text-left flex-1">Sort by: {sortField === "id" ? "Client ID" : sortField === "name" ? "Client Name" : sortField === "company" ? "Company" : sortField === "conversionDate" ? "Conversion Date" : "Default"} ({sortOrder === "asc" ? "Asc" : "Desc"})</span>
               <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-2" />
             </button>
             <Dropdown
               isOpen={isSortDropdownOpen}
               onClose={() => setIsSortDropdownOpen(false)}
-              className="left-0 w-48 p-1 mt-2"
+              className="left-0 w-52 p-1 mt-2"
             >
-              <ul className="flex flex-col gap-0.5">
+              <ul className="flex flex-col gap-0.5 max-h-60 overflow-y-auto custom-scrollbar">
                 {[
-                  { value: "id", label: "Client ID" },
-                  { value: "name", label: "Client Name" },
-                  { value: "company", label: "Company" },
-                  { value: "conversionDate", label: "Conversion Date" },
+                  { field: "id", order: "asc", label: "Client ID (Asc)" },
+                  { field: "id", order: "desc", label: "Client ID (Desc)" },
+                  { field: "name", order: "asc", label: "Client Name (Asc)" },
+                  { field: "name", order: "desc", label: "Client Name (Desc)" },
+                  { field: "company", order: "asc", label: "Company (Asc)" },
+                  { field: "company", order: "desc", label: "Company (Desc)" },
+                  { field: "conversionDate", order: "asc", label: "Conversion Date (Asc)" },
+                  { field: "conversionDate", order: "desc", label: "Conversion Date (Desc)" },
                 ].map((opt) => (
-                  <li key={opt.value}>
-                    <div className="flex items-center justify-between px-3 py-1.5 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg">
-                      <button
-                        onClick={() => {
-                          setSortField(opt.value as keyof Client);
-                          setSortOrder("asc");
-                          setCurrentPage(1);
-                          setIsSortDropdownOpen(false);
-                        }}
-                        className="text-left flex-1 cursor-pointer hover:text-brand-500"
-                      >
-                        {opt.label} (Asc)
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSortField(opt.value as keyof Client);
-                          setSortOrder("desc");
-                          setCurrentPage(1);
-                          setIsSortDropdownOpen(false);
-                        }}
-                        className="text-right cursor-pointer text-gray-400 hover:text-brand-500 ml-2"
-                      >
-                        Desc
-                      </button>
-                    </div>
+                  <li key={`${opt.field}-${opt.order}`}>
+                    <DropdownItem
+                      onItemClick={() => {
+                        setSortField(opt.field as keyof Client);
+                        setSortOrder(opt.order as "asc" | "desc");
+                        setCurrentPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${sortField === opt.field && sortOrder === opt.order ? "bg-brand-500 text-white font-medium" : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"}`}
+                    >
+                      {opt.label}
+                    </DropdownItem>
                   </li>
                 ))}
               </ul>
