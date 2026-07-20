@@ -46,18 +46,13 @@ export interface Role {
 
 export const sidebarStructure = [
   { name: "Dashboard", key: "dashboard" },
-  { name: "Master", key: "master", subItems: [
-    "Country", "State", "City", "Department", "Designation",
-    "Lead source", "Industry", "Tech stack", "Priority", "Service",
-    "Company type", "Payment type"
-  ] },
   { name: "Manage Users", key: "users", subItems: ["User Roles", "Users"] },
   { name: "Leads", key: "leads" },
   { name: "Connect", key: "connect", subItems: ["All Leads", "Follow-ups"] },
   { name: "Meetings", key: "meetings" },
   { name: "Proposals", key: "quotations" },
   { name: "Clients", key: "clients" },
-  { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report"] },
+  { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report", "Client report", "Proposal report"] },
   { name: "Settings", key: "settings" }
 ];
 
@@ -97,7 +92,6 @@ const buildRolePermissions = (
   rules: { all?: boolean }
 ): Permission[] => {
   return defaultPermissionsList.map(perm => {
-    const isMaster = perm.key === "master" || perm.parentKey === "master";
     const isUsers = perm.key === "users" || perm.parentKey === "users";
     const isReports = perm.key === "reports" || perm.parentKey === "reports";
     const isSettings = perm.key === "settings";
@@ -112,9 +106,7 @@ const buildRolePermissions = (
     }
     
     if (roleName === "Business Development Manager") {
-      if (isMaster) {
-        view = true;
-      } else if (isUsers) {
+      if (isUsers) {
         view = create = edit = true;
       } else if (isReports) {
         view = true;
@@ -124,7 +116,7 @@ const buildRolePermissions = (
         view = create = edit = del = true;
       }
     } else if (roleName === "Business Development Executive") {
-      if (!isMaster && !isUsers && !isReports) {
+      if (!isUsers && !isReports) {
         if (isSettings) {
           view = true;
         } else {
