@@ -8,13 +8,6 @@ import Input from "../../../components/form/input/InputField";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "../../../components/ui/table";
 import { ChevronDownIcon, ChevronUpIcon } from "../../../icons";
 import Button from "../../../components/ui/button/Button";
 import { FiEye,
@@ -80,6 +73,7 @@ export default function ClientList() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -128,28 +122,6 @@ export default function ClientList() {
       setSortOrder("asc");
     }
     setCurrentPage(1);
-  };
-
-  const renderSortHeader = (label: string, field: keyof Client) => {
-    const isActive = sortField === field;
-    return (
-      <button
-        onClick={() => handleSort(field)}
-        className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer"
-      >
-        {label}
-        <span className="flex flex-col">
-          <ChevronUpIcon
-            className={`w-3 h-3 -mb-1 transition-colors ${isActive && sortOrder === "asc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-              }`}
-          />
-          <ChevronDownIcon
-            className={`w-3 h-3 transition-colors ${isActive && sortOrder === "desc" ? "text-brand-500" : "text-gray-300 dark:text-gray-600"
-              }`}
-          />
-        </span>
-      </button>
-    );
   };
 
   const processedClients = useMemo(() => {
@@ -287,6 +259,58 @@ export default function ClientList() {
               </ul>
             </Dropdown>
           </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+              className="flex items-center justify-between h-11 w-48 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <span className="truncate text-left flex-1">Sort: {sortField === "id" ? "Client ID" : sortField === "name" ? "Client Name" : sortField === "company" ? "Company" : sortField === "conversionDate" ? "Conversion Date" : "Default"} ({sortOrder.toUpperCase()})</span>
+              <ChevronDownIcon className="w-4 h-4 text-gray-500 shrink-0 ml-2" />
+            </button>
+            <Dropdown
+              isOpen={isSortDropdownOpen}
+              onClose={() => setIsSortDropdownOpen(false)}
+              className="left-0 w-48 p-1 mt-2"
+            >
+              <ul className="flex flex-col gap-0.5">
+                {[
+                  { value: "id", label: "Client ID" },
+                  { value: "name", label: "Client Name" },
+                  { value: "company", label: "Company" },
+                  { value: "conversionDate", label: "Conversion Date" },
+                ].map((opt) => (
+                  <li key={opt.value}>
+                    <div className="flex items-center justify-between px-3 py-1.5 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg">
+                      <button
+                        onClick={() => {
+                          setSortField(opt.value as keyof Client);
+                          setSortOrder("asc");
+                          setCurrentPage(1);
+                          setIsSortDropdownOpen(false);
+                        }}
+                        className="text-left flex-1 cursor-pointer hover:text-brand-500"
+                      >
+                        {opt.label} (Asc)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSortField(opt.value as keyof Client);
+                          setSortOrder("desc");
+                          setCurrentPage(1);
+                          setIsSortDropdownOpen(false);
+                        }}
+                        className="text-right cursor-pointer text-gray-400 hover:text-brand-500 ml-2"
+                      >
+                        Desc
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Dropdown>
+          </div>
         </div>
       </div>
 
@@ -307,147 +331,163 @@ export default function ClientList() {
         </div>
       )}
 
-      {/* Clients Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-        <div className="max-w-full overflow-x-auto custom-scrollbar">
-          <Table className="min-w-full">
-            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <TableRow>
-                <TableCell isHeader className="px-4 py-3 w-10">
+      {/* Select All Bar for Cards */}
+      {paginatedClients.length > 0 && (
+        <div className="flex items-center gap-3 mb-4 px-4 py-2 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.05] rounded-lg">
+          <input
+            type="checkbox"
+            checked={selectAll}
+            ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+            onChange={toggleSelectAll}
+            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+            id="select-all-clients"
+          />
+          <label htmlFor="select-all-clients" className="text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer">
+            Select All Clients
+          </label>
+        </div>
+      )}
+
+      {/* Clients Card Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {paginatedClients.map((client) => {
+          const isSelected = selectedIds.includes(client.id);
+          return (
+            <div
+              key={client.id}
+              className={`relative rounded-2xl border bg-white p-5 dark:bg-white/[0.03] transition-all duration-200 shadow-sm hover:shadow-md flex flex-col justify-between ${
+                isSelected
+                  ? "border-brand-500 dark:border-brand-500/50 ring-1 ring-brand-500/20"
+                  : "border-gray-200 dark:border-white/[0.05]"
+              }`}
+            >
+              {/* Card Header */}
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Select Checkbox */}
                   <input
                     type="checkbox"
-                    checked={selectAll}
-                    ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
-                    onChange={toggleSelectAll}
-                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                    checked={isSelected}
+                    onChange={() => toggleSelect(client.id)}
+                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer shrink-0"
                   />
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("S.No", "id")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Client Name", "name")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Company", "company")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Contact Number", "phone")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Email", "email")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Conversion Date", "conversionDate")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Assigned Employee", "assignedEmployee")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{renderSortHeader("Handover Status", "handoverStatus")}</TableCell>
-                <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {paginatedClients.length > 0 ? (
-                paginatedClients.map((client, index) => (
-                    <TableRow key={client.id}
-                      className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
-                    >
-                      <TableCell className="px-4 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(client.id)}
-                          onChange={() => toggleSelect(client.id)}
-                          className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
-                        />
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400 font-mono text-xs">
-                        {(currentPage - 1) * rowsPerPage + index + 1}
-                      </TableCell>
-                      {/* Client Name */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold text-xs">
-                            {client.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="text-theme-sm font-medium text-gray-800 dark:text-white/90">{client.name}</div>
-                            <div className="text-xs text-gray-400">{client.designation || "—"}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      {/* Company */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap">
-                        <div className="text-theme-sm font-medium text-gray-800 dark:text-white/90">{client.company}</div>
-                        <div className="text-xs text-gray-400">{client.industry || "—"}</div>
-                      </TableCell>
-                      {/* Contact Number */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap text-theme-sm text-gray-700 dark:text-gray-400">
-                        {client.phone}
-                      </TableCell>
-                      {/* Email */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap text-theme-sm text-gray-700 dark:text-gray-400">
-                        {client.email}
-                      </TableCell>
-                      {/* Conversion Date */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap">
-                        {client.conversionDate ? (
-                          <div className="flex items-center gap-1.5 text-theme-sm text-gray-700 dark:text-gray-400">
-                            <FiCalendar className="size-3.5 text-gray-400" />
-                            {formatDate(client.conversionDate)}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
-                      </TableCell>
-                      {/* Assigned Employee */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                            <FiUser className="size-3" />
-                          </div>
-                          <span className="text-theme-sm text-gray-700 dark:text-gray-400">
-                            {client.assignedEmployee || client.relationshipManager || "—"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      {/* Handover Status */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap text-center">
-                        <Badge size="sm" color={HANDOVER_STATUS_COLORS[client.handoverStatus] || "warning"}>
-                          <span className="flex items-center gap-1">
-                            {renderHandoverStatusIcon(client.handoverStatus)}
-                            {client.handoverStatus}
-                          </span>
-                        </Badge>
-                      </TableCell>
-                      {/* Actions */}
-                      <TableCell className="px-5 py-4 whitespace-nowrap text-end">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => navigate(`/clients/${client.id}`)}
-                            className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition"
-                            title="View Details"
-                          >
-                            <FiEye className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => exportClientProposalPDF(client)}
-                            className="p-1.5 text-gray-500 hover:text-cyan-600 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition"
-                            title="Download Proposal PDF"
-                          >
-                            <FiDownload className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => toggleOnboardingStatus(client)}
-                            className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition cursor-pointer"
-                            title={client.handoverStatus === "Onboarded" ? "Mark Pending" : "Mark Onboarded"}
-                          >
-                            <FiShield className="size-4" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={10} className="px-5 py-12 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <FiUsers className="size-10 text-gray-300 dark:text-gray-600" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No clients found.</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                  {/* Avatar / Initial */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold text-sm">
+                    {client.company.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-850 dark:text-white/95 truncate" title={client.company}>
+                      {client.company}
+                    </h3>
+                    <span className="text-xs text-gray-400 truncate block">
+                      {client.industry || "Information Technology"}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Handover Status Badge */}
+                <div className="shrink-0">
+                  <Badge size="sm" color={HANDOVER_STATUS_COLORS[client.handoverStatus] || "warning"}>
+                    <span className="flex items-center gap-1 font-medium">
+                      {renderHandoverStatusIcon(client.handoverStatus)}
+                      {client.handoverStatus}
+                    </span>
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Card Content / Details */}
+              <div className="space-y-3 mb-5 flex-1">
+                {/* Client ID */}
+                <div className="flex justify-between items-center text-xs border-b border-gray-50 dark:border-white/[0.02] pb-1.5">
+                  <span className="text-gray-400">Client ID</span>
+                  <span className="font-mono text-gray-650 dark:text-gray-300 font-medium">
+                    {`SF-CLI-${String(client.id).padStart(4, "0")}`}
+                  </span>
+                </div>
+
+                {/* Primary Contact */}
+                <div className="flex justify-between items-center text-xs border-b border-gray-50 dark:border-white/[0.02] pb-1.5">
+                  <span className="text-gray-400">Contact Person</span>
+                  <span className="text-gray-650 dark:text-gray-300 font-medium text-right truncate max-w-[150px]">
+                    {client.name} <span className="text-[10px] text-gray-400 font-normal">({client.designation || "—"})</span>
+                  </span>
+                </div>
+
+                {/* Contact Phone */}
+                <div className="flex justify-between items-center text-xs border-b border-gray-50 dark:border-white/[0.02] pb-1.5">
+                  <span className="text-gray-400">Contact Number</span>
+                  <span className="text-gray-650 dark:text-gray-300 font-medium font-mono">
+                    {client.phone}
+                  </span>
+                </div>
+
+                {/* Contact Email */}
+                <div className="flex justify-between items-center text-xs border-b border-gray-50 dark:border-white/[0.02] pb-1.5">
+                  <span className="text-gray-400">Email Address</span>
+                  <span className="text-gray-650 dark:text-gray-300 font-medium truncate max-w-[170px]" title={client.email}>
+                    {client.email}
+                  </span>
+                </div>
+
+                {/* Conversion Date */}
+                <div className="flex justify-between items-center text-xs border-b border-gray-50 dark:border-white/[0.02] pb-1.5">
+                  <span className="text-gray-400">Conversion Date</span>
+                  <span className="text-gray-650 dark:text-gray-300 font-medium flex items-center gap-1">
+                    <FiCalendar className="size-3 text-gray-400" />
+                    {client.conversionDate ? formatDate(client.conversionDate) : "—"}
+                  </span>
+                </div>
+
+                {/* Assigned Employee */}
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-400">Assigned To</span>
+                  <span className="text-gray-650 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                      <FiUser className="size-2.5" />
+                    </span>
+                    {client.assignedEmployee || client.relationshipManager || "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card Actions Footer */}
+              <div className="flex items-center justify-end gap-2 pt-3.5 border-t border-gray-105 dark:border-white/[0.05]">
+                <button
+                  onClick={() => navigate(`/clients/${client.id}`)}
+                  className="p-2 text-gray-500 hover:text-brand-500 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg border border-gray-200 dark:border-white/[0.05] transition cursor-pointer"
+                  title="View Details"
+                >
+                  <FiEye className="size-4" />
+                </button>
+                <button
+                  onClick={() => exportClientProposalPDF(client)}
+                  className="p-2 text-gray-500 hover:text-cyan-600 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg border border-gray-200 dark:border-white/[0.05] transition cursor-pointer"
+                  title="Download Proposal PDF"
+                >
+                  <FiDownload className="size-4" />
+                </button>
+                <button
+                  onClick={() => toggleOnboardingStatus(client)}
+                  className="p-2 text-gray-500 hover:text-green-600 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg border border-gray-200 dark:border-white/[0.05] transition cursor-pointer"
+                  title={client.handoverStatus === "Onboarded" ? "Mark Pending" : "Mark Onboarded"}
+                >
+                  <FiShield className="size-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {paginatedClients.length === 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-12 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <FiUsers className="size-10 text-gray-300 dark:text-gray-600" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">No clients found.</p>
+          </div>
+        </div>
+      )}
 
       {processedClients.length > 0 && (
         <Pagination
