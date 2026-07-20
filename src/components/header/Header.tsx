@@ -87,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
       const proposals = getStorage<any[]>("saiflow_proposals", initialProposals);
       for (const proposal of proposals) {
         if (proposal.companyName?.toLowerCase().includes(q) || proposal.leadName?.toLowerCase().includes(q) || proposal.proposalNo?.toLowerCase().includes(q)) {
-          results.push({ type: "proposal", id: proposal.id, title: proposal.companyName, subtitle: `${proposal.proposalNo} \u2022 ${proposal.leadName}`, url: `/quotations` });
+          results.push({ type: "proposal", id: proposal.id, title: proposal.companyName, subtitle: `${proposal.proposalNo} \u2022 ${proposal.leadName}`, url: `/proposals` });
           if (results.length >= 20) break;
         }
       }

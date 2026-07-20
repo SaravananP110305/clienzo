@@ -50,7 +50,7 @@ export const sidebarStructure = [
   { name: "Leads", key: "leads" },
   { name: "Connect", key: "connect", subItems: ["All Leads", "Follow-ups"] },
   { name: "Meetings", key: "meetings" },
-  { name: "Proposals", key: "quotations" },
+  { name: "Proposals", key: "proposals" },
   { name: "Clients", key: "clients" },
   { name: "Reports", key: "reports", subItems: ["Lead report", "Meeting report", "Employee report", "Follow-up report", "Proposal report", "Client report"] },
   { name: "Settings", key: "settings" }
@@ -126,7 +126,7 @@ const buildRolePermissions = (
     } else if (roleName === "Presales Consultant") {
       if (perm.key === "leads" || perm.key === "meetings" || perm.key === "requirements" || perm.parentKey === "requirements") {
         view = edit = true;
-      } else if (perm.key === "clients" || perm.key === "quotations" || isSettings) {
+      } else if (perm.key === "clients" || perm.key === "proposals" || isSettings) {
         view = true;
       }
     } else if (roleName === "Guest User") {

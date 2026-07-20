@@ -256,20 +256,20 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
       } else {
         breadcrumbs.push({ label: clientName });
       }
-    } else if (pathname === "/quotations") {
+    } else if (pathname === "/proposals") {
       breadcrumbs.push({ label: "Proposals" });
-    } else if (pathname === "/quotations/add") {
-      breadcrumbs.push({ label: "Proposals", to: "/quotations" });
+    } else if (pathname === "/proposals/add") {
+      breadcrumbs.push({ label: "Proposals", to: "/proposals" });
       breadcrumbs.push({ label: "New proposal" });
-    } else if (pathname.startsWith("/quotations/")) {
+    } else if (pathname.startsWith("/proposals/")) {
       const parts = pathname.split("/");
       const id = parts[2];
       const isEdit = parts[3] === "edit";
       const proposalNo = getProposalNo(id);
 
-      breadcrumbs.push({ label: "Proposals", to: "/quotations" });
+      breadcrumbs.push({ label: "Proposals", to: "/proposals" });
       if (isEdit) {
-        breadcrumbs.push({ label: proposalNo, to: `/quotations` });
+        breadcrumbs.push({ label: proposalNo, to: `/proposals` });
         breadcrumbs.push({ label: "Edit proposal" });
       } else {
         breadcrumbs.push({ label: proposalNo });

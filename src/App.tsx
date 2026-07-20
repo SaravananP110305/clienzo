@@ -560,9 +560,9 @@ export default function App() {
               }
             />
             {/* Requirements are now part of Business Proposals */}
-            <Route path="/requirements" element={<Navigate to="/quotations" replace />} />
+            <Route path="/requirements" element={<Navigate to="/proposals" replace />} />
             <Route
-              path="/quotations"
+              path="/proposals"
               element={
                 <ProtectedRoute allowedRoles={allowedRoles}>
                   <QuotationList />
@@ -570,7 +570,7 @@ export default function App() {
               }
             />
             <Route
-              path="/quotations/add"
+              path="/proposals/add"
               element={
                 <ProtectedRoute allowedRoles={allowedRoles}>
                   <AddProposal />
@@ -578,7 +578,7 @@ export default function App() {
               }
             />
             <Route
-              path="/quotations/:id/edit"
+              path="/proposals/:id/edit"
               element={
                 <ProtectedRoute allowedRoles={allowedRoles}>
                   <AddProposal />

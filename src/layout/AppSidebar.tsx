@@ -85,7 +85,7 @@ const navItems: NavItem[] = [
   {
     name: "Proposals",
     icon: <MdReceiptLong className="size-5" />,
-    path: "/quotations",
+    path: "/proposals",
   },
   {
     name: "Clients",

@@ -321,7 +321,7 @@ export default function QuotationList() {
   const handleRevise = (proposal: Proposal) => {
     // Update status to Negotiation and log the action, then navigate to edit
     updateStatus(proposal.id, "Negotiation", "Client requested revisions - moved to negotiation.");
-    navigate(`/quotations/${proposal.id}/edit`);
+    navigate(`/proposals/${proposal.id}/edit`);
   };
 
   // ── Delete ─────────────────────────────────────────────────────────────────
@@ -463,7 +463,7 @@ export default function QuotationList() {
             </div>
           </div>
         </div>
-        <Button onClick={() => navigate("/quotations/add")} variant="primary" size="sm" startIcon={<FiPlus />}>
+        <Button onClick={() => navigate("/proposals/add")} variant="primary" size="sm" startIcon={<FiPlus />}>
           New Proposal
         </Button>
       </div>
@@ -651,7 +651,7 @@ export default function QuotationList() {
                             className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="View">
                             <FiEye className="size-4" />
                           </button>
-                          <button onClick={() => navigate(`/quotations/${proposal.id}/edit`)}
+                          <button onClick={() => navigate(`/proposals/${proposal.id}/edit`)}
                             className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="Edit">
                             <FiEdit className="size-4" />
                           </button>
@@ -670,7 +670,7 @@ export default function QuotationList() {
                     <div className="flex flex-col items-center gap-2">
                       <FiFileText className="size-10 text-gray-300 dark:text-gray-600" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">No proposals found.</p>
-                      <Button onClick={() => navigate("/quotations/add")} variant="outline" size="sm" startIcon={<FiPlus />}>
+                      <Button onClick={() => navigate("/proposals/add")} variant="outline" size="sm" startIcon={<FiPlus />}>
                         Create First Proposal
                       </Button>
                     </div>
@@ -756,7 +756,7 @@ export default function QuotationList() {
                 Convert to Client
               </Button>
             )}
-            <Button onClick={() => navigate(`/quotations/${selectedProposal.id}/edit`)} size="sm" variant="outline" startIcon={<FiEdit />}>
+            <Button onClick={() => navigate(`/proposals/${selectedProposal.id}/edit`)} size="sm" variant="outline" startIcon={<FiEdit />}>
               Edit
             </Button>
             <Button onClick={() => handleExportPDF(selectedProposal)} size="sm" variant="outline" startIcon={<FiDownload />}>

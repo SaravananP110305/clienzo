@@ -364,7 +364,7 @@ export default function MeetingsScopePage({
   const navigateToProposal = (meeting: Meeting) => {
     showToast(`Navigating to Business Proposal for "${meeting.company}"...`, "info");
     // Navigate to quotation/business proposal page
-    navigate(`/quotations?company=${encodeURIComponent(meeting.company)}&meetingId=${meeting.id}`);
+    navigate(`/proposals?company=${encodeURIComponent(meeting.company)}&meetingId=${meeting.id}`);
   };
 
   // ─── Render Action Buttons (icon-only) ──────────────────────────────

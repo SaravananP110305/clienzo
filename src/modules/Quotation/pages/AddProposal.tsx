@@ -174,7 +174,7 @@ export default function AddProposal() {
         setFormTnC(proposal.quotation.termsAndConditions);
       } else {
         showToast("Proposal not found.", "error");
-        navigate("/quotations");
+        navigate("/proposals");
         return;
       }
     }
@@ -327,10 +327,10 @@ export default function AddProposal() {
       setStorage("saiflow_proposals", [...allProposals, newProposal]);
       showToast("Proposal created successfully.", "success");
     }
-    navigate("/quotations");
+    navigate("/proposals");
   };
 
-  const handleCancel = () => navigate("/quotations");
+  const handleCancel = () => navigate("/proposals");
 
   // ── Quick total preview ────────────────────────────────────────────────────
 
