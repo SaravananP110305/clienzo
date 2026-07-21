@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDate, formatTime } from "../../../utils/dateFormatter";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -123,13 +124,6 @@ export default function FollowUpReport() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const renderSortHeader = (label: string, field: keyof FollowUpReportData) => {
     const isActive = sortField === field;
@@ -338,7 +332,7 @@ export default function FollowUpReport() {
                       {formatDate(row.date)}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {row.time}
+                      {formatTime(row.time)}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {row.reason}

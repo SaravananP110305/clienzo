@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
+import { formatDate } from "../../../utils/dateFormatter";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 
@@ -501,15 +502,7 @@ export default function LeadDetails() {
             <InfoCard
               icon={<FiCalendar className="size-4" />}
               label="Assigned Date"
-              value={
-                lead.assignedDate
-                  ? new Date(lead.assignedDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : ""
-              }
+              value={formatDate(lead.assignedDate)}
             />
           </div>
         </div>
@@ -543,11 +536,7 @@ export default function LeadDetails() {
                         {event.title}
                       </h4>
                       <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(event.timestamp).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {formatDate(event.timestamp)}
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">

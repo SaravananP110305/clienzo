@@ -4,6 +4,7 @@ import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Input from "../../../components/form/input/InputField";
+import DatePicker from "../../../components/form/date-picker";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
@@ -570,27 +571,25 @@ export default function MyLeads() {
                 {contactResult === "Call Later" && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Follow-up date <span className="text-error-500">*</span>
-                      </label>
-                      <Input
-                        type="date"
-                        value={callLaterDate}
-                        onChange={(e) => setCallLaterDate(e.target.value)}
-                        min={new Date().toISOString().split("T")[0]}
+                      <DatePicker
+                        id="call-later-date"
+                        label="Follow-up date"
+                        required={true}
+                        defaultDate={callLaterDate}
+                        onChange={(_, dateStr) => setCallLaterDate(dateStr)}
                       />
                       {!callLaterDate && (
                         <span className="mt-1 text-xs text-error-500 block">Required</span>
                       )}
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Follow-up time <span className="text-error-500">*</span>
-                      </label>
-                      <Input
-                        type="time"
-                        value={callLaterTime}
-                        onChange={(e) => setCallLaterTime(e.target.value)}
+                      <DatePicker
+                        id="call-later-time"
+                        mode="time"
+                        label="Follow-up time"
+                        required={true}
+                        defaultDate={callLaterTime}
+                        onChange={(_, timeStr) => setCallLaterTime(timeStr)}
                       />
                       {!callLaterTime && (
                         <span className="mt-1 text-xs text-error-500 block">Required</span>

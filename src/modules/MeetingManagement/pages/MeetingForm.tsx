@@ -375,18 +375,18 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Start Time <span className="text-error-500">*</span>
-              </label>
               <Controller
                 name="startTime"
                 control={control}
                 rules={{ required: "Start time is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="time"
-                    error={!!errors.startTime}
+                render={({ field: { value, onChange } }) => (
+                  <DatePicker
+                    id="meeting-start-time"
+                    mode="time"
+                    label="Start Time"
+                    required={true}
+                    defaultDate={value}
+                    onChange={(_, timeStr) => onChange(timeStr)}
                   />
                 )}
               />
@@ -396,18 +396,18 @@ export default function MeetingForm({ onSave }: MeetingFormProps) {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
-                End Time <span className="text-error-500">*</span>
-              </label>
               <Controller
                 name="endTime"
                 control={control}
                 rules={{ required: "End time is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="time"
-                    error={!!errors.endTime}
+                render={({ field: { value, onChange } }) => (
+                  <DatePicker
+                    id="meeting-end-time"
+                    mode="time"
+                    label="End Time"
+                    required={true}
+                    defaultDate={value}
+                    onChange={(_, timeStr) => onChange(timeStr)}
                   />
                 )}
               />

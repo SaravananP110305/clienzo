@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { formatDate as centFormatDate, formatTime as centFormatTime } from "../../../utils/dateFormatter";
 import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -121,16 +122,15 @@ function formatCurrency(amount: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return centFormatDate(dateStr);
 }
 
 function formatDateTime(dateStr: string): string {
+  if (!dateStr) return "—";
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+  if (isNaN(d.getTime())) return "—";
+  const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${centFormatDate(d)} at ${centFormatTime(timeStr)}`;
 }
 
 function getTimeAgo(dateStr: string): string {
@@ -1140,7 +1140,7 @@ export function exportProposalToPDF(proposal: Proposal, showToast: (msg: string,
       pdf.setTextColor(150, 150, 150);
       pdf.setFontSize(6.5);
       pdf.setFont("helvetica", "normal");
-      pdf.text(`Generated on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} | Page ${pageNum}`, margin, pageHeight - 5);
+      pdf.text(`Generated on ${centFormatDate(new Date())} | Page ${pageNum}`, margin, pageHeight - 5);
       pdf.text("SaiFlow CRM — Confidential", pageWidth - margin, pageHeight - 5, { align: "right" });
     };
 

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDate } from "../../../utils/dateFormatter";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -122,13 +123,6 @@ export default function ProposalReport() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const renderSortHeader = (label: string, field: keyof ProposalReportData) => {
     const isActive = sortField === field;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
+import { formatDate, formatTime } from "../../../utils/dateFormatter";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -181,31 +182,6 @@ export default function MeetingDetails() {
         date: l.timestamp,
         operator: l.operator,
       }));
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const formatTime12hr = (timeStr: string) => {
-    if (!timeStr) return "";
-    if (timeStr.includes("AM") || timeStr.includes("PM")) return timeStr;
-    const parts = timeStr.split(":");
-    if (parts.length < 2) return timeStr;
-    const hour = parseInt(parts[0], 10);
-    const minStr = parts[1];
-    if (isNaN(hour)) return timeStr;
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const formattedHour = hour % 12 || 12;
-    return `${formattedHour}:${minStr} ${ampm}`;
   };
 
   useEffect(() => {
@@ -423,12 +399,12 @@ export default function MeetingDetails() {
             <InfoCard
               icon={<FiClock className="size-4" />}
               label="Start time"
-              value={formatTime12hr(meeting.startTime || meeting.time)}
+              value={formatTime(meeting.startTime || meeting.time)}
             />
             <InfoCard
               icon={<FiClock className="size-4" />}
               label="End time"
-              value={formatTime12hr(meeting.endTime || "")}
+              value={formatTime(meeting.endTime || "")}
             />
             <InfoCard
               icon={<FiClock className="size-4" />}
@@ -780,7 +756,7 @@ export default function MeetingDetails() {
                   label="Rescheduled To"
                   value={
                     <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                      {formatDate(meeting.rescheduledDate)}{meeting.rescheduledTime ? ` at ${formatTime12hr(meeting.rescheduledTime)}` : ""}
+                      {formatDate(meeting.rescheduledDate)}{meeting.rescheduledTime ? ` at ${formatTime(meeting.rescheduledTime)}` : ""}
                     </span>
                   }
                 />
@@ -791,7 +767,7 @@ export default function MeetingDetails() {
                 <InfoCard
                   icon={<FiCalendar className="size-4 text-gray-400" />}
                   label="Originally Scheduled"
-                  value={`${formatDate(meeting.date)} at ${formatTime12hr(meeting.time)}`}
+                  value={`${formatDate(meeting.date)} at ${formatTime(meeting.time)}`}
                 />
               )}
 

@@ -5,6 +5,8 @@ import PageMeta from "../../../components/common/PageMeta";
 import Button from "../../../components/ui/button/Button";
 import Badge from "../../../components/ui/badge/Badge";
 import Input from "../../../components/form/input/InputField";
+import DatePicker from "../../../components/form/date-picker";
+import { formatDate, formatTime } from "../../../utils/dateFormatter";
 import {
   Table,
   TableHeader,
@@ -158,28 +160,6 @@ export default function MeetingsScopePage({
   const totalItems = filteredMeetings.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch { return dateStr; }
-  };
-
-  const formatTime = (timeStr: string) => {
-    if (!timeStr) return "";
-    if (timeStr.includes("AM") || timeStr.includes("PM")) return timeStr;
-    const parts = timeStr.split(":");
-    if (parts.length < 2) return timeStr;
-    const hour = parseInt(parts[0], 10);
-    const minStr = parts[1];
-    if (isNaN(hour)) return timeStr;
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const formattedHour = hour % 12 || 12;
-    return `${formattedHour}:${minStr} ${ampm}`;
-  };
 
   const handleSort = (field: keyof Meeting) => {
     if (sortField === field) {
@@ -685,17 +665,18 @@ export default function MeetingsScopePage({
                 Follow-up Date & Time <span className="text-error-500">*</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="date"
-                  value={rescheduleDate}
-                  onChange={(e) => setRescheduleDate(e.target.value)}
-                  className="w-full"
+                <DatePicker
+                  id="reschedule-date"
+                  defaultDate={rescheduleDate}
+                  onChange={(_, dateStr) => setRescheduleDate(dateStr)}
+                  placeholder="Select Date"
                 />
-                <Input
-                  type="time"
-                  value={rescheduleTime}
-                  onChange={(e) => setRescheduleTime(e.target.value)}
-                  className="w-full"
+                <DatePicker
+                  id="reschedule-time"
+                  mode="time"
+                  defaultDate={rescheduleTime}
+                  onChange={(_, timeStr) => setRescheduleTime(timeStr)}
+                  placeholder="Select Time"
                 />
               </div>
               {!rescheduleDate && (

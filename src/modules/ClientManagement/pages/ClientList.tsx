@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
+import { formatDate } from "../../../utils/dateFormatter";
 import { getStorage, setStorage } from "../../../utils/storage";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -31,12 +32,7 @@ const HANDOVER_STATUS_COLORS: Record<string, "warning" | "success"> = {
   Onboarded: "success",
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
 
 
 

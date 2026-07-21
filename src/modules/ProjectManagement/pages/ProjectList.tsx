@@ -7,6 +7,8 @@ import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
+import DatePicker from "../../../components/form/date-picker";
+import { formatDate } from "../../../utils/dateFormatter";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
@@ -325,7 +327,7 @@ export default function ProjectList() {
                     <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{proj.client}</TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{proj.category}</TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">
-                      {proj.startDate} to {proj.deadline}
+                      {formatDate(proj.startDate)} to {formatDate(proj.deadline)}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm w-44">
                       <div className="flex items-center gap-2">
@@ -396,12 +398,28 @@ export default function ProjectList() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Start Date *</label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} error={!!errors.startDate} hint={errors.startDate} />
+              <DatePicker
+                id="project-start-date"
+                label="Start Date"
+                required={true}
+                defaultDate={startDate}
+                onChange={(_, dateStr) => setStartDate(dateStr)}
+              />
+              {errors.startDate && (
+                <span className="mt-1.5 text-xs text-error-600 block">{errors.startDate}</span>
+              )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Deadline *</label>
-              <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} error={!!errors.deadline} hint={errors.deadline} />
+              <DatePicker
+                id="project-deadline"
+                label="Deadline"
+                required={true}
+                defaultDate={deadline}
+                onChange={(_, dateStr) => setDeadline(dateStr)}
+              />
+              {errors.deadline && (
+                <span className="mt-1.5 text-xs text-error-600 block">{errors.deadline}</span>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -448,7 +466,7 @@ export default function ProjectList() {
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Project Name</span><span className="text-sm text-gray-800 dark:text-white font-semibold">{selectedProject.name}</span></div>
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Client</span><span className="text-sm text-gray-800 dark:text-white">{selectedProject.client}</span></div>
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Category</span><span className="text-sm text-gray-800 dark:text-white">{selectedProject.category}</span></div>
-            <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Timeline</span><span className="text-sm text-gray-800 dark:text-white">{selectedProject.startDate} to {selectedProject.deadline}</span></div>
+            <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Timeline</span><span className="text-sm text-gray-800 dark:text-white">{formatDate(selectedProject.startDate)} to {formatDate(selectedProject.deadline)}</span></div>
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Progress</span><span className="text-sm text-gray-800 dark:text-white font-semibold">{selectedProject.progress}%</span></div>
             <div className="flex justify-between pb-2"><span className="text-sm font-medium text-gray-500">Status</span><Badge color={getStatusColor(selectedProject.status)} variant="solid">{selectedProject.status}</Badge></div>
           </div>

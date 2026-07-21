@@ -4,6 +4,8 @@ import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
 import Input from "../../../components/form/input/InputField";
+import DatePicker from "../../../components/form/date-picker";
+import { formatDate, formatTime } from "../../../utils/dateFormatter";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
@@ -142,12 +144,6 @@ export default function FollowUps() {
     );
   };
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
 
   // Modal state for completing follow-ups
   const [selectedItemForComplete, setSelectedItemForComplete] = useState<FollowUp | null>(null);
@@ -432,7 +428,7 @@ export default function FollowUps() {
                       {formatDate(item.date)}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {item.time}
+                      {formatTime(item.time)}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-theme-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {item.assignedTo}
@@ -632,24 +628,22 @@ export default function FollowUps() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  New follow-up date <span className="text-error-500">*</span>
-                </label>
-                <Input
-                  type="date"
-                  value={missedDate}
-                  onChange={(e) => setMissedDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
+                <DatePicker
+                  id="missed-follow-up-date"
+                  label="New follow-up date"
+                  required={true}
+                  defaultDate={missedDate}
+                  onChange={(_, dateStr) => setMissedDate(dateStr)}
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  New follow-up time <span className="text-error-500">*</span>
-                </label>
-                <Input
-                  type="time"
-                  value={missedTime}
-                  onChange={(e) => setMissedTime(e.target.value)}
+                <DatePicker
+                  id="missed-follow-up-time"
+                  mode="time"
+                  label="New follow-up time"
+                  required={true}
+                  defaultDate={missedTime}
+                  onChange={(_, timeStr) => setMissedTime(timeStr)}
                 />
               </div>
             </div>

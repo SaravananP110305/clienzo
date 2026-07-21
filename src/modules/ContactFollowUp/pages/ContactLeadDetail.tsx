@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
+import { formatDate, formatTime } from "../../../utils/dateFormatter";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import Badge from "../../../components/ui/badge/Badge";
@@ -169,13 +170,7 @@ function InfoCard({
 
 function ActivityItem({ activity, isLast }: { activity: Activity; isLast?: boolean }) {
   const formattedDate = activity.timestamp
-    ? new Date(activity.timestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+    ? `${formatDate(activity.timestamp)} at ${formatTime(new Date(activity.timestamp).getHours() + ":" + new Date(activity.timestamp).getMinutes())}`
     : null;
 
   return (
@@ -551,15 +546,7 @@ export default function ContactLeadDetail() {
             <InfoCard
               icon={<FiCalendar className="size-4" />}
               label="Assigned Date"
-              value={
-                lead.assignedDate
-                  ? new Date(lead.assignedDate).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                  : ""
-              }
+              value={formatDate(lead.assignedDate)}
             />
           </div>
         </div>
@@ -574,7 +561,7 @@ export default function ContactLeadDetail() {
               <InfoCard
                 icon={<FiCalendar className="size-4" />}
                 label="Follow-up Date & Time"
-                value={`${latestFollowUp.date} at ${latestFollowUp.time}`}
+                value={`${formatDate(latestFollowUp.date)} at ${formatTime(latestFollowUp.time)}`}
               />
               <InfoCard
                 icon={<FiTag className="size-4" />}

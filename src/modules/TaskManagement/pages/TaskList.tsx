@@ -7,6 +7,8 @@ import Button from "../../../components/ui/button/Button";
 import Input from "../../../components/form/input/InputField";
 import Select from "../../../components/form/Select";
 import { Modal } from "../../../components/ui/modal";
+import DatePicker from "../../../components/form/date-picker";
+import { formatDate } from "../../../utils/dateFormatter";
 import { useModal } from "../../../hooks/useModal";
 import { Dropdown } from "../../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../../components/ui/dropdown/DropdownItem";
@@ -336,7 +338,7 @@ export default function TaskList() {
                     <TableCell className="px-5 py-4 text-sm">
                       <Badge color={getStatusColor(t.status)} variant="solid">{t.status}</Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{t.dueDate}</TableCell>
+                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-400">{formatDate(t.dueDate)}</TableCell>
                     <TableCell className="px-5 py-4 text-sm text-end">
                       <div className="flex justify-end items-center gap-2">
                         <button onClick={() => handleOpenView(t)} className="text-gray-500 hover:text-brand-500 p-1"><FiEye size={16} /></button>
@@ -421,10 +423,18 @@ export default function TaskList() {
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Due Date *</label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} error={!!errors.dueDate} hint={errors.dueDate} />
-          </div>
+           <div>
+             <DatePicker
+               id="task-due-date"
+               label="Due Date"
+               required={true}
+               defaultDate={dueDate}
+               onChange={(_, dateStr) => setDueDate(dateStr)}
+             />
+             {errors.dueDate && (
+               <span className="mt-1.5 text-xs text-error-600 block">{errors.dueDate}</span>
+             )}
+           </div>
           <div className="flex justify-end gap-3 mt-6">
             <Button onClick={formModal.closeModal} variant="outline" size="sm">Cancel</Button>
             <Button type="submit" variant="primary" size="sm">Save Task</Button>
@@ -452,7 +462,7 @@ export default function TaskList() {
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Assignee</span><span className="text-sm text-gray-800 dark:text-white">{selectedTask.assignee}</span></div>
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Priority</span><Badge color={getPriorityColor(selectedTask.priority)}>{selectedTask.priority}</Badge></div>
             <div className="flex justify-between border-b pb-2 dark:border-white/[0.05]"><span className="text-sm font-medium text-gray-500">Status</span><Badge color={getStatusColor(selectedTask.status)} variant="solid">{selectedTask.status}</Badge></div>
-            <div className="flex justify-between pb-2"><span className="text-sm font-medium text-gray-500">Due Date</span><span className="text-sm text-gray-800 dark:text-white">{selectedTask.dueDate}</span></div>
+            <div className="flex justify-between pb-2"><span className="text-sm font-medium text-gray-500">Due Date</span><span className="text-sm text-gray-800 dark:text-white">{formatDate(selectedTask.dueDate)}</span></div>
           </div>
         )}
         <div className="flex justify-end mt-6">
