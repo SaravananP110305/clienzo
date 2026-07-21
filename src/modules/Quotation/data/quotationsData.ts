@@ -27,7 +27,7 @@ export interface EstimationLineItem {
   id: string;
   category: string;
   description: string;
-  quantity: number;
+  quantity?: number;
   unit: string;
   unitPrice: number;
   amount: number;

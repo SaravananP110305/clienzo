@@ -906,7 +906,6 @@ export default function QuotationList() {
               <tr className="border-b border-gray-100 dark:border-white/[0.05]">
                 <th className="text-left py-3 px-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase">Category</th>
                 <th className="text-left py-3 px-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase">Description</th>
-                <th className="text-right py-3 px-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase">Qty</th>
                 <th className="text-right py-3 px-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase">Unit</th>
                 <th className="text-right py-3 px-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase">Unit Price</th>
                 <th className="text-right py-3 px-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase">Amount</th>
@@ -919,7 +918,6 @@ export default function QuotationList() {
                     <Badge size="sm" color="primary">{item.category}</Badge>
                   </td>
                   <td className="py-3 px-3 text-gray-700 dark:text-gray-300">{item.description}</td>
-                  <td className="py-3 px-3 text-right text-gray-700 dark:text-gray-300">{item.quantity}</td>
                   <td className="py-3 px-3 text-right text-gray-500 dark:text-gray-400 text-xs">{item.unit}</td>
                   <td className="py-3 px-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(item.unitPrice)}</td>
                   <td className="py-3 px-3 text-right font-medium text-gray-800 dark:text-white">{formatCurrency(item.amount)}</td>
@@ -928,21 +926,21 @@ export default function QuotationList() {
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-100 dark:border-white/[0.05]">
-                <td colSpan={5} className="py-3 px-3 text-right text-sm text-gray-500 dark:text-gray-400">Subtotal</td>
+                <td colSpan={4} className="py-3 px-3 text-right text-sm text-gray-500 dark:text-gray-400">Subtotal</td>
                 <td className="py-3 px-3 text-right text-sm text-gray-800 dark:text-white">{formatCurrency(est.subtotal)}</td>
               </tr>
               {est.discountPercent > 0 && (
                 <tr>
-                  <td colSpan={5} className="py-1 px-3 text-right text-sm text-gray-500 dark:text-gray-400">Discount ({est.discountPercent}%)</td>
+                  <td colSpan={4} className="py-1 px-3 text-right text-sm text-gray-500 dark:text-gray-400">Discount ({est.discountPercent}%)</td>
                   <td className="py-1 px-3 text-right text-sm text-red-500">-{formatCurrency(est.discountAmount)}</td>
                 </tr>
               )}
               <tr>
-                <td colSpan={5} className="py-1 px-3 text-right text-sm text-gray-500 dark:text-gray-400">Tax ({est.taxPercent}%)</td>
+                <td colSpan={4} className="py-1 px-3 text-right text-sm text-gray-500 dark:text-gray-400">Tax ({est.taxPercent}%)</td>
                 <td className="py-1 px-3 text-right text-sm text-gray-800 dark:text-white">{formatCurrency(est.taxAmount)}</td>
               </tr>
               <tr className="border-t-2 border-gray-200 dark:border-white/[0.1]">
-                <td colSpan={5} className="py-3 px-3 text-right text-base font-bold text-gray-800 dark:text-white">Total</td>
+                <td colSpan={4} className="py-3 px-3 text-right text-base font-bold text-gray-800 dark:text-white">Total</td>
                 <td className="py-3 px-3 text-right text-base font-bold text-brand-600 dark:text-brand-400">{formatCurrency(est.total)}</td>
               </tr>
             </tfoot>
@@ -1294,7 +1292,7 @@ export function exportProposalToPDF(proposal: Proposal, showToast: (msg: string,
 
     if (est.items && est.items.length > 0) {
       // Table header row
-      const cols = [margin, 55, 105, 125, 145, pageWidth - margin];
+      const cols = [margin, 60, 140, 165, pageWidth - margin];
       const colWidth = pageWidth - margin * 2;
 
       checkPageBreak(24);
@@ -1305,9 +1303,8 @@ export function exportProposalToPDF(proposal: Proposal, showToast: (msg: string,
       pdf.setFont("helvetica", "bold");
       pdf.text("CATEGORY", cols[0] + 2, y + 1);
       pdf.text("DESCRIPTION", cols[1] + 2, y + 1);
-      pdf.text("QTY", cols[2] + 2, y + 1);
-      pdf.text("RATE", cols[3] + 2, y + 1);
-      pdf.text("AMOUNT", cols[4] + 2, y + 1);
+      pdf.text("RATE", cols[2] + 2, y + 1);
+      pdf.text("AMOUNT", cols[3] + 2, y + 1);
       y += 5;
 
       // Table rows
@@ -1321,15 +1318,14 @@ export function exportProposalToPDF(proposal: Proposal, showToast: (msg: string,
         }
         pdf.setTextColor(60, 60, 60);
         pdf.setFontSize(7);
-        const desc = pdf.splitTextToSize(item.description, 45)[0] || "";
+        const desc = pdf.splitTextToSize(item.description, 75)[0] || "";
         pdf.text(item.category.substring(0, 14), cols[0] + 2, y + 1);
         pdf.setFontSize(6.5);
-        pdf.text(String(desc).substring(0, 35), cols[1] + 2, y + 1);
+        pdf.text(String(desc).substring(0, 50), cols[1] + 2, y + 1);
         pdf.setFontSize(7);
-        pdf.text(String(item.quantity), cols[2] + 2, y + 1);
-        pdf.text(formatCurrency(item.unitPrice), cols[3] + 2, y + 1);
+        pdf.text(formatCurrency(item.unitPrice), cols[2] + 2, y + 1);
         pdf.setFont("helvetica", "bold");
-        pdf.text(formatCurrency(item.amount), cols[4] + 2, y + 1);
+        pdf.text(formatCurrency(item.amount), cols[3] + 2, y + 1);
         pdf.setFont("helvetica", "normal");
         y += 5;
       });

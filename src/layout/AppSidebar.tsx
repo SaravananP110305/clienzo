@@ -306,8 +306,8 @@ const AppSidebar: React.FC = () => {
                               sub.path === "/contacts/my-leads"
                                 ? location.pathname.startsWith("/contacts") && !location.pathname.startsWith("/contacts/follow-ups")
                                 : sub.path === "/contacts/follow-ups"
-                                ? location.pathname.startsWith("/contacts/follow-ups")
-                                : location.pathname.startsWith(sub.path);
+                                  ? location.pathname.startsWith("/contacts/follow-ups")
+                                  : location.pathname.startsWith(sub.path);
                             return (
                               <li key={sub.name}>
                                 <Link

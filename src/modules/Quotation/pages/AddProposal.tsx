@@ -51,7 +51,7 @@ const EMPTY_REQUIREMENT: RequirementSection = {
 };
 
 const EMPTY_ESTIMATION_ITEM: EstimationLineItem = {
-  id: "", category: "Development", description: "", quantity: 1, unit: "Project", unitPrice: 0, amount: 0,
+  id: "", category: "", description: "", unit: "Project", unitPrice: 0, amount: 0,
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -65,19 +65,10 @@ export default function AddProposal() {
 
   // ── Master Data Options ──────────────────────────────────────────────────────
   const serviceOptions = useMemo(() => {
-    // Combine legacy categories (for sample data backward compat) with PROJECT_CATEGORIES from master data
-    const legacyCats = [
-      "Development", "UI/UX Design", "Frontend", "Backend", "Mobile App", "Integration",
-      "Data Engineering", "Testing", "Deployment", "Documentation",
-      "Consulting", "Maintenance", "UI/UX", "Dashboard", "ML/AI",
-      "Payments", "Inventory", "CRM Core", "AI Integration", "Workflow",
-      "Reporting", "Data Pipeline", "Processing", "Automation", "Admin Panel", "Other",
-    ];
     const masterCategories = getStorage<any[]>("saiflow_master_services", PROJECT_CATEGORIES)
       .filter((s: any) => s.status === "Active")
       .map((s: any) => s.name);
-    const combined = [...new Set([...legacyCats, ...masterCategories])];
-    return combined.map((c) => ({ value: c, label: c }));
+    return masterCategories.map((c) => ({ value: c, label: c }));
   }, []);
 
   const paymentTypeOptions = useMemo(() => {
@@ -214,10 +205,8 @@ export default function AddProposal() {
       formEstimationItems.map((item) => {
         if (item.id !== itemId) return item;
         const updated = { ...item, [field]: value };
-        if (field === "quantity" || field === "unitPrice") {
-          const qty = field === "quantity" ? Number(value) : item.quantity;
-          const price = field === "unitPrice" ? Number(value) : item.unitPrice;
-          updated.amount = qty * price;
+        if (field === "unitPrice") {
+          updated.amount = Number(value);
         }
         return updated;
       })
@@ -494,51 +483,61 @@ export default function AddProposal() {
             <FiDollarSign className="size-4 text-brand-500" /> Estimation
           </h3>
 
-          <div className="overflow-x-auto mb-3">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto mb-3 border border-gray-200 dark:border-gray-800 rounded-xl">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-white/[0.05]">
-                  <th className="text-left py-2 px-2 text-xs text-gray-500">Category</th>
-                  <th className="text-left py-2 px-2 text-xs text-gray-500">Description</th>
-                  <th className="text-right py-2 px-2 text-xs text-gray-500">Qty</th>
-                  <th className="text-right py-2 px-2 text-xs text-gray-500">Unit Price</th>
-                  <th className="text-right py-2 px-2 text-xs text-gray-500">Amount</th>
-                  <th className="w-8 py-2 px-2"></th>
+                <tr className="bg-gray-50 dark:bg-white/[0.02] border-b border-gray-200 dark:border-gray-800">
+                  <th className="w-[200px] text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 last:border-r-0">Category</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 last:border-r-0">Description</th>
+                  <th className="w-[140px] text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 last:border-r-0">Unit Price</th>
+                  <th className="w-[120px] text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 last:border-r-0">Amount</th>
+                  <th className="w-[50px] py-3 px-4 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 last:border-r-0"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-white/[0.03]">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {formEstimationItems.map((item) => (
-                  <tr key={item.id}>
-                    <td className="py-1.5 px-2">
-                      <select value={item.category}
-                        onChange={(e) => updateEstimationItem(item.id, "category", e.target.value)}
-                        className="w-36 rounded border border-gray-200 bg-transparent px-2 py-1.5 text-xs text-gray-800 dark:border-gray-800 dark:text-white/90">
-                        {serviceOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                      </select>
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
+                    <td className="py-3 px-4 align-middle border-r border-gray-200 dark:border-gray-800 last:border-r-0">
+                      <div className="relative">
+                        <select value={item.category}
+                          onChange={(e) => updateEstimationItem(item.id, "category", e.target.value)}
+                          className={`w-full appearance-none rounded-lg border border-gray-300 bg-white dark:bg-gray-900 pl-3 pr-9 py-2.5 text-xs dark:border-gray-700 focus:outline-none focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:focus:border-brand-800 cursor-pointer ${
+                            item.category ? "text-gray-800 dark:text-white/90" : "text-gray-400 dark:text-gray-400"
+                          }`}>
+                          <option value="" disabled className="text-gray-400 dark:bg-gray-900 dark:text-gray-400 bg-white">
+                            Select
+                          </option>
+                          {serviceOptions.map((c) => (
+                            <option key={c.value} value={c.value} className="text-gray-700 dark:bg-gray-900 dark:text-gray-200 bg-white">
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                          <svg className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-1.5 px-2">
+                    <td className="py-3 px-4 align-middle border-r border-gray-200 dark:border-gray-800 last:border-r-0">
                       <input value={item.description}
                         onChange={(e) => updateEstimationItem(item.id, "description", e.target.value)}
-                        className="w-full min-w-32 rounded border border-gray-200 bg-transparent px-2 py-1.5 text-xs text-gray-800 dark:border-gray-800 dark:text-white/90"
+                        className="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-xs text-gray-800 dark:border-gray-800 dark:text-white/90 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500"
                         placeholder="Description" />
                     </td>
-                    <td className="py-1.5 px-2">
-                      <input type="number" value={item.quantity}
-                        onChange={(e) => updateEstimationItem(item.id, "quantity", Number(e.target.value))}
-                        className="w-16 rounded border border-gray-200 bg-transparent px-2 py-1.5 text-xs text-right text-gray-800 dark:border-gray-800 dark:text-white/90" min="0" />
-                    </td>
-                    <td className="py-1.5 px-2">
+                    <td className="py-3 px-4 align-middle border-r border-gray-200 dark:border-gray-800 last:border-r-0">
                       <input type="number" value={item.unitPrice}
                         onChange={(e) => updateEstimationItem(item.id, "unitPrice", Number(e.target.value))}
-                        className="w-24 rounded border border-gray-200 bg-transparent px-2 py-1.5 text-xs text-right text-gray-800 dark:border-gray-800 dark:text-white/90" min="0" />
+                        className="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-xs text-right text-gray-800 dark:border-gray-800 dark:text-white/90 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500" min="0" />
                     </td>
-                    <td className="py-1.5 px-2 text-right text-xs font-medium text-gray-800 dark:text-white">
+                    <td className="py-3 px-4 align-middle text-right text-xs font-semibold text-gray-800 dark:text-white border-r border-gray-200 dark:border-gray-800 last:border-r-0">
                       {formatCurrency(item.amount)}
                     </td>
-                    <td className="py-1.5 px-2">
+                    <td className="py-3 px-4 align-middle text-center last:border-r-0">
                       <button type="button" onClick={() => removeEstimationItem(item.id)}
-                        className="text-red-400 hover:text-red-600 cursor-pointer">
-                        <FiTrash2 className="size-3.5" />
+                        className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 p-1.5 rounded-lg cursor-pointer transition-colors">
+                        <FiTrash2 className="size-4" />
                       </button>
                     </td>
                   </tr>
