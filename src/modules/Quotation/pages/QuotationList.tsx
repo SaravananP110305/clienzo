@@ -511,9 +511,9 @@ export default function QuotationList() {
                   { key: null, label: "Amount" },
                   { key: "status", label: "Status" },
                   { key: "updatedAt", label: "Last Updated" },
-                  { key: null, label: "" },
+                  { key: null, label: "Actions" },
                 ].map((col) => (
-                  <TableCell key={col.label} isHeader className={`px-5 py-3 text-${col.key === "Amount" || col.key === "" ? "end" : "start"} text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap`}>
+                  <TableCell key={col.label || "actions"} isHeader className={`px-5 py-3 text-${col.label === "Amount" ? "end" : col.label === "Actions" ? "center" : "start"} text-theme-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap`}>
                     {col.key ? (
                       <button onClick={() => { if (col.key) handleSort(col.key as keyof Proposal); }}
                         className="flex items-center gap-1.5 font-medium hover:text-gray-900 dark:hover:text-white cursor-pointer">
@@ -644,8 +644,8 @@ export default function QuotationList() {
                         <div>{formatDate(proposal.updatedAt)}</div>
                         <div className="text-xs">{getTimeAgo(proposal.updatedAt)}</div>
                       </TableCell>
-                      <TableCell className="px-5 py-4 text-theme-sm text-end">
-                        <div className="flex items-center justify-end gap-1.5"
+                      <TableCell className="px-5 py-4 text-theme-sm text-center">
+                        <div className="flex items-center justify-center gap-1.5"
                           onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => { setSelectedProposalId(proposal.id); setView("detail"); setActiveDetailTab("requirement"); }}
                             className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="View">
