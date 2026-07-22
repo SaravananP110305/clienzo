@@ -510,15 +510,26 @@ export default function AddLead() {
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Website
+                  Website <span className="text-error-500">*</span>
                 </label>
                 <Controller
                   name="website"
                   control={control}
+                  rules={{ required: "Website is required" }}
                   render={({ field }) => (
-                    <Input {...field} type="text" placeholder="https://example.com" />
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="https://example.com"
+                      error={!!errors.website}
+                    />
                   )}
                 />
+                {errors.website && (
+                  <span className="mt-1 text-xs text-error-600 block">
+                    {errors.website.message}
+                  </span>
+                )}
               </div>
             </div>
           </div>
