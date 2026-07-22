@@ -286,6 +286,63 @@ export default function Dashboard() {
     { name: "Won leads", data: [12, 18, 15, 22, 30, 28] },
     { name: "Lost leads", data: [4, 6, 5, 8, 10, 9] },
   ];
+  const leadStatusBreakdown = useMemo(() => {
+    const statuses: Lead["status"][] = ["New", "Contacted", "Qualified", "Proposal sent", "Won", "Lost"];
+    return statuses.map((status) => rawLeads.filter((lead) => lead.status === status).length);
+  }, [rawLeads]);
+
+  const leadStatusOptions: ApexOptions = {
+    colors: ["#3B82F6", "#06B6D4", "#F59E0B", "#8B5CF6", "#10B981", "#EF4444"],
+    chart: {
+      fontFamily: "Poppins, sans-serif",
+      type: "donut",
+      toolbar: {
+        show: false,
+      },
+    },
+    labels: ["New", "Contacted", "Qualified", "Proposal sent", "Won", "Lost"],
+    dataLabels: {
+      enabled: false,
+    },
+    stroke: {
+      width: 0,
+    },
+    legend: {
+      position: "bottom",
+      horizontalAlign: "center",
+      fontFamily: "Poppins, sans-serif",
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "68%",
+          labels: {
+            show: true,
+            name: {
+              show: true,
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 700,
+            },
+            value: {
+              show: true,
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 700,
+              formatter: (val: string) => val,
+            },
+            total: {
+              show: true,
+              label: "Total leads",
+              fontWeight: 700,
+              formatter: () => `${rawLeads.length}`,
+            },
+          },
+        },
+      },
+    },
+    tooltip: {
+      enabled: false,
+    },
+  };
 
   // ── RENDER ──────────────────────────────────────────────────
   return (
@@ -324,15 +381,17 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-2 md:gap-6">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
-            Lead generation trend
+            Lead status breakdown
           </h3>
-          <div className="max-w-full overflow-hidden">
-            <Chart
-              options={leadTrendOptions}
-              series={leadTrendSeries}
-              type="area"
-              height={260}
-            />
+          <div className="max-w-full overflow-x-auto custom-scrollbar">
+            <div className="min-w-[320px]">
+              <Chart
+                options={leadStatusOptions}
+                series={leadStatusBreakdown}
+                type="donut"
+                height={320}
+              />
+            </div>
           </div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -351,6 +410,20 @@ export default function Dashboard() {
       </div>
 
       {/* ── RECENT LEADS TABLE ─────────────────────────────── */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 mb-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
+          Lead generation trend
+        </h3>
+        <div className="max-w-full overflow-hidden">
+          <Chart
+            options={leadTrendOptions}
+            series={leadTrendSeries}
+            type="area"
+            height={260}
+          />
+        </div>
+      </div>
+
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-800 dark:text-white/90">
           Recent leads
