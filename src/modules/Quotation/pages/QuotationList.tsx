@@ -222,22 +222,22 @@ export default function QuotationList() {
     const updated = proposals.map((p) =>
       p.id === proposalId
         ? {
-            ...p,
-            status: newStatus,
-            updatedAt: new Date().toISOString().split("T")[0],
-            workflowLogs: [
-              ...p.workflowLogs,
-              {
-                id: generateId(p.workflowLogs),
-                action: `Status changed to ${newStatus}`,
-                fromStatus: p.status,
-                toStatus: newStatus,
-                timestamp: new Date().toISOString(),
-                performedBy: "Current User",
-                notes,
-              },
-            ],
-          }
+          ...p,
+          status: newStatus,
+          updatedAt: new Date().toISOString().split("T")[0],
+          workflowLogs: [
+            ...p.workflowLogs,
+            {
+              id: generateId(p.workflowLogs),
+              action: `Status changed to ${newStatus}`,
+              fromStatus: p.status,
+              toStatus: newStatus,
+              timestamp: new Date().toISOString(),
+              performedBy: "Current User",
+              notes,
+            },
+          ],
+        }
         : p
     );
     setProposals(updated);
@@ -635,7 +635,7 @@ export default function QuotationList() {
                           {/* No transitions available badge */}
                           {activeStatusDropdown === proposal.id && STATUS_TRANSITIONS[proposal.status].length === 0 && (
                             <div className="absolute left-0 top-full mt-1 z-[100] w-48 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl text-center">
-                              <p className="text-xs text-gray-400 dark:text-gray-500">No further transitions available</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500">No more transitions</p>
                             </div>
                           )}
                         </div>
@@ -851,11 +851,10 @@ export default function QuotationList() {
         <div className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-white/[0.05]">
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveDetailTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition cursor-pointer ${
-                activeDetailTab === tab.key
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition cursor-pointer ${activeDetailTab === tab.key
                   ? "text-brand-600 border-brand-500 dark:text-brand-400 dark:border-brand-400"
                   : "text-gray-500 border-transparent hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-              }`}>
+                }`}>
               {tab.icon}
               {tab.label}
             </button>
