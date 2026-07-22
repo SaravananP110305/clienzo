@@ -380,6 +380,13 @@ export default function MeetingsScopePage({
         return (
           <div className="flex items-center gap-1">
             <button
+              onClick={() => openRescheduleModal(meeting)}
+              className="p-1.5 text-brand-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition cursor-pointer"
+              title="Reschedule meeting"
+            >
+              <FiRefreshCw className="size-4" />
+            </button>
+            <button
               onClick={() => openCompleteModal(meeting)}
               className="p-1.5 text-success-500 hover:text-success-600 hover:bg-success-50 dark:hover:bg-success-500/10 rounded-lg transition cursor-pointer"
               title="Complete meeting"
