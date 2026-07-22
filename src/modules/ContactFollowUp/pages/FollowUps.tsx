@@ -27,7 +27,7 @@ import { ASSIGNEES, initialLeads, type Lead } from "../../LeadManagement/data/le
 import { useToast } from "../../../hooks/useToast";
 import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
-import { FiCheckCircle, FiEye, FiXCircle } from "react-icons/fi";
+import { FiCheckCircle, FiEye, FiXCircle, FiClock } from "react-icons/fi";
 
 const FOLLOW_UP_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -147,7 +147,10 @@ export default function FollowUps() {
 
   // Modal state for completing follow-ups
   const [selectedItemForComplete, setSelectedItemForComplete] = useState<FollowUp | null>(null);
+  const [completeOutcome, setCompleteOutcome] = useState<"Interested" | "Reschedule" | "Not Interested" | null>(null);
   const [completeSummary, setCompleteSummary] = useState("");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
 
   // Modal state for missed / reschedule
   const [selectedItemForMissed, setSelectedItemForMissed] = useState<FollowUp | null>(null);
@@ -155,9 +158,20 @@ export default function FollowUps() {
   const [missedDate, setMissedDate] = useState("");
   const [missedTime, setMissedTime] = useState("");
 
+  const resetCompleteModal = () => {
+    setSelectedItemForComplete(null);
+    setCompleteOutcome(null);
+    setCompleteSummary("");
+    setRescheduleDate("");
+    setRescheduleTime("");
+  };
+
   const handleOpenCompleteModal = (item: FollowUp) => {
     setSelectedItemForComplete(item);
+    setCompleteOutcome("Interested");
     setCompleteSummary("");
+    setRescheduleDate("");
+    setRescheduleTime("");
   };
 
   const handleOpenMissedModal = (item: FollowUp) => {
@@ -178,29 +192,113 @@ export default function FollowUps() {
 
   const handleConfirmComplete = () => {
     if (!selectedItemForComplete) return;
-    if (selectedItemForComplete.status === "Completed") return;
 
-    const summary = completeSummary.trim() || "No summary provided.";
-    const updatedList = followupsList.map((f) =>
-      f.id === selectedItemForComplete.id
-        ? { ...f, status: "Completed" as const, completedSummary: summary }
-        : f
-    );
-    setFollowupsList(updatedList);
-    setStorage("saiflow_followups", updatedList);
+    if (completeOutcome === "Interested") {
+      const summary = completeSummary.trim() || "Client expressed interest.";
 
-    // Update the lead's status to Qualified
-    const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
-    const updatedLeads = leadsList.map((l) =>
-      l.id === selectedItemForComplete.leadId
-        ? { ...l, status: "Qualified" as const, summary: summary, notes: l.notes ? `${l.notes}\n[Follow-up Completed] ${summary}` : `[Follow-up Completed] ${summary}` }
-        : l
-    );
-    setStorage("saiflow_leads", updatedLeads);
+      const updatedList = followupsList.map((f) =>
+        f.id === selectedItemForComplete.id
+          ? { ...f, status: "Completed" as const, completedSummary: summary }
+          : f
+      );
+      setFollowupsList(updatedList);
+      setStorage("saiflow_followups", updatedList);
 
-    showToast(`Follow-up completed! Lead moved to Qualified.`, "success");
-    setSelectedItemForComplete(null);
-    setCompleteSummary("");
+      // Update the lead's status to Qualified
+      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+      const updatedLeads = leadsList.map((l) =>
+        l.id === selectedItemForComplete.leadId
+          ? {
+              ...l,
+              status: "Qualified" as const,
+              summary: summary,
+              notes: l.notes ? `${l.notes}\n[Follow-up Completed - Interested] ${summary}` : `[Follow-up Completed - Interested] ${summary}`
+            }
+          : l
+      );
+      setStorage("saiflow_leads", updatedLeads);
+
+      showToast(`Follow-up completed! Lead moved to Qualified.`, "success");
+      resetCompleteModal();
+    } else if (completeOutcome === "Reschedule") {
+      if (!completeSummary.trim()) {
+        showToast("Please enter a summary/reason for rescheduling.", "error");
+        return;
+      }
+      if (!rescheduleDate) {
+        showToast("Please select a new follow-up date.", "error");
+        return;
+      }
+      if (!rescheduleTime) {
+        showToast("Please select a new follow-up time.", "error");
+        return;
+      }
+
+      const summary = completeSummary.trim();
+
+      const updatedList = followupsList.map((f) =>
+        f.id === selectedItemForComplete.id
+          ? {
+              ...f,
+              status: "Scheduled" as const,
+              date: rescheduleDate,
+              time: rescheduleTime,
+              reason: summary,
+            }
+          : f
+      );
+      setFollowupsList(updatedList);
+      setStorage("saiflow_followups", updatedList);
+
+      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+      const updatedLeads = leadsList.map((l) =>
+        l.id === selectedItemForComplete.leadId
+          ? {
+              ...l,
+              status: "Scheduled" as const,
+              nextFollowUpDate: rescheduleDate,
+              followUpTime: rescheduleTime,
+              summary: summary,
+              notes: l.notes ? `${l.notes}\n[Follow-up Rescheduled] ${summary}` : `[Follow-up Rescheduled] ${summary}`
+            }
+          : l
+      );
+      setStorage("saiflow_leads", updatedLeads);
+
+      showToast(`Follow-up rescheduled to ${rescheduleDate} at ${rescheduleTime}.`, "success");
+      resetCompleteModal();
+    } else if (completeOutcome === "Not Interested") {
+      if (!completeSummary.trim()) {
+        showToast("Please provide a reason for declining interest.", "error");
+        return;
+      }
+
+      const summary = completeSummary.trim();
+
+      const updatedList = followupsList.map((f) =>
+        f.id === selectedItemForComplete.id
+          ? { ...f, status: "Completed" as const, completedSummary: `[Not Interested] ${summary}` }
+          : f
+      );
+      setFollowupsList(updatedList);
+      setStorage("saiflow_followups", updatedList);
+
+      const leadsList = getStorage<Lead[]>("saiflow_leads", initialLeads);
+      const updatedLeads = leadsList.map((l) =>
+        l.id === selectedItemForComplete.leadId
+          ? {
+              ...l,
+              status: "Lost" as const,
+              summary: summary,
+              notes: l.notes ? `${l.notes}\n[Follow-up - Not Interested] ${summary}` : `[Follow-up - Not Interested] ${summary}`
+            }
+          : l
+      );
+      setStorage("saiflow_leads", updatedLeads);
+
+      showToast("Follow-up marked as Not Interested. Lead moved to Lost.", "info");
+      resetCompleteModal();
+    }
   };
 
   const handleConfirmMissedReschedule = () => {
@@ -511,66 +609,166 @@ export default function FollowUps() {
         )}
       </div>
 
-      {/* Mark as Completed Modal */}
+      {/* Mark as Completed / Outcome Modal */}
       <Modal
         isOpen={!!selectedItemForComplete}
-        onClose={() => { setSelectedItemForComplete(null); setCompleteSummary(""); }}
-        className="max-w-[500px] m-4"
+        onClose={resetCompleteModal}
+        className="max-w-[520px] m-4"
       >
         <div className="relative w-full rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-8">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <FiCheckCircle className="size-5 text-success-500" />
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Mark follow-up as Completed
-              </h4>
+          {/* Header */}
+          <div className="mb-5 flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <FiCheckCircle className="size-5 text-brand-500" />
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+              Update follow-up outcome
+            </h4>
+          </div>
+
+          {/* Lead info banner */}
+          {selectedItemForComplete && (
+            <div className="mb-5 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3.5 border border-gray-150 dark:border-gray-700/60">
+              <div className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                {selectedItemForComplete.company}
+                {selectedItemForComplete.contactPerson && (
+                  <span className="font-normal text-gray-500 dark:text-gray-400"> ({selectedItemForComplete.contactPerson})</span>
+                )}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>Scheduled: {formatDate(selectedItemForComplete.date)} at {formatTime(selectedItemForComplete.time)}</span>
+                {selectedItemForComplete.reason && (
+                  <span>• Reason: {selectedItemForComplete.reason}</span>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Completing this follow-up will move{' '}
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                {selectedItemForComplete?.company}
-              </span>
-              {' '}to <strong>Qualified</strong> and allow proceeding to meetings.
-            </p>
-            {selectedItemForComplete && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Reason: {selectedItemForComplete.reason}
-                </span>
-                <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  {selectedItemForComplete.date} at {selectedItemForComplete.time}
-                </span>
+          )}
+
+          {/* 3 Outcome Action Buttons (ALWAYS VISIBLE) */}
+          <div className="mb-5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2.5">
+              Select Call Outcome <span className="text-error-500">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Button 1: Interest */}
+              <button
+                type="button"
+                onClick={() => setCompleteOutcome("Interested")}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-medium transition cursor-pointer text-center gap-1.5 ${
+                  completeOutcome === "Interested"
+                    ? "border-success-500 bg-success-50 text-success-700 dark:border-success-500 dark:bg-success-950/40 dark:text-success-400 ring-2 ring-success-500/20 font-semibold"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                }`}
+              >
+                <FiCheckCircle className={`size-5 ${completeOutcome === "Interested" ? "text-success-600 dark:text-success-400" : "text-gray-400"}`} />
+                <span>Interest</span>
+              </button>
+
+              {/* Button 2: Reschedule */}
+              <button
+                type="button"
+                onClick={() => setCompleteOutcome("Reschedule")}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-medium transition cursor-pointer text-center gap-1.5 ${
+                  completeOutcome === "Reschedule"
+                    ? "border-warning-500 bg-warning-50 text-warning-700 dark:border-warning-500 dark:bg-warning-950/40 dark:text-warning-400 ring-2 ring-warning-500/20 font-semibold"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                }`}
+              >
+                <FiClock className={`size-5 ${completeOutcome === "Reschedule" ? "text-warning-600 dark:text-warning-400" : "text-gray-400"}`} />
+                <span>Reschedule</span>
+              </button>
+
+              {/* Button 3: Not Interested */}
+              <button
+                type="button"
+                onClick={() => setCompleteOutcome("Not Interested")}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-medium transition cursor-pointer text-center gap-1.5 ${
+                  completeOutcome === "Not Interested"
+                    ? "border-error-500 bg-error-50 text-error-700 dark:border-error-500 dark:bg-error-950/40 dark:text-error-400 ring-2 ring-error-500/20 font-semibold"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                }`}
+              >
+                <FiXCircle className={`size-5 ${completeOutcome === "Not Interested" ? "text-error-600 dark:text-error-400" : "text-gray-400"}`} />
+                <span>Not Interested</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Form details section depending on outcome */}
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                {completeOutcome === "Interested" && <>Summary / Notes <span className="text-gray-400 font-normal">(optional)</span></>}
+                {completeOutcome === "Reschedule" && <>Reason for rescheduling <span className="text-error-500">*</span></>}
+                {completeOutcome === "Not Interested" && <>Reason for declining interest <span className="text-error-500">*</span></>}
+              </label>
+              <textarea
+                value={completeSummary}
+                onChange={(e) => setCompleteSummary(e.target.value)}
+                placeholder={
+                  completeOutcome === "Interested"
+                    ? "E.g., Client agreed to schedule a product demo next week..."
+                    : completeOutcome === "Reschedule"
+                    ? "E.g., Client is in a meeting, requested callback later today..."
+                    : "E.g., Client selected another vendor due to price..."
+                }
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+
+            {completeOutcome === "Reschedule" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <DatePicker
+                    id="modal-reschedule-date"
+                    label="New follow-up date"
+                    required={true}
+                    defaultDate={rescheduleDate}
+                    onChange={(_, dateStr) => setRescheduleDate(dateStr)}
+                  />
+                  {!rescheduleDate && (
+                    <span className="mt-1 text-xs text-error-500 block">Required</span>
+                  )}
+                </div>
+                <div>
+                  <DatePicker
+                    id="modal-reschedule-time"
+                    mode="time"
+                    label="New follow-up time"
+                    required={true}
+                    defaultDate={rescheduleTime}
+                    onChange={(_, timeStr) => setRescheduleTime(timeStr)}
+                  />
+                  {!rescheduleTime && (
+                    <span className="mt-1 text-xs text-error-500 block">Required</span>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Completion summary <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <textarea
-              value={completeSummary}
-              onChange={(e) => setCompleteSummary(e.target.value)}
-              placeholder="E.g., Client agreed to schedule a demo next week..."
-              rows={4}
-              className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-white/[0.05]">
+          {/* Footer buttons */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-white/[0.05]">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => { setSelectedItemForComplete(null); setCompleteSummary(""); }}
+              onClick={resetCompleteModal}
             >
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleConfirmComplete}
-              className="bg-success-600 hover:bg-success-700 text-white"
+              className={
+                completeOutcome === "Interested"
+                  ? "bg-success-600 hover:bg-success-700 text-white"
+                  : completeOutcome === "Reschedule"
+                  ? "bg-warning-600 hover:bg-warning-700 text-white"
+                  : "bg-error-600 hover:bg-error-700 text-white"
+              }
             >
-              Confirm Completed
+              {completeOutcome === "Interested" && "Confirm Interested (Qualify)"}
+              {completeOutcome === "Reschedule" && "Confirm Reschedule"}
+              {completeOutcome === "Not Interested" && "Confirm Not Interested"}
             </Button>
           </div>
         </div>

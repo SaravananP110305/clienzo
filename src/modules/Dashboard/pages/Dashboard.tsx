@@ -20,22 +20,29 @@ import {
   FiUsers,
   FiCheckCircle,
   FiDollarSign,
+  FiPhoneCall,
+  FiClock,
+  FiUserCheck,
 } from "react-icons/fi";
-import { getStorage } from "../../../utils/storage";
-import { initialLeads as sourceLeads, Lead as SourceLead } from "../../LeadManagement/data/leadsData";
+import { getStorage, setStorage } from "../../../utils/storage";
+import { initialLeads as sourceLeads, Lead as SourceLead, ASSIGNEES } from "../../LeadManagement/data/leadsData";
 import { initialClients } from "../../ClientManagement/data/clientsData";
 import { initialProposals, Proposal } from "../../Quotation/data/quotationsData";
+import { initialFollowUps, FollowUp } from "../../ContactFollowUp/data/contactData";
+import { useToast } from "../../../hooks/useToast";
+import { formatTime } from "../../../utils/dateFormatter";
 
 interface Lead {
   sNo: number;
   company: string;
   contactPerson: string;
   phone: string;
-  status: "New" | "Contacted" | "Qualified" | "Proposal sent" | "Won" | "Lost";
+  status: "New" | "Contacted" | "Qualified" | "Scheduled" | "Completed" | "Missed" | "Rescheduled" | "Proposal sent" | "Won" | "Lost";
   assignedTo: string;
 }
 
 export default function Dashboard() {
+  const { showToast } = useToast();
   const { isOpen, openModal, closeModal } = useModal();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
@@ -73,11 +80,42 @@ export default function Dashboard() {
     openModal();
   };
 
+  // ── Today Lead Calls & Reassign Action ────────────────────────
+  const todayCalls = useMemo(() => {
+    const list = rawLeads.filter(
+      (l) => l.status === "Scheduled" || l.status === "Contacted" || l.status === "New"
+    );
+    return list.length > 0 ? list.slice(0, 5) : rawLeads.slice(0, 5);
+  }, [rawLeads]);
+
+  const handleReassignCall = (leadId: number, targetAssignee: string) => {
+    if (!targetAssignee) return;
+
+    // 1. Update leads in storage
+    const updatedLeads = rawLeads.map((l) =>
+      l.id === leadId ? { ...l, assignedTo: targetAssignee } : l
+    );
+    setStorage("saiflow_leads", updatedLeads);
+
+    // 2. Update follow-ups in storage if matching
+    const currentFollowups = getStorage<FollowUp[]>("saiflow_followups", initialFollowUps);
+    const updatedFollowups = currentFollowups.map((f) =>
+      f.leadId === leadId ? { ...f, assignedTo: targetAssignee } : f
+    );
+    setStorage("saiflow_followups", updatedFollowups);
+
+    showToast(`Lead call reassigned to ${targetAssignee} successfully!`, "success");
+  };
+
   const getStatusColor = (status: Lead["status"]) => {
     switch (status) {
       case "New": return "primary";
       case "Contacted": return "info";
       case "Qualified": return "warning";
+      case "Scheduled": return "primary";
+      case "Completed": return "success";
+      case "Missed": return "error";
+      case "Rescheduled": return "warning";
       case "Proposal sent": return "warning";
       case "Won": return "success";
       case "Lost": return "error";
@@ -107,9 +145,7 @@ export default function Dashboard() {
 
   const assigneeOptions = [
     { value: "all", label: "All assignees" },
-    { value: "John Doe", label: "John Doe" },
-    { value: "Jane Smith", label: "Jane Smith" },
-    { value: "Alice Johnson", label: "Alice Johnson" },
+    ...ASSIGNEES.map((a) => ({ value: a, label: a })),
   ];
 
   const processedLeads = useMemo(() => {
@@ -286,63 +322,6 @@ export default function Dashboard() {
     { name: "Won leads", data: [12, 18, 15, 22, 30, 28] },
     { name: "Lost leads", data: [4, 6, 5, 8, 10, 9] },
   ];
-  const leadStatusBreakdown = useMemo(() => {
-    const statuses: Lead["status"][] = ["New", "Contacted", "Qualified", "Proposal sent", "Won", "Lost"];
-    return statuses.map((status) => rawLeads.filter((lead) => lead.status === status).length);
-  }, [rawLeads]);
-
-  const leadStatusOptions: ApexOptions = {
-    colors: ["#3B82F6", "#06B6D4", "#F59E0B", "#8B5CF6", "#10B981", "#EF4444"],
-    chart: {
-      fontFamily: "Poppins, sans-serif",
-      type: "donut",
-      toolbar: {
-        show: false,
-      },
-    },
-    labels: ["New", "Contacted", "Qualified", "Proposal sent", "Won", "Lost"],
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      width: 0,
-    },
-    legend: {
-      position: "bottom",
-      horizontalAlign: "center",
-      fontFamily: "Poppins, sans-serif",
-    },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: "68%",
-          labels: {
-            show: true,
-            name: {
-              show: true,
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 700,
-            },
-            value: {
-              show: true,
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 700,
-              formatter: (val: string) => val,
-            },
-            total: {
-              show: true,
-              label: "Total leads",
-              fontWeight: 700,
-              formatter: () => `${rawLeads.length}`,
-            },
-          },
-        },
-      },
-    },
-    tooltip: {
-      enabled: false,
-    },
-  };
 
   // ── RENDER ──────────────────────────────────────────────────
   return (
@@ -377,23 +356,24 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts Row — side by side */}
+      {/* ── CHARTS ROW: Lead Generation Trend & Lead Conversion Rate ── */}
       <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-2 md:gap-6">
+        {/* Task 1: Placed Lead generation trend in place of Lead status breakdown */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
-            Lead status breakdown
+            Lead generation trend
           </h3>
-          <div className="max-w-full overflow-x-auto custom-scrollbar">
-            <div className="min-w-[320px]">
-              <Chart
-                options={leadStatusOptions}
-                series={leadStatusBreakdown}
-                type="donut"
-                height={320}
-              />
-            </div>
+          <div className="max-w-full overflow-hidden">
+            <Chart
+              options={leadTrendOptions}
+              series={leadTrendSeries}
+              type="area"
+              height={265}
+            />
           </div>
         </div>
+
+        {/* Lead conversion rate */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
             Lead conversion rate
@@ -409,21 +389,78 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── RECENT LEADS TABLE ─────────────────────────────── */}
+      {/* ── TASK 2: TODAY LEAD CALL REASSIGNING FEATURE ─────────────────── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 mb-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <h3 className="mb-4 text-base font-semibold text-gray-850 dark:text-white">
-          Lead generation trend
-        </h3>
-        <div className="max-w-full overflow-hidden">
-          <Chart
-            options={leadTrendOptions}
-            series={leadTrendSeries}
-            type="area"
-            height={260}
-          />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div>
+            <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+              <FiPhoneCall className="text-brand-500 size-5" />
+              Today's lead calls
+            </h3>
+          </div>
+          <Badge size="sm" color="primary">
+            {todayCalls.length} calls scheduled
+          </Badge>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-100 dark:divide-white/[0.05]">
+            <thead>
+              <tr className="bg-gray-50/50 dark:bg-gray-900/50">
+                <th className="px-4 py-2.5 text-start text-xs font-semibold text-gray-500 dark:text-gray-400">Lead ID</th>
+                <th className="px-4 py-2.5 text-start text-xs font-semibold text-gray-500 dark:text-gray-400">Company</th>
+                <th className="px-4 py-2.5 text-start text-xs font-semibold text-gray-500 dark:text-gray-400">Contact person</th>
+                <th className="px-4 py-2.5 text-start text-xs font-semibold text-gray-500 dark:text-gray-400">Scheduled time</th>
+                <th className="px-4 py-2.5 text-start text-xs font-semibold text-gray-500 dark:text-gray-400">Current assignee</th>
+                <th className="px-4 py-2.5 text-end text-xs font-semibold text-gray-500 dark:text-gray-400">Quick reassign</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              {todayCalls.map((lead) => (
+                <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                  <td className="px-4 py-3 text-xs font-mono text-gray-500 dark:text-gray-400">
+                    SF-LEAD-{String(lead.id).padStart(4, "0")}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    {lead.company}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                    {lead.contactPerson}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-medium">
+                      <FiClock className="size-3 text-gray-400" />
+                      {formatTime(lead.followUpTime || "10:00 AM")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <Badge size="sm" color="light">
+                      <FiUserCheck className="size-3 mr-1 inline" />
+                      {lead.assignedTo}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-end">
+                    <select
+                      value=""
+                      onChange={(e) => handleReassignCall(lead.id, e.target.value)}
+                      className="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs text-gray-700 shadow-theme-xs focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer"
+                    >
+                      <option value="" disabled>Reassign to...</option>
+                      {ASSIGNEES.filter((a) => a !== lead.assignedTo).map((assignee) => (
+                        <option key={assignee} value={assignee}>
+                          {assignee}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
+      {/* ── RECENT LEADS TABLE ─────────────────────────────── */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-800 dark:text-white/90">
           Recent leads
@@ -459,8 +496,8 @@ export default function Dashboard() {
                         <DropdownItem
                           onItemClick={() => { setStatusFilter(opt.value); setCurrentPage(1); setIsStatusOpen(false); }}
                           className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === opt.value
-                              ? "bg-brand-500 text-white font-medium"
-                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                            ? "bg-brand-500 text-white font-medium"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                             }`}
                         >
                           {opt.label}
@@ -490,8 +527,8 @@ export default function Dashboard() {
                         <DropdownItem
                           onItemClick={() => { setAssigneeFilter(opt.value); setCurrentPage(1); setIsAssigneeOpen(false); }}
                           className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${assigneeFilter === opt.value
-                              ? "bg-brand-500 text-white font-medium"
-                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                            ? "bg-brand-500 text-white font-medium"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
                             }`}
                         >
                           {opt.label}
