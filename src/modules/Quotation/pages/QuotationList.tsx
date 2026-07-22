@@ -339,7 +339,9 @@ export default function QuotationList() {
   // ── List View Processing ───────────────────────────────────────────────────
 
   const processedProposals = useMemo(() => {
-    let result = [...proposals];
+    // Converted leads have already become clients, so their proposals no longer
+    // belong in the active quotation list.
+    let result = proposals.filter((proposal) => proposal.status !== "Converted");
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -451,14 +453,16 @@ export default function QuotationList() {
                     All Statuses
                   </button>
                 </li>
-                {(Object.keys(STATUS_CONFIG) as ProposalStatus[]).map((st) => (
+                {(Object.keys(STATUS_CONFIG) as ProposalStatus[])
+                  .filter((st) => st !== "Converted")
+                  .map((st) => (
                   <li key={st}>
                     <button onClick={() => { setStatusFilter(st); setCurrentPage(1); setIsStatusFilterOpen(false); }}
                       className={`cursor-pointer rounded-lg text-left w-full px-3 py-2 text-sm ${statusFilter === st ? "bg-brand-500 text-white" : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"}`}>
                       {STATUS_CONFIG[st].label}
                     </button>
                   </li>
-                ))}
+                  ))}
               </ul>
             </div>
           </div>
