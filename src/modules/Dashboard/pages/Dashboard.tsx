@@ -443,11 +443,23 @@ export default function Dashboard() {
                     <select
                       value=""
                       onChange={(e) => handleReassignCall(lead.id, e.target.value)}
-                      className="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs text-gray-700 shadow-theme-xs focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer"
+                      className="h-8.5 w-36 appearance-none rounded-lg border border-gray-200 bg-white px-2.5 py-1 pr-7 text-xs font-medium text-gray-700 shadow-theme-xs transition-all hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 cursor-pointer"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 0.4rem center',
+                        backgroundSize: '1.1rem',
+                        backgroundRepeat: 'no-repeat'
+                      }}
                     >
-                      <option value="" disabled>Reassign to...</option>
+                      <option value="" disabled className="text-gray-400 dark:bg-gray-900 dark:text-gray-500">
+                        Reassign to...
+                      </option>
                       {ASSIGNEES.filter((a) => a !== lead.assignedTo).map((assignee) => (
-                        <option key={assignee} value={assignee}>
+                        <option
+                          key={assignee}
+                          value={assignee}
+                          className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 py-1"
+                        >
                           {assignee}
                         </option>
                       ))}
